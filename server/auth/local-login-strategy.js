@@ -9,10 +9,19 @@ module.exports = function(passport) {
         passwordField: 'password',
         passReqToCallback: true
     },
-    function(req, email, password, done) {
+    async function(req, email, password, done) {
         const validation = userValidators.localLoginValidator({ email, password });
+        
+        if(validation.error) {
+            const { path, type } = validation.error.details[0];
+            return done({ path: path[0], type });
+        }
 
-        if(validation.error)
-            return done('error');
-    }))
+        const retrievedUser = await User.findOne({ email });
+        if(!retrievedUser) 
+            return done({ path: 'user', type: 'exists' });
+        if(!await bcrypt.compare(password, retrievedUser.password))
+            return done({ path: 'password', type: 'incorrect' });
+        return done(null, retrievedUser);
+    }));
 }

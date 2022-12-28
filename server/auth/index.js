@@ -33,7 +33,21 @@ exports.authenticate = {
     // Email/Password:
     localLogin: async function(req, res, next) {
         return passport.authenticate('local-login', (err, user, info) => {
-            console.log('marker')
+            if(err)
+                return res.status(400).send(err);
+            else if(!user)
+                return res.status(500).send("An error occured while processing your request");
+            
+            req.logIn(user, err => {
+                if (err) throw err;
+                res.send('Successfully Authenticated');
+            })
         })(req, res, next);
     }
+}
+
+exports.getUser = function(req, res, next) {
+    console.log(req.session)
+    console.log(req.user)
+    next();
 }

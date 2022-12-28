@@ -5,7 +5,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const passport = require('passport');
 const auth = require('./auth');
 
 const app = express();
@@ -27,8 +26,6 @@ connectDB.then(_ => {
     }));
 
     app.use(cookieParser(process.env.SESSION_SECRET));
-    // app.use(passport.initialize());
-    // app.use(passport.session());
 
     auth.configureMiddleware(app);
 
