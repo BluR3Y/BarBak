@@ -1,0 +1,62 @@
+sources:
+    - https://www.geeksforgeeks.org/difference-between-app-use-and-app-get-in-express-js/
+
+
+definition: Express
+    A small framework that sits on top of Node.js’s web server functionality to simplify its APIs and add helpful new features
+
+Code Implementation: 
+    * app.use(): A function used to mount the specified middleware function (are the functions that have access to the request object and response object, or we 
+        can call it a response-request cycle) at the path which is being specified. 
+        - The middleware function is executed when the base of the requested path matches the path.
+        - Syntax: app.use([path,],callback[,callback...])
+        - Example:
+            // Requiring module
+            const express = require('express')
+            const app = express()
+            
+            app.use(function(req, res, next) {
+                console.log('hello world')
+                next()
+            })
+            
+            app.use(function(req, res, next) {
+                console.log('happy holidays')
+                next()
+            })
+            
+            // Server setup
+            var server = app.listen(8080, function () {
+                var port = server.address().port
+                console.log("Listening at", port)
+            })
+            + Output: 
+                Listening at 8080
+                hello world
+                happy holidays
+                hello world
+                happy holidays
+    
+    * app.set(): A function used to assigns the setting name to value. You may store any value that you want, but certain names can be used to configure the 
+        behavior of the server.
+
+Middlewares:
+    - body-parser: the Node.js body parsing middleware. It is responsible for parsing the incoming request bodies in a middleware before you handle it.
+    - Syntax: app.set(name, value)
+    - Example:    
+        var express = require('express');
+        var app = express();
+        var PORT = 3000;
+        
+        app.set('title', 'GeeksforGeeks');
+        
+        app.get('/', (req, res) => {
+        res.send(app.get('title'));
+        })
+        
+        app.listen(PORT, function(err){
+            if (err) console.log(err);
+            console.log("Server listening on PORT", PORT);
+        }); 
+        + Output:
+            GeeksforGeeks

@@ -1,0 +1,35 @@
+{
+  "name": "barbak",
+  "version": "1.0.0",
+  "description": "Barbak is a web application developed to teach the art of mixing and serving drinks. Similar to a barback in the service industry, BarBak is designed to assist you, the drink maker, craft any alcoholic or non-alcoholic beverage. This is made possible by proving users with plenty of information relating to the drink. Information that is constantly revised and deemed accurate by professional drink makers. In addition to providing novice drink makers with a platform to learn the art of mixology, Barbak also provides expert mixologists with a platform to showcase their understanding of the craft by equipping them with the ability to publish new drinks and validate other users' drinks before publicizing.",
+  "main": "index.js",
+  "scripts": {
+    "devStart": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BluR3Y/BarBak.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BluR3Y/BarBak/issues"
+  },
+  "homepage": "https://github.com/BluR3Y/BarBak#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "bluebird": "^3.7.2",
+    "body-parser": "^1.20.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "mongoose": "^6.8.1",
+    "passport": "^0.6.0",
+    "passport-local": "^1.0.0"
+  }
+}
