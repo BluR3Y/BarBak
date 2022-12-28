@@ -44,6 +44,13 @@ exports.authenticate = {
             })
         })(req, res, next);
     }
+};
+
+// Middleware that checks if session exists
+exports.authenticationRequired = function(req, res, next) {
+    if(!req.isAuthenticated())
+        return res.status(401).send('Not Authenticated');
+    next();
 }
 
 exports.getUser = function(req, res, next) {

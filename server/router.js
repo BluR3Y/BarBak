@@ -6,5 +6,6 @@ const auth = require('./auth/index');
 router.use('/', auth.getUser);
 
 require('./routes/user-routes').connect(router);
+require('./routes/drink-routes').connect(router);
 
 module.exports = router;
