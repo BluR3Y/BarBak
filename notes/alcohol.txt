@@ -1,0 +1,186 @@
+Sources:
+    -https://www.alcoholrehabguide.org/alcohol/types/#:~:text=There%20are%20two%20categories%20of,both%20fermented%2C%20undistilled%20alcoholic%20beverages.
+    - https://www.acouplecooks.com/types-of-alcohol-liquor-names/
+
+
+Types of alcohol:
+    - Ethanol - The only type that humans can safely drink
+        - It is produced by the fermentation of yeast, and starches
+    - methanol
+    - Isopropanol
+
+Types of alcoholic beverages:
+    - Distilled
+        - Distillation is a process which follows fermentation. The process converts a fermented substance into one with an even
+            higher concentration of alcohol.
+        - Examples: Liquors/spirits
+
+    - Undistilled
+        - AKA {fermented} drinks
+        - Fermentation is the process by which bateria or yeast chemically converts sugar into ethanol
+        - Examples: Wine, beer
+
+Measures of alcohol content:
+    - Alcohol by volume (ABV)
+        - It is the number of milliliters of ethanol per 100 milliliters (or 3.4 fl.oz) in a solution
+    - Alcohol proof
+        - It is twice the percentage of alcohol by volume
+
+
+Types of Alcoholic drinks by alcohol content:
+    - Undistilled Drinks :
+        - Beer:
+            * Between 4% - 6% ABV
+        - Wine:
+            * Less than 14% ABV
+        - Hard Cider:
+            * About 5% ABV
+            * Is Fermented apple juice
+        - Mead:
+            * 10% to 14% ABV
+            * Blend of water and fermented honey
+        - Sake:
+            * 16% ABV
+            * Made from fermented rice
+        
+    - Distilled Drinks (Liquors/Spirits):
+        - Gin:
+            * Between 35% - 55% ABV
+            * Spirit made from juniper berries
+        - Brandy:
+            * Between 35% - 60% ABV
+            * Distilled Wine
+        - Whiskey:
+            * Between 40% - 50% ABV
+            * Spirit made from fermented grain
+        - Rum:
+            * Around 40% ABV
+            * Made from Fermented sugarcane or molasses
+        - Tequila:
+            * Around 40% ABV
+            * Liquor made fromthe Mexican agave plant
+        - Vodka:
+            * Around 40% ABV
+            * Liquor made from fermented grains and potatoes
+        - Absinthe:
+            * Between 45% - 74% ABV
+            * Spirit made from a variety of leaves and herbs
+        - Everclear:
+            * Between 60% - 95% ABV
+            * Grain based spirit
+        - Triple Sec:
+            * About 40% ABV
+            * Liquor made primarily with grain and dried orange peels
+
+Model: drinkware
+    const drinkwareModel = {
+        name: String,
+        description: String,
+        image: String,
+    }
+    - Example: {
+        name: 'sour',
+        description: '...',
+        image: 'http...'
+    }
+
+Model: equipment
+    const equipmentModel = {
+        name: String,
+        description: String,
+        image: String
+    }
+    - Example: {
+        name: 'Cocktail shaker',
+        description: '...',
+        image: 'http...'
+    }
+
+Model: ingredient
+    const ingredientModel = {
+        name: String,
+        description: String,
+        type: String        // alcohol, beverage, juice, fruit, other     // based on this, set allowed measurements 
+        image: String,
+        // only on { type: alcohol }
+            alcohol_type: String    // beer, liquor, wine, liqueur
+    }
+    - Example: {
+        name: 'vodka',
+        description: '...',
+        type: 'alcohol', 
+        image: 'http...',
+        alcohol_type: 'liquor'
+    }
+    - Example: {
+        name: 'orange',
+        description: '...',
+        type: 'fruit',
+        image: '...',
+    }
+    - Example: {
+        name: 'lime juice',
+        description: '...',
+        type: 'juice',
+        image: 'http...',
+    }
+
+Model: drink
+    const drinkModel = {
+        name: String,
+        description: String,
+        image: String,
+        type: String,       // needed?
+        ingredients: Array of ingredient Objects,
+        drinkware: Array of drinkware Objects
+        equipment: Array of equipment Objects,
+        preparation: Array of Strings,
+        tags: Array of Strings
+    }
+    - Example: {
+        name: 'Espresso Martini',
+        description: '...',
+        image: 'http...',
+        ingredients: [
+            { ingredientRef: 'vodka', 
+                substitutes: [ 
+                    ingredientRef, 
+                    ingredientRef, 
+                ], 
+                measure: 'ml', 
+                amount: 50, 
+                optional: false, 
+                garnish: false
+             },
+            { ingredientRef: 'Kahlua', 
+                amount: 30 
+            },
+            { ingredientRef: 'sugar syrup', 
+                amount: 10 
+            },
+            { ingredientRef: 'strong espresso', 
+                amount: 1 
+            }
+        ],
+        drinkware: [
+            { drinkwareRef: 'martini glass' },
+            { drinkwareRef: 'coupe glass' },
+        ],
+        equipment: [
+            { equipmentRef: 'Espresso Machine'},
+            { equipmentRef: 'Cocktail kit' },
+            { equipmentRef: 'Cambro Container' }
+        ],
+        preparation: [
+            "Add liquid ...",
+            "Add liquid ...",
+            "Add liquid ...",
+            "Add liquid ...",
+        ],
+        tags: [
+            'sweet',
+            'late-night',
+            'strong',
+        ]
+    }
+
