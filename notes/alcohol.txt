@@ -1,6 +1,9 @@
 Sources:
     -https://www.alcoholrehabguide.org/alcohol/types/#:~:text=There%20are%20two%20categories%20of,both%20fermented%2C%20undistilled%20alcoholic%20beverages.
     - https://www.acouplecooks.com/types-of-alcohol-liquor-names/
+    - http://www.cocktailhunter.com/wp-content/uploads/2014/05/Cocktail-Preparation.pdf
+    - https://www.youtube.com/watch?v=GQhnMSnaWUo&ab_channel=NightlifeBartenders
+    - http://www.cocktailhunter.com/wp-content/uploads/2014/05/Cocktail-Preparation.pdf
 
 
 Types of alcohol:
@@ -130,7 +133,10 @@ Model: drink
         name: String,
         description: String,
         image: String,
-        type: String,       // needed?
+        type: String,                   // --
+            // preparation_style: Array of Strings,          // on-the-rocks, up, neat, shaken, built-in-glass, poured, stirred, heated, blended
+        preparation_style: String,      // built, stirred, shaken, blended, layered, poured, heated
+        serving_style: String,    // on-the-rocks, up(straight up) , neat, chilled, back
         ingredients: Array of ingredient Objects,
         drinkware: Array of drinkware Objects
         equipment: Array of equipment Objects,
