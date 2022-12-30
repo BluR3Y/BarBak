@@ -103,7 +103,7 @@ Model: ingredient
     const ingredientModel = {
         name: String,
         description: String,
-        type: String        // alcohol, beverage, juice, fruit, other     // based on this, set allowed measurements 
+        type: String        // alcohol, beverage, juice, fruit, spice, herb, other     // based on this, set allowed measurements 
         image: String,
         // only on { type: alcohol }
             alcohol_type: String    // beer, liquor, wine, liqueur
@@ -134,9 +134,9 @@ Model: drink
         description: String,
         image: String,
         type: String,                   // --
-            // preparation_style: Array of Strings,          // on-the-rocks, up, neat, shaken, built-in-glass, poured, stirred, heated, blended
-        preparation_style: String,      // built, stirred, shaken, blended, layered, poured, heated
-        serving_style: String,    // on-the-rocks, up(straight up) , neat, chilled, back
+        mixing_style: String,      // built, stirred, shaken, blended, layered
+            // serving_styles: String,    // on-the-rocks, up(straight up) , neat, chilled, back(chaser), flaming, hot
+        
         ingredients: Array of ingredient Objects,
         drinkware: Array of drinkware Objects
         equipment: Array of equipment Objects,
@@ -190,3 +190,70 @@ Model: drink
         ]
     }
 
+Ingredient Type Measurements:
+    * alcohol:
+        - centiliter
+        - cup
+        - drop
+        - gram
+        - milliliters
+        - ounces
+        - splash
+        - part
+        - tablespoon
+        - teaspoon
+
+    * beverage:
+        - centiliters
+        - cups
+        - drops
+        - grams
+        - milliliters
+        - ounces
+        - splashes
+        - parts
+        - tablespoons
+        - teaspoons
+
+    * juice:
+        - centiliters
+        - cups
+        - drops
+        - grams
+        - milliliters
+        - ounces
+        - splashes
+        - parts
+        - tablespoons
+        - teaspoons
+
+    * fruit:
+        - halves
+        - leaves
+        - peels
+        - quarters
+        - shavings
+        - slices
+        - thirds
+        - twists
+        - wedges
+
+    * spice:
+        - cubes
+        - cups
+        - dashes
+        - grams
+        - ounces
+        - pinches
+        - scoops
+        - tablespoons
+        - teaspoons
+
+    * herb:
+        - leaves
+        - shavings
+        - sprigs
+        - stalks
+
+
+    * other:
