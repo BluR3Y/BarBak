@@ -31,9 +31,9 @@ module.exports.register = async (req, res) => {
             email,
             password: hashedPassword
         });
-        res.send(registeredUser);
+        res.status(200).send(registeredUser);
     } catch(err) {
-        res.status(400).send(err);
+        res.status(500).send(err);
     }
 }
 

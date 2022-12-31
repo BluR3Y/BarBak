@@ -1,0 +1,5 @@
+* 200 - OK success
+* 204 - No Content success
+* 400 - Bad Request response
+* 401 - Not Authenticated
+* 500 - Internal Server Error
