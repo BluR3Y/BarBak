@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-module.exports.create_user_tool = (data) => {
+module.exports.create_tool_validator = (data) => {
     const toolSchema = Joi.object({
         name: Joi.string()
             .max(30)

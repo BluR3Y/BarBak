@@ -40,7 +40,7 @@ exports.authenticate = {
             
             req.logIn(user, err => {
                 if (err) throw err;
-                res.send('Successfully Authenticated');
+                res.status(204).send();
             })
         })(req, res, next);
     }

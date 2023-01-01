@@ -1,8 +1,8 @@
 const Drinkware = require('../models/drinkware-model');
 const drinkwareValidators = require('../validators/drinkware-validators');
 
-module.exports.create_user_drinkware = async (req, res) => {
-    const validation = drinkwareValidators.create_user_drinkware(req.body);
+module.exports.create_drinkware = async (req, res) => {
+    const validation = drinkwareValidators.create_drinkware_validator(req.body);
 
     if(validation.error) {
         const { path, type } = validation.error.details[0];
@@ -17,7 +17,8 @@ module.exports.create_user_drinkware = async (req, res) => {
         await Drinkware.create({
             name,
             description,
-            user: req.user
+            user: req.user,
+            visibility: 'private'
         });
         res.status(204).send();
     } catch(err) {

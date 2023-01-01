@@ -79,7 +79,7 @@ Model: drinkware
     const drinkwareModel = {
         name: String,
         description: String,
-        image: String,
+        access: String          // private, public, in-review
     }
     - Example: {
         name: 'sour',
@@ -133,7 +133,7 @@ Model: drink
         name: String,
         description: String,
         image: String,
-        type: String,                   // --
+        type: String,                   // -- 
         mixing_style: String,      // built, stirred, shaken, blended, layered
             // serving_styles: String,    // on-the-rocks, up(straight up) , neat, chilled, back(chaser), flaming, hot
         

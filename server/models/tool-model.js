@@ -13,7 +13,22 @@ const toolSchema = new mongoose.Schema({
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         required: true,
+        immutable: true,
+    },
+    visibility: {
+        type: String,
+        default: 'private',
+        validate: {
+            validator: val => (val === 'private' || val === 'public' || val === 'in-review'),
+            message: props => `${props.value} is not a valid state`,
+        },
+    },
+    creation_date: {
+        type: Date,
+        required: true,
+        immutable: true,
+        default: () => Date.now(),
     }
-}, { collection: 'user-tools' });
+}, { collection: 'tools' });
 
 module.exports = mongoose.model("tools", toolSchema);

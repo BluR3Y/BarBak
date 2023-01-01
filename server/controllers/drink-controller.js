@@ -1,7 +1,7 @@
 const Drink = require('../models/drink-model');
 const drinkValidators = require('../validators/drink-validators');
 
-module.exports.create_user_drink = async (req, res) => {
+module.exports.create_drink = async (req, res) => {
 
     try {
         const createdDrink = await Drink.create({

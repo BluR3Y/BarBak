@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-module.exports.create_user_ingredient = (data) => {
+module.exports.create_ingredient_validator = (data) => {
     const ingredientSchema = Joi.object({
         name: Joi.string()
             .max(30)

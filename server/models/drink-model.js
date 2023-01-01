@@ -11,6 +11,6 @@ const drinkSchema = new mongoose.Schema({
     type: {
         type: String,
     },
-}, { collection: 'user-drinks' });
+}, { collection: 'drinks' });
 
-module.exports = mongoose.model("user-drinks", drinkSchema);
+module.exports = mongoose.model("drinks", drinkSchema);

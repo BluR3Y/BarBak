@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-module.exports.create_user_drinkware = (data) => {
+module.exports.create_drinkware_validator = (data) => {
     const schema = Joi.object({
         name: Joi.string()
             .max(30)

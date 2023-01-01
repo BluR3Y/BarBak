@@ -2,6 +2,6 @@ const mongoose = require('mongoose');
 
 const ingredientSchema = new mongoose.Schema({
 
-}, { collection: 'user-ingredients' });
+}, { collection: 'ingredients' });
 
 module.exports = mongoose.model("ingredients", ingredientSchema);
