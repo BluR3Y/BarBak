@@ -64,6 +64,20 @@ const AlcoholIngredient = Ingredient.discriminator('alcohol', new mongoose.Schem
             ),
             message: props => `${props.value} is not a valid category`,
         },
+    },
+    alcohol_by_volume: {
+        type:  Array,
+        validate: {
+            validator: val => {
+                if (val.length > 2)
+                    return false;
+                for(var i = 0; i < val.length; i++) {
+                    if(val[i] > 100)
+                        return false;
+                }
+            },
+            message: props => 'provided value is invalid',
+        },
     }
 }));
 
