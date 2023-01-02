@@ -1,0 +1,6 @@
+ingredient:
+    - name
+    - description
+    - category
+        * alcohol
+            - alcohol_type: beer, wine, liquor, liqueur

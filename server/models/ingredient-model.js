@@ -1,7 +1,70 @@
 const mongoose = require('mongoose');
 
 const ingredientSchema = new mongoose.Schema({
-
+    name: {
+        type: String,
+        maxLength: 30,
+        lowercase: true,
+        required: true,
+    },
+    description: {
+        type: String,
+        maxLength: 280,
+    },
+    category: {
+        type: String,
+        required: true,
+        validate: {
+            validator: val => (
+                val === 'alcohol' || 
+                val === 'beverage' ||
+                val === 'juice' ||
+                val === 'fruit' ||
+                val === 'other'
+            ),
+            message: props => `${props.value} is not a valid category`,
+        },
+    },
+    user: {
+        type: mongoose.SchemaTypes.ObjectId,
+        required: true,
+        immutable: true,
+    },
+    visibility: {
+        type: String,
+        default: 'private',
+        validate: {
+            validator: val => (val === 'private' || val === 'public' || val === 'in-review'),
+            message: props => `${props.value} is not a valid state`,
+        },
+    },
+    creation_date: {
+        type: Date,
+        immutable: true,
+        default: () => Date.now(),
+    }
 }, { collection: 'ingredients' });
 
-module.exports = mongoose.model("ingredients", ingredientSchema);
+ingredientSchema.methods.tester = function() {
+    console.log('tester');
+}
+
+// module.exports = mongoose.model("ingredients", ingredientSchema);
+
+const Ingredient = mongoose.model("ingredients", ingredientSchema);
+const AlcoholIngredient = Ingredient.discriminator('alcohol', new mongoose.Schema({
+    alcohol_category: {
+        type: String,
+        validate: {
+            validator: val => (
+                val === 'beer' ||
+                val === 'wine' ||
+                val === 'liquor' ||
+                val === 'liqueur'
+            ),
+            message: props => `${props.value} is not a valid category`,
+        },
+    }
+}));
+
+module.exports = { Ingredient, AlcoholIngredient };
