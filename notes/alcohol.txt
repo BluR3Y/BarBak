@@ -133,9 +133,11 @@ Model: drink
         name: String,
         description: String,
         image: String,
-        type: String,                   // -- 
+        type: String,                   // -- cocktail, mocktail, other
         mixing_style: String,      // built, stirred, shaken, blended, layered
-            // serving_styles: String,    // on-the-rocks, up(straight up) , neat, chilled, back(chaser), flaming, hot
+            // serving_styles: String,                                  // on-the-rocks, up(straight up) , flaming, heated
+                // mixed drinks serving styles: up(straight up), on-the-rocks, flaming, heated
+                // non-mixed drinks serving styles: on-the-rocks , neat, chilled, back(chaser)
         
         ingredients: Array of ingredient Objects,
         drinkware: Array of drinkware Objects

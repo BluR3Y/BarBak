@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
+const drinkValidators = require('../validators/drink-validators');
 
 const drinkSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
+        minLength: 2,
+        maxLength: 30,
+        lowercase: true,
     },
     description: {
         type: String,
@@ -13,4 +16,8 @@ const drinkSchema = new mongoose.Schema({
     },
 }, { collection: 'drinks' });
 
-module.exports = mongoose.model("drinks", drinkSchema);
+drinkSchema.statics.createDrinkValidator = function(data) {
+    return drinkValidators.createDrinkSchema.validate(data);
+}
+
+module.exports = mongoose.model("drink", drinkSchema);

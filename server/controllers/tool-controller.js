@@ -1,8 +1,7 @@
 const Tool = require('../models/tool-model');
-const toolValidators = require('../validators/tool-validators');
 
 module.exports.create_tool = async (req, res) => {
-    const validation = toolValidators.create_tool_validator(req.body);
+    const validation = Tool.createToolValidator(req.body);
     
     if(validation.error) {
         const { path, type } = validation.error.details[0];

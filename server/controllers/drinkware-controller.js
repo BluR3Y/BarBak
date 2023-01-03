@@ -1,8 +1,7 @@
 const Drinkware = require('../models/drinkware-model');
-const drinkwareValidators = require('../validators/drinkware-validators');
 
 module.exports.create_drinkware = async (req, res) => {
-    const validation = drinkwareValidators.create_drinkware_validator(req.body);
+    const validation = Drinkware.createDrinkwareValidator(req.body);
 
     if(validation.error) {
         const { path, type } = validation.error.details[0];

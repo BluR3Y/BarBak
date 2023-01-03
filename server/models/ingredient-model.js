@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Joi = require('joi');
+const ingredientValidators = require('../validators/ingredient-validators');
 
 // Base Ingredient Schema
 const ingredientSchema = new mongoose.Schema({
@@ -43,26 +43,13 @@ const ingredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-const ingredient_validation_schema = Joi.object({
-    name: Joi.string()
-        .max(30)
-        .lowercase()
-        .required(),
-    description: Joi.string()
-        .max(280),
-    category: Joi.string()
-        .lowercase()
-        .valid('alcohol', 'beaverage', 'juice', 'fruit', 'other')
-        .required(),
-});
-
 ingredientSchema.statics.validate = function(data) {
-    return ingredient_validation_schema.validate(data);
+    return ingredientValidators.createIngredientSchema.validate(data);
 }
 
 
 // Derived Alcohol Schema
-const alcoholSchema = new mongoose.Schema({
+const alcoholicIngredientSchema = new mongoose.Schema({
     alcohol_category: {
         type: String,
         lowercase: true,
@@ -91,21 +78,11 @@ const alcoholSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-const alcohol_validation_schema = Joi.object({
-    alcohol_category: Joi.string()
-        .lowercase()
-        .valid('beer', 'wine', 'liquor', 'liqueur')
-        .required(),
-    alcohol_by_volume: Joi.array()
-        .max(2)
-        .items(Joi.number())
-})
-
-alcoholSchema.statics.validate = function(data) {
-    return ingredient_validation_schema.concat(alcohol_validation_schema).validate(data);
+alcoholicIngredientSchema.statics.validate = function(data) {
+    return ingredientValidators.createAlcoholicIngredientSchema.validate(data);
 }
 
-const Ingredient = mongoose.model("ingredients", ingredientSchema);
-const AlcoholIngredient = Ingredient.discriminator('alcohol', alcoholSchema);
+const Ingredient = mongoose.model("ingredient", ingredientSchema);
+const AlcoholicIngredient = Ingredient.discriminator('alcoholic-ingredient', alcoholicIngredientSchema);
 
-module.exports = { Ingredient, AlcoholIngredient }
+module.exports = { Ingredient, AlcoholicIngredient }

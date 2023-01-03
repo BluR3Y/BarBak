@@ -1,7 +1,6 @@
 const User = require('../models/user-model');
 const bcrypt = require('bcrypt');
 const localStrategy = require('passport-local').Strategy;
-const userValidators = require('../validators/user-validators');
 
 module.exports = function(passport) {
     passport.use('local-login', new localStrategy({
@@ -10,7 +9,7 @@ module.exports = function(passport) {
         passReqToCallback: true
     },
     async function(req, email, password, done) {
-        const validation = userValidators.localLoginValidator({ email, password });
+        const validation = User.localLoginValidator({ email, password })
         
         if(validation.error) {
             const { path, type } = validation.error.details[0];

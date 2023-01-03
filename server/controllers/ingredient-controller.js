@@ -1,7 +1,7 @@
-const { Ingredient, AlcoholIngredient } = require('../models/ingredient-model');
+const { Ingredient, AlcoholicIngredient } = require('../models/ingredient-model');
 
 module.exports.create_ingredient = async (req, res) => {
-    const validation = req.body.category === 'alcohol' ? AlcoholIngredient.validate(req.body) : Ingredient.validate(req.body);
+    const validation = req.body.category === 'alcohol' ? AlcoholicIngredient.validate(req.body) : Ingredient.validate(req.body);
 
     if(validation.error) {
         const { path, type } = validation.error.details[0];
@@ -16,7 +16,7 @@ module.exports.create_ingredient = async (req, res) => {
         if(category === 'alcohol') {
             const { alcohol_category ,alcohol_by_volume } = validation.value;
 
-            await AlcoholIngredient.create({
+            await AlcoholicIngredient.create({
                 name,
                 description,
                 category,

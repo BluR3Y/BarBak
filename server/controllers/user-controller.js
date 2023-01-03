@@ -1,6 +1,5 @@
 const User = require('../models/user-model');
 const bcrypt = require('bcrypt');
-const userValidators = require('../validators/user-validators');
 const auth = require('../auth');
 
 module.exports.test = async (req, res) => {
@@ -8,7 +7,7 @@ module.exports.test = async (req, res) => {
 }
 
 module.exports.register = async (req, res) => {
-    const validation = userValidators.registerValidator(req.body);
+    const validation = User.registerValidator(req.body);
     
     if(validation.error) {
         const { path, type } = validation.error.details[0];

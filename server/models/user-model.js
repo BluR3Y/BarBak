@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const userValidators = require('../validators/user-validators');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -24,4 +25,11 @@ const userSchema = new mongoose.Schema({
     }
 }, { collection: 'users' });
 
-module.exports = mongoose.model("users", userSchema);
+userSchema.statics.registerValidator = function(data) {
+    return userValidators.registerSchema.validate(data);
+}
+userSchema.statics.localLoginValidator = function(data) {
+    return userValidators.localLoginSchema.validate(data);
+}
+
+module.exports = mongoose.model("user", userSchema);
