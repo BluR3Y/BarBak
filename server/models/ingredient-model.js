@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const Joi = require('joi');
 
+// Base Ingredient Schema
 const ingredientSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -14,16 +16,11 @@ const ingredientSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
-        validate: {
-            validator: val => (
-                val === 'alcohol' || 
-                val === 'beverage' ||
-                val === 'juice' ||
-                val === 'fruit' ||
-                val === 'other'
-            ),
-            message: props => `${props.value} is not a valid category`,
-        },
+        lowercase: true,
+        enum: {
+            values: ['alcohol', 'beverage', 'juice', 'fruit', 'other'],
+            message: props => `${props.value} is not a valid 'category' state`
+        }
     },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
@@ -32,11 +29,12 @@ const ingredientSchema = new mongoose.Schema({
     },
     visibility: {
         type: String,
-        default: 'private',
-        validate: {
-            validator: val => (val === 'private' || val === 'public' || val === 'in-review'),
-            message: props => `${props.value} is not a valid state`,
-        },
+        required: true,
+        lowercase: true,
+        enum: {
+            values: ['private', 'public', 'in-review'],
+            message: props => `${props.value} is not a valid 'visibility' state`,
+        }
     },
     creation_date: {
         type: Date,
@@ -45,40 +43,69 @@ const ingredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-ingredientSchema.methods.tester = function() {
-    console.log('tester');
+const ingredient_validation_schema = Joi.object({
+    name: Joi.string()
+        .max(30)
+        .lowercase()
+        .required(),
+    description: Joi.string()
+        .max(280),
+    category: Joi.string()
+        .lowercase()
+        .valid('alcohol', 'beaverage', 'juice', 'fruit', 'other')
+        .required(),
+});
+
+ingredientSchema.statics.validate = function(data) {
+    return ingredient_validation_schema.validate(data);
 }
 
-// module.exports = mongoose.model("ingredients", ingredientSchema);
 
-const Ingredient = mongoose.model("ingredients", ingredientSchema);
-const AlcoholIngredient = Ingredient.discriminator('alcohol', new mongoose.Schema({
+// Derived Alcohol Schema
+const alcoholSchema = new mongoose.Schema({
     alcohol_category: {
         type: String,
-        validate: {
-            validator: val => (
-                val === 'beer' ||
-                val === 'wine' ||
-                val === 'liquor' ||
-                val === 'liqueur'
-            ),
-            message: props => `${props.value} is not a valid category`,
-        },
+        lowercase: true,
+        required: true,
+        enum: {
+            values: ['beer', 'wine', 'liquor', 'liqueur'],
+            message: props => `${props.value} is not a valid 'alcohol_category' state`,
+        }
     },
     alcohol_by_volume: {
-        type:  Array,
+        type: Array,
         validate: {
             validator: val => {
-                if (val.length > 2)
+                if(val.length > 2)
                     return false;
+                var prev = -1;
                 for(var i = 0; i < val.length; i++) {
-                    if(val[i] > 100)
+                    if(isNaN(val[i]) || val[i] > 100 || val[i] < 0 || prev >= val[i])
                         return false;
+                    prev = val[i];
                 }
+                return true;
             },
-            message: props => 'provided value is invalid',
-        },
+            message: 'provided value is invalid',
+        }
     }
-}));
+}, { collection: 'ingredients' });
 
-module.exports = { Ingredient, AlcoholIngredient };
+const alcohol_validation_schema = Joi.object({
+    alcohol_category: Joi.string()
+        .lowercase()
+        .valid('beer', 'wine', 'liquor', 'liqueur')
+        .required(),
+    alcohol_by_volume: Joi.array()
+        .max(2)
+        .items(Joi.number())
+})
+
+alcoholSchema.statics.validate = function(data) {
+    return ingredient_validation_schema.concat(alcohol_validation_schema).validate(data);
+}
+
+const Ingredient = mongoose.model("ingredients", ingredientSchema);
+const AlcoholIngredient = Ingredient.discriminator('alcohol', alcoholSchema);
+
+module.exports = { Ingredient, AlcoholIngredient }

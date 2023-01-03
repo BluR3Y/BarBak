@@ -1,13 +1,15 @@
 const Joi = require('joi');
 
-module.exports.create_ingredient_validator = (data) => {
-    const ingredientSchema = Joi.object({
-        name: Joi.string()
-            .max(30)
-            .lowercase()
-            .required(),
-        description: Joi.string()
-            .max(280)
+// module.exports.create_ingredient_validator = (data) => {
+//     const ingredientSchema = Joi.object({
+//         name: Joi.string()
+//             .max(30)
+//             .lowercase()
+//             .required(),
+//         description: Joi.string()
+//             .max(280)
         
-    })
-}
+//     })
+// }
+
+module.exports.ingredient_validation_schema = 
