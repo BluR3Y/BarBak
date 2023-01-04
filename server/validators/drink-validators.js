@@ -1,5 +1,19 @@
 const Joi = require('joi');
 
+const ingredientSchema = Joi.object({
+    ingredientId: Joi.string()
+        .hex()
+        .length(24)
+        .required(),
+    amount: Joi.number()
+        .min(0)
+        .max(99999)
+        .required(),
+    measure: Joi.string()
+        .lowercase()
+        .required()
+});
+
 const createDrinkSchema = Joi.object({
     name: Joi.string()
         .min(3)
@@ -21,7 +35,8 @@ const createDrinkSchema = Joi.object({
     ingredients: Joi.array()
         .min(2)
         .max(30)
-        .items(Joi.object()),
+        .items(ingredientSchema)
+        .required(),
     drinkware: Joi.array()
         .min(1)
         .max(30)
