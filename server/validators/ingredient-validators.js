@@ -6,7 +6,7 @@ const createIngredientSchema = Joi.object({
         .lowercase()
         .required(),
     description: Joi.string()
-        .max(280),
+        .max(500),
     category: Joi.string()
         .lowercase()
         .valid('alcohol', 'beverage', 'juice', 'fruit', 'other')

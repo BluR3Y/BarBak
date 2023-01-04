@@ -11,7 +11,7 @@ const ingredientSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        maxLength: 280,
+        maxLength: 500,
     },
     category: {
         type: String,

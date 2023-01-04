@@ -24,3 +24,20 @@ module.exports.create_drinkware = async (req, res) => {
         res.status(500).send(err);
     }
 }
+
+module.exports.search_drinkware = async (req, res) => {
+    const validation = Drinkware.searchDrinkwareValidator(req.body);
+
+    if(validation.error) {
+        const { path, type } = validation.error.details[0];
+        return res.status(400).send({ path: path[0], type });
+    }
+    const { searchQuery } = validation.value;
+
+    try {
+        const search = await Drinkware.find({ name: {$regex : searchQuery}, user: req.user }, ['_id', 'name']);
+        res.status(200).send(search);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}

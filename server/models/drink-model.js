@@ -4,16 +4,36 @@ const drinkValidators = require('../validators/drink-validators');
 const drinkSchema = new mongoose.Schema({
     name: {
         type: String,
-        minLength: 2,
+        minLength: 3,
         maxLength: 30,
         lowercase: true,
     },
     description: {
         type: String,
+        maxLength: 500,
     },
-    type: {
+    preparation_method: {
         type: String,
+        lowercase: true,
+        required: true,
+        enum: {
+            values: ['build', 'stir', 'shake', 'blend', 'layer', 'muddle'],
+            message: props => `${props.value} is not a valid 'preparation_method' state`
+        }
     },
+    serving_style: {
+        type: String,
+        lowercase: true,
+        enum: {
+            values: ['on-the-rocks', 'straight-up', 'flaming', 'heated', 'neat'],
+            message: props => `${props.value} is not a valid 'serving_style' state`
+        }
+    },
+    ingredients: {
+        type: Array,
+        minLength: 2,
+        maxLength: 30,
+    }
 }, { collection: 'drinks' });
 
 drinkSchema.statics.createDrinkValidator = function(data) {

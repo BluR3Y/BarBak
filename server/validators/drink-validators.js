@@ -6,11 +6,18 @@ const createDrinkSchema = Joi.object({
         .max(30)
         .lowercase(),
     description: Joi.string()
-        .max(280),
-    drink_category: Joi.string()
+        .max(500),
+    // drink_category: Joi.string()
+    //     .lowercase()
+    //     .valid('cocktail', 'mocktail', 'other')
+    //     .required(),
+    preparation_method: Joi.string()
         .lowercase()
-        .valid('cocktail', 'mocktail', 'other')
+        .valid('build', 'stir', 'shake', 'blend', 'layer', 'muddle')
         .required(),
+    serving_style: Joi.string()
+        .lowercase()
+        .valid('on-the-rocks', 'straight-up', 'flaming', 'heated', 'neat'),
     ingredients: Joi.array()
         .min(2)
         .max(30)

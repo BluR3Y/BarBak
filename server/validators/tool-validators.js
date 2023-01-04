@@ -6,7 +6,7 @@ const createToolSchema = Joi.object({
         .lowercase()
         .required(),
     description: Joi.string()
-        .max(280)
+        .max(500)
 });
 
 module.exports = { createToolSchema };

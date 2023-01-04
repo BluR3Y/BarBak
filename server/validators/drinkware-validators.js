@@ -6,7 +6,14 @@ const createDrinkwareSchema = Joi.object({
         .lowercase()
         .required(),
     description: Joi.string()
-        .max(280)
+        .max(500)
 });
 
-module.exports = { createDrinkwareSchema };
+const searchDrinkwareSchema = Joi.object({
+    searchQuery: Joi.string()
+        .max(30)
+        .lowercase()
+        .required()
+});
+
+module.exports = { createDrinkwareSchema, searchDrinkwareSchema };

@@ -9,7 +9,7 @@ const drinkwareSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        maxLength: 280,
+        maxLength: 500,
     },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
@@ -18,11 +18,12 @@ const drinkwareSchema = new mongoose.Schema({
     },
     visibility: {
         type: String,
-        default: 'private',
-        validate: {
-            validator: val => (val === 'private' || val === 'public' || val === 'in-review'),
-            message: props => `${props.value} is not a valid state`,
-        },
+        required: true,
+        lowercase: true,
+        enum: {
+            values: ['private', 'public', 'in-review'],
+            message: props => `${props.value} is not a valid 'visibility' state`,
+        }
     },
     creation_date: {
         type: Date,
@@ -34,6 +35,10 @@ const drinkwareSchema = new mongoose.Schema({
 
 drinkwareSchema.statics.createDrinkwareValidator = function(data) {
     return drinkwareValidators.createDrinkwareSchema.validate(data);
+}
+
+drinkwareSchema.statics.searchDrinkwareValidator = function(data) {
+    return drinkwareValidators.searchDrinkwareSchema.validate(data);
 }
 
 module.exports = mongoose.model("drinkware", drinkwareSchema);
