@@ -17,7 +17,8 @@ module.exports.create_tool = async (req, res) => {
         await Tool.create({
             name,
             description,
-            user: req.user
+            user: req.user,
+            visibility: 'private'
         });
         res.status(204).send();
     } catch(err) {

@@ -7,6 +7,7 @@ const drinkSchema = new mongoose.Schema({
         minLength: 3,
         maxLength: 30,
         lowercase: true,
+        required: true,
     },
     description: {
         type: String,
@@ -33,6 +34,23 @@ const drinkSchema = new mongoose.Schema({
         type: Array,
         minLength: 2,
         maxLength: 30,
+        required: true,
+    },
+    drinkware: {
+        type: Array,
+        maxLength: 3,
+    },
+    tools: {
+        type: Array,
+        maxLength: 20,
+    },
+    preparation: {
+        type: Array,
+        max: 30,
+    },
+    tags: {
+        type: Array,
+        max: 10,
     }
 }, { collection: 'drinks' });
 

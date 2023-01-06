@@ -4,7 +4,9 @@ const drinkwareValidators = require('../validators/drinkware-validators');
 const drinkwareSchema = new mongoose.Schema({
     name: {
         type: String,
+        minLength: 3,
         maxLength: 30,
+        lowercase: true,
         required: true
     },
     description: {
@@ -27,7 +29,6 @@ const drinkwareSchema = new mongoose.Schema({
     },
     creation_date: {
         type: Date,
-        required: true,
         immutable: true,
         default: () => Date.now(),
     }

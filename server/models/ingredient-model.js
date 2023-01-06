@@ -5,6 +5,7 @@ const ingredientValidators = require('../validators/ingredient-validators');
 const ingredientSchema = new mongoose.Schema({
     name: {
         type: String,
+        minLength: 3,
         maxLength: 30,
         lowercase: true,
         required: true,
@@ -55,7 +56,7 @@ const alcoholicIngredientSchema = new mongoose.Schema({
         lowercase: true,
         required: true,
         enum: {
-            values: ['beer', 'wine', 'liquor', 'liqueur'],
+            values: ['beer', 'wine', 'liquor', 'liqueur', 'other'],
             message: props => `${props.value} is not a valid 'alcohol_category' state`,
         }
     },
@@ -67,7 +68,7 @@ const alcoholicIngredientSchema = new mongoose.Schema({
                     return false;
                 var prev = -1;
                 for(var i = 0; i < val.length; i++) {
-                    if(isNaN(val[i]) || val[i] > 100 || val[i] < 0 || prev >= val[i])
+                    if(isNaN(val[i]) || val[i] > 100 || val[i] < 0 || prev > val[i])
                         return false;
                     prev = val[i];
                 }

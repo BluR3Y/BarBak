@@ -38,10 +38,9 @@ const createDrinkSchema = Joi.object({
         .items(ingredientSchema)
         .required(),
     drinkware: Joi.array()
-        .min(1)
-        .max(30)
+        .max(3)
         .items(Joi.object()),
-    equipment: Joi.array()
+    tools: Joi.array()
         .max(30)
         .items(Joi.object()),
     preparation: Joi.array()

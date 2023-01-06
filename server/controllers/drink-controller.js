@@ -10,7 +10,7 @@ module.exports.create_drink = async (req, res) => {
         const { path, type } = validation.error.details[0];
         return res.status(400).send({ path:path[0], type });
     }
-    const { name, description, drink_category, mixing_style, serving_style, ingredients, drinkware, equipment, preparation, tags } = validation.value;
+    const { name, description, drink_category, preparation_method, serving_style, ingredients, drinkware, tools, preparation, tags } = validation.value;
 
     try {
         if(await Drink.findOne({ user: req.user, name }))
@@ -26,21 +26,21 @@ module.exports.create_drink = async (req, res) => {
             if(!drinkwareInfo)
                 return res.status(400).send({ path: 'drinkware', type: 'exists' });
         }
-        for(const item in equipment) {
-            const equipmentInfo = await Tool.findOne({ _id: equipment[item]._id, user: req.user });
-            if(!equipmentInfo)
-                return res.status(400).send({ path: 'equipment', type: 'exists' });
+        for(const item in tools) {
+            const toolInfo = await Tool.findOne({ _id: tools[item].toolId, user: req.user });
+            if(!toolInfo)
+                return res.status(400).send({ path: 'tool', type: 'exists' });
         }
 
         await Drink.create({
             name,
             description,
             drink_category,
-            mixing_style,
+            preparation_method,
             serving_style,
             ingredients,
             drinkware,
-            equipment,
+            tools,
             preparation,
             tags
         });

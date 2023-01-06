@@ -4,7 +4,8 @@ const toolValidators = require('../validators/tool-validators');
 const toolSchema = new mongoose.Schema({
     name: {
         type: String,
-        maxLength: 30,
+        minLength: 3,
+        maxlength: 30,
         required: true,
     },
     description: {
