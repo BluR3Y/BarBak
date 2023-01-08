@@ -13,7 +13,13 @@ const connectDB = require('./config/database-config');
 connectDB.then(_ => {
     PORT = process.env.PORT || 3001;
 
-    app.use(bodyParser.json());
+    // app.use(bodyParser.json());
+    app.use((req, res, next) => {
+        if(req.originalUrl === '/stripe-webhooks') 
+            bodyParser.raw({ type: 'application/json' })(req, res, next);
+        else
+            bodyParser.json()(req,res,next);
+    });
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cors({
         origin: '*',
