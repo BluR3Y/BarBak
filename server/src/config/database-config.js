@@ -3,7 +3,8 @@ const Promise = require('bluebird');
 
 const connectDB = () => {
     return new Promise((resolve, reject) => {
-        mongoose.connect(process.env.MONGODB_URI, {
+        const { MONGODB_URI } = process.env;
+        mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         })

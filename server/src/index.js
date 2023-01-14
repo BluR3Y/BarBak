@@ -1,4 +1,4 @@
-require('dotenv').config();
+// require('dotenv').config();
 const express = require('express');
 const router = require('./router');
 const cors = require('cors');
@@ -11,7 +11,7 @@ const app = express();
 const connectDB = require('./config/database-config');
 
 connectDB.then(_ => {
-    PORT = process.env.PORT || 3001;
+    const { PORT, SESSION_SECRET } = process.env;
 
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
@@ -20,12 +20,12 @@ connectDB.then(_ => {
         credentials: true,
     }));
     app.use(session({
-        secret: process.env.SESSION_SECRET,
+        secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
     }));
 
-    app.use(cookieParser(process.env.SESSION_SECRET));
+    app.use(cookieParser(SESSION_SECRET));
 
     auth.configureMiddleware(app);
 
