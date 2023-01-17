@@ -37,6 +37,8 @@ services:
     volumes:
       - /app/node_modules
     # Add environmental variables
+    env_file:
+      - ./backend/.env
 
   api:
     container_name: api
