@@ -1,0 +1,62 @@
+version: '3'
+services:
+  nginx:
+    container_name: nginx
+    depends_on:
+      - client
+      - backend
+      - api
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    restart: always # because it is routing traffic to our entire app
+    ports:
+      - 80:80
+  
+  client:
+    container_name: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - 3000:3000
+    volumes:
+      - /app/node_modules
+  
+  backend:
+    container_name: backend
+    depends_on:
+      - mongo
+    build: 
+      dockerfile: Dockerfile
+      context: ./backend
+    ports:
+      - 3001:3001
+    restart: on-failure
+    volumes:
+      - /app/node_modules
+    # Add environmental variables
+
+  api:
+    container_name: api
+    depends_on:
+      - mongo
+    build: 
+      dockerfile: Dockerfile
+      context: ./api
+    ports:
+      - 3002:3002
+    restart: on-failure
+    volumes:
+      - /app/node_modules
+    # Add environmental variables
+
+  mongo:
+    container_name: mongo
+    image: 'mongo'
+    ports:
+      - 27017:27017
+    volumes:
+      - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./db/mongo-volume:/data/db
