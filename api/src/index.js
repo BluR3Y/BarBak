@@ -8,8 +8,12 @@ app.post('/testpostreq', (req,res) => {
     res.status(200).send("Hello There From API");
 })
 
-app.post('/testgetreq', (req,res) => {
+app.get('/testgetreq', (req,res) => {
     res.status(200).send("Hello There From API");
+})
+
+app.get('/', (req,res) => {
+    res.send("Hello There From API");
 })
 
 app.listen(PORT, () => console.log(`API is listening on http://localhost:${PORT}`));
