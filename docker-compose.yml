@@ -1,14 +1,14 @@
 version: '3'
 services:
-  nginx:
-    container_name: nginx
+  webserver:
+    container_name: webserver
     depends_on:
       - client
       - backend
       - api
     build:
       dockerfile: Dockerfile
-      context: ./nginx
+      context: ./webserver
     restart: always # because it is routing traffic to our entire app
     ports:
       - 80:80
@@ -38,7 +38,7 @@ services:
       - /app/node_modules
     # Add environmental variables
     env_file:
-      - ./backend/.env
+      - ./backend/env/webhost.env
 
   api:
     container_name: api
@@ -54,7 +54,7 @@ services:
       - /app/node_modules
     # Add environmental variables
     env_file:
-      - ./api/.env
+      - ./api/env/webhost.env
 
   mongo:
     container_name: mongo

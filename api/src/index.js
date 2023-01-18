@@ -1,19 +1,23 @@
 const express = require('express');
+const router = require('./router');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
 const app = express();
+const connectDB = require('./config/database-config');
 
-const { PORT } = process.env;
-console.log(PORT)
+connectDB.then(_ => {
+    const { PORT, WEB_SERVER_URI } = process.env;
 
-app.post('/testpostreq', (req,res) => {
-    res.status(200).send("Hello There From API");
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(cors({
+        origin: WEB_SERVER_URI,
+        credentials: true,
+    }));
+    app.use('/', router);
+    app.listen(PORT, () => console.log(`Backend Server is listening on http://localhost:${PORT}`));
 })
-
-app.get('/testgetreq', (req,res) => {
-    res.status(200).send("Hello There From API");
-})
-
-app.get('/', (req,res) => {
-    res.send("Hello There From API");
-})
-
-app.listen(PORT, () => console.log(`API is listening on http://localhost:${PORT}`));
+.catch(err => {
+    console.log('Error occured while connecting to Database:', err);
+});

@@ -30,3 +30,6 @@
 
 # Idea IDE configs
 .idea
+
+# Mongo db volume data for persistence storage
+/db/mongo-volume/*

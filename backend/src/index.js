@@ -1,4 +1,3 @@
-// require('dotenv').config();
 const express = require('express');
 const router = require('./router');
 const cors = require('cors');
@@ -11,12 +10,12 @@ const app = express();
 const connectDB = require('./config/database-config');
 
 connectDB.then(_ => {
-    const { PORT, SESSION_SECRET } = process.env;
+    const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;
 
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cors({
-        origin: '*',
+        origin: WEB_SERVER_URI,
         credentials: true,
     }));
     app.use(session({
