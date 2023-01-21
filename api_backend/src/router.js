@@ -4,7 +4,7 @@ const auth = require('./middleware/auth');
 const schemaValidator = require('./validator');
 
 // Validate User API Key
-// router.use('/', auth.keyAuthenticationRequired);
+router.use('/', auth.keyAuthenticationRequired);
 
 // Validate Request Data
 router.use('/', schemaValidator());

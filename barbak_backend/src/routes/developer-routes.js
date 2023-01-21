@@ -2,8 +2,10 @@ const developerController = require('../controllers/developer-controller');
 const auth = require('../auth/index');
 
 function connectRoutes(router) {
-    // router.post('/drinks/create-drink', auth.sessionAuthenticationRequired, drinkController.create_drink);
-    router.post('/developer/register', auth.sessionAuthenticationRequired, developerController.register);
+    router.post('/developers/register', auth.sessionAuthenticationRequired, developerController.register);
+    router.post('/developers/update-info', auth.sessionAuthenticationRequired, developerController.updateInfo);
+
+    router.get('/developers/regenerate-key', auth.sessionAuthenticationRequired, developerController.regenerateAPIKey);
 };
 
 module.exports.connect = connectRoutes;

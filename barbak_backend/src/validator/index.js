@@ -37,8 +37,8 @@ module.exports = (req, res, next) => {
                 const validation = _schema.validate(data, _validationOptions);
                 
                 if(validation.error) {
-                    const { path, type } = validation.error.details[0];
-                    return res.status(400).send({ path: path[0], type });
+                    const errors = validation.error.details;
+                    return res.status(400).send(errors);
                 }
 
                 if(method === 'post') {

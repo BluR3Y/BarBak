@@ -11,7 +11,7 @@ const developerSchema = new mongoose.Schema({
         lowercase: true,
         required: true,
     },
-    host: {
+    link: {
         type: String,
         lowercase: true,
         maxLength: 50,
@@ -31,6 +31,11 @@ const developerSchema = new mongoose.Schema({
         },
         required: true,
     },
+    user: {
+        type: mongoose.SchemaTypes.ObjectId,
+        required: true,
+        immutable: true,
+    },
     apiKey: {
         type: String,
         required: true,
@@ -40,27 +45,15 @@ const developerSchema = new mongoose.Schema({
         immutable: true,
         default: () => Date.now(),
         required: true,
-    },
-    startCycleDay: {
-        type: Number,
-        default: () => {
-            const date = new Date.now();
-            return date.getDate();
-        },
-        required: true,
     }
 }, { collection: 'developers' });
-
-// developerSchema.statics.registerValidator = function(data) {
-//     return developerValidators.registerDeveloperSchema.validate(data);
-// }
 
 developerSchema.statics.generateAPIKey = async function() {
     const { randomBytes, createHash } = require('crypto');
     const apiKey = randomBytes(16).toString('hex');
     const hashedAPIKey = createHash('md5').update(apiKey).digest('hex');
 
-    if(await this.findOne({ api_key: hashedAPIKey }))
+    if(await this.findOne({ apiKey: hashedAPIKey }))
         this.generateAPIKey();
     else
         return { apiKey, hashedAPIKey }; 

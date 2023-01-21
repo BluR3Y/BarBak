@@ -50,26 +50,39 @@ const Joi = require('joi');
 //         .max(15)
 //         .items(Joi.string())
 // });
-const ingredients = require('./ingredient-schemas');
+
+const drinkIngredientObject = Joi.object({
+    ingredientId: Joi.string().hex().length(24).required(),
+    amount: Joi.number().min(0).max(99999).required(),
+    measure: Joi.string().lowercase().required()
+});
+const drinkDrinkwareObject = Joi.object({
+    drinkwareId: Joi.string().hex().length(24).required()
+});
+const drinkToolObject = Joi.object({
+    toolId: Joi.string().hex().length(24).required()
+});
 
 const drinkName = Joi.string().lowercase().min(3).max(30);
 const drinkDescription = Joi.string().max(500);
 const drinkPreparationMethod = Joi.string().lowercase().valid('build', 'stir', 'shake', 'blend', 'layer', 'muddle');
 const drinkServingStyle = Joi.string().lowercase().valid('on-the-rocks', 'straight-up', 'flaming', 'heated', 'neat');
-// const drinkIngredients = Joi.array().min(2).max(30).items('place-holder***');
-// const drinkDrinkware = Joi.array().min(1).max(3).items('placeholder');
-// const drinkTools = Joi.array().max(15).items('place-holder');
+const drinkIngredients = Joi.array().min(2).max(30).items(drinkIngredientObject);
+const drinkDrinkware = Joi.array().min(1).max(3).items(drinkDrinkwareObject);
+const drinkTools = Joi.array().max(15).items(drinkToolObject);
 const drinkPreparation = Joi.array().min(2).max(30).items(Joi.string());
 const drinkTags = Joi.array().max(15).items(Joi.string());
+
+
 
 const createDrinkSchema = Joi.object({
     name: drinkName.required(),
     description: drinkDescription,
     preparation_method: drinkPreparationMethod.required(),
     serving_style: drinkServingStyle.required(),
-    // ingredients: drinkIngredients.required(),
-    // drinkware: drinkDrinkware,
-    // tools: drinkTools,
+    ingredients: drinkIngredients.required(),
+    drinkware: drinkDrinkware,
+    tools: drinkTools,
     preparation: drinkPreparation.required(),
     tags: drinkTags
 });

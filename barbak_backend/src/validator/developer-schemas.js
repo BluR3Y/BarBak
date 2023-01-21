@@ -34,4 +34,5 @@ const registerDeveloperSchema = Joi.object({
 
 module.exports = {
     '/developers/register': registerDeveloperSchema,
+    '/developers/update-info': registerDeveloperSchema,
 };

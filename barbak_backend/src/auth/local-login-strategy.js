@@ -12,7 +12,7 @@ module.exports = function(passport) {
 
         const retrievedUser = await User.findOne({ username });
         if(!retrievedUser) 
-            return done({ path: 'user', type: 'exists' });
+            return done({ path: 'user', type: 'exist' });
         if(!await bcrypt.compare(password, retrievedUser.password))
             return done({ path: 'password', type: 'incorrect' });
         return done(null, retrievedUser);

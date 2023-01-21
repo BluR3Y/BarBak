@@ -1,36 +1,64 @@
 const Developer = require('../models/developer-model');
 
-// module.exports.register = async (req, res) => {
-//     const validation = Developer.registerValidator(req.body);
-
-//     if(validation.error) {
-//         const { path, type } = validation.error.details[0];
-//         return res.status(400).send({ path: path[0], type });
-//     }
-//     const { name, email, host, statement } = validation.value;
-
-//     if(await Developer.findOne({ email }))
-//         return res.status(400).send({ path: 'email', type: 'exists' });
-//     else if(await Developer.findOne({ host }))
-//         return res.status(400).send({ path: 'host', type: 'exists' });
-
-//     const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
-
-//     try {
-//         await Developer.create({
-//             name,
-//             email,
-//             host,
-//             statement,
-//             apiKey: hashedAPIKey
-//         });
-//         res.status(200).send({ apiKey });
-//     } catch(err) {
-//         res.status(500).send(err);
-//     }
-// }
-
 module.exports.register = async (req, res) => {
-    console.log(req.body);
-    res.send('Hello')
+    const { name, email, link, statement } = req.body;
+
+    if(await Developer.findOne({ email }))
+        return res.status(400).send({ path: 'email', type: 'exist' });
+    else if(await Developer.findOne({ link }))
+        return res.status(400).send({ path: 'link', type: 'exist' });
+    
+    const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
+
+    try {
+        await Developer.create({
+            name,
+            email,
+            link,
+            statement,
+            apiKey: hashedAPIKey,
+            user: req.user
+        });
+    } catch(err) {
+        return res.status(500).send(err);
+    }
+    res.status(200).send({ apiKey });
+}
+
+module.exports.regenerateAPIKey = async (req, res) => {
+    const developer = await Developer.findOne({ user: req.user });
+
+    if(!developer)
+        return res.status(401).send({ path: 'developer', type: 'registered' });
+
+    const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
+
+    try {
+        await developer.updateOne({
+            apiKey: hashedAPIKey
+        });
+    } catch(err) {
+        return res.status(500).send(err);
+    }
+    res.status(200).send({ apiKey });
+}
+
+module.exports.updateInfo = async (req, res) => {
+    const { name, email, link, statement } = req.body;
+    const developer = await Developer.findOne({ user: req.user });
+
+    if(!developer)
+        return res.status(401).send({ path: 'developer', type: 'registered' });
+
+    try {
+        await developer.updateOne({
+            name,
+            email,
+            link,
+            statement
+        });
+    } catch(err){
+        return res.status(500).send(err);
+    }
+    res.status(204).send();
 }
