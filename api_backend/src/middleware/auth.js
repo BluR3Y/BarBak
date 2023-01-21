@@ -2,6 +2,8 @@ const Developer = require('../models/developer-model');
 
 // Middleware that checks if API key is valid
 exports.keyAuthenticationRequired = async function(req, res, next) {
+    // const host = req.get('host');
+    // const origin = req.get('origin');
     const apiKey = req.query.key;
 
     if(!apiKey)

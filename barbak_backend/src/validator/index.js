@@ -2,14 +2,15 @@ const _ = require('lodash');
 const url = require('url');
 
 const Schemas = {
-    drinkware: require('./drinkware-schemas'),
+    users: require('./user-schemas'),
+    developers: require('./developer-schemas'),
+    drinks: require('./drink-schemas'),
     ingredients: require('./ingredient-schemas'),
-    tools: require('./tool-schemas'),
-    drink: require('./drink-schemas')
+    drinkware: require('./drinkware-schemas'),
+    tools: require('./tool-schemas')
 };
 
-module.exports = () => {
-
+module.exports = (req, res, next) => {
     // enabled HTTP methods for request data validation
     const _supportedMethods = ['post', 'get'];
 
@@ -21,12 +22,12 @@ module.exports = () => {
     };
 
     // return the validation middleware
-    return (req, res, next) => {
+    return ((req, res, next) => {
         const route = url.parse(req.url);
         const method = req.method.toLowerCase();
         const path = route.pathname;
         const _relevantSchemas = Schemas[path.split('/')[1]];
-        
+
         if(_relevantSchemas && _.includes(_supportedMethods, method) && _.has(_relevantSchemas, path)) {
             const _schema = _.get(_relevantSchemas, path);
             const data = (method === 'post') ? req.body : req.query;
@@ -34,7 +35,7 @@ module.exports = () => {
             if(_schema) {
                 // Validate req.body using the schema and validation options
                 const validation = _schema.validate(data, _validationOptions);
-
+                
                 if(validation.error) {
                     const { path, type } = validation.error.details[0];
                     return res.status(400).send({ path: path[0], type });
@@ -48,5 +49,5 @@ module.exports = () => {
             }
         }
         next();
-    }
-}
+    })(req,res,next);
+};

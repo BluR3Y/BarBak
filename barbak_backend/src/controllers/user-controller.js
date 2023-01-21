@@ -7,17 +7,11 @@ module.exports.test = async (req, res) => {
 }
 
 module.exports.register = async (req, res) => {
-    const validation = User.registerValidator(req.body);
     
-    if(validation.error) {
-        const { path, type } = validation.error.details[0];
-        return res.status(400).send({ path: path[0], type: type });
-    }
-    const { username, email, password } = validation.value;
+    const { username, email, password } = req.body;
 
-    if(await User.exists({ username })) 
+    if(await User.exists({ username }))
         return res.status(400).send({ path: 'username', type: 'exists' });
-    
     if(await User.exists({ email }))
         return res.status(400).send({ path: 'email', type: 'exists' });
 
@@ -25,12 +19,12 @@ module.exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     try {
-        const registeredUser = await User.create({
+        await User.create({
             username,
             email,
             password: hashedPassword
         });
-        res.status(200).send(registeredUser);
+        res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
     }

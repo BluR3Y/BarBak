@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const ingredientValidators = require('../validators/ingredient-validators');
 
 // Base Ingredient Schema
 const ingredientSchema = new mongoose.Schema({
@@ -44,10 +43,6 @@ const ingredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-ingredientSchema.statics.validate = function(data) {
-    return ingredientValidators.createIngredientSchema.validate(data);
-}
-
 
 // Derived Alcohol Schema
 const alcoholicIngredientSchema = new mongoose.Schema({
@@ -78,10 +73,6 @@ const alcoholicIngredientSchema = new mongoose.Schema({
         }
     }
 }, { collection: 'ingredients' });
-
-alcoholicIngredientSchema.statics.validate = function(data) {
-    return ingredientValidators.createAlcoholicIngredientSchema.validate(data);
-}
 
 const Ingredient = mongoose.model("ingredient", ingredientSchema);
 const AlcoholicIngredient = Ingredient.discriminator('alcoholic-ingredient', alcoholicIngredientSchema);

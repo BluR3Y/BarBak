@@ -15,4 +15,8 @@ const connectDB = () => {
 
 const ready = connectDB();
 
-module.exports = ready;
+module.exports = {
+    ready,
+    // Returns the current mongoose instance
+    getMongoose: () => mongoose,
+}

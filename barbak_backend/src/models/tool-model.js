@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const toolValidators = require('../validators/tool-validators');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -33,9 +32,5 @@ const toolSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 }, { collection: 'tools' });
-
-toolSchema.statics.createToolValidator = function(data) {
-    return toolValidators.createToolSchema.validate(data);
-}
 
 module.exports = mongoose.model("tool", toolSchema);

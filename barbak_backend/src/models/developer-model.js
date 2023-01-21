@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const developerValidators = require('../validators/developer-validators');
 
 const developerSchema = new mongoose.Schema({
     name: {
@@ -52,24 +51,9 @@ const developerSchema = new mongoose.Schema({
     }
 }, { collection: 'developers' });
 
-// const callLogSchema = new mongoose.Schema({
-//     developer: {
-//         type: mongoose.SchemaTypes.ObjectId,
-//         immutable: true,
-//         required: true,
-//     },
-//     requestDate: {
-//         type: Date,
-//         immutable: false,
-//         default: () => Date.now(),
-//         required: true,
-//     }
-// }, { collection: 'call-logs' });
-// const CallLog = mongoose.model("call-log", callLogSchema);
-
-developerSchema.statics.registerValidator = function(data) {
-    return developerValidators.registerDeveloperSchema.validate(data);
-}
+// developerSchema.statics.registerValidator = function(data) {
+//     return developerValidators.registerDeveloperSchema.validate(data);
+// }
 
 developerSchema.statics.generateAPIKey = async function() {
     const { randomBytes, createHash } = require('crypto');
@@ -81,32 +65,5 @@ developerSchema.statics.generateAPIKey = async function() {
     else
         return { apiKey, hashedAPIKey }; 
 };
-
-// developerSchema.statics.hashAPIKey = function(apiKey) {
-//     const { createHash } = require('crypto');
-//     return createHash('md5').update(apiKey).digest('hex');
-// }
-
-// developerSchema.methods.createCallLog = function() {
-//     const developerId = this._id;
-//     try {
-//         CallLog.create({
-//             developer: developerId
-//         });
-//     } catch (err) {
-//         throw err;
-//     }
-// }
-
-// developerSchema.methods.numLifetimeCalls = async function() {
-//     const developerId = this._id;
-//     return await CallLog.count({ developer: developerId });
-// }
-
-// developerSchema.methods.exceedsMonthlyCallLimit = async function() {
-//     const developerId = this._id;
-//     const limit = (this.subscription === 'free' ? 10 : 50);
-//     return false;
-// }
 
 module.exports = mongoose.model("developer", developerSchema);

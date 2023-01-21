@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const drinkValidators = require('../validators/drink-validators');
 
 const drinkSchema = new mongoose.Schema({
     name: {
@@ -53,9 +52,5 @@ const drinkSchema = new mongoose.Schema({
         max: 10,
     }
 }, { collection: 'drinks' });
-
-drinkSchema.statics.createDrinkValidator = function(data) {
-    return drinkValidators.createDrinkSchema.validate(data);
-}
 
 module.exports = mongoose.model("drink", drinkSchema);

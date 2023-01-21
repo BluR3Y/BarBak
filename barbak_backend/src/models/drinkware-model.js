@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const drinkwareValidators = require('../validators/drinkware-validators');
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -33,13 +32,5 @@ const drinkwareSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 }, { collection: 'drinkware' });
-
-drinkwareSchema.statics.createDrinkwareValidator = function(data) {
-    return drinkwareValidators.createDrinkwareSchema.validate(data);
-}
-
-drinkwareSchema.statics.searchDrinkwareValidator = function(data) {
-    return drinkwareValidators.searchDrinkwareSchema.validate(data);
-}
 
 module.exports = mongoose.model("drinkware", drinkwareSchema);
