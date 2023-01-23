@@ -1,0 +1,23 @@
+
+drinkware_model = {
+    name: String,
+    description: String
+    material: {
+        type: String,
+        enum: ['crystal','wood',etc]
+    },
+    capacity: { // store with default unit: centiliters
+        type: Number,
+    }
+}
+
+material:
+    - Crystal
+    - Wood
+    - Glass
+    - Stainless Steel
+    - Ceramic
+    - Copper
+    - Bamboo
+    - Silicone
+    - Acrylic

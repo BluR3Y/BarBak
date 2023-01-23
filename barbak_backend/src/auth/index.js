@@ -54,8 +54,9 @@ exports.sessionAuthenticationRequired = function(req, res, next) {
     next();
 }
 
-exports.getUser = function(req, res, next) {
+exports.getUser = async function(req, res, next) {
     // console.log(req.session)
     // console.log(req.user)
+
     next();
 }

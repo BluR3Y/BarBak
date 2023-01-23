@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { randomBytes, createHash } = require('crypto');
 
 const developerSchema = new mongoose.Schema({
     name: {
@@ -49,7 +50,6 @@ const developerSchema = new mongoose.Schema({
 }, { collection: 'developers' });
 
 developerSchema.statics.generateAPIKey = async function() {
-    const { randomBytes, createHash } = require('crypto');
     const apiKey = randomBytes(16).toString('hex');
     const hashedAPIKey = createHash('md5').update(apiKey).digest('hex');
 

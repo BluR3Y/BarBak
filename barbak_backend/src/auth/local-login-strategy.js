@@ -1,5 +1,4 @@
 const User = require('../models/user-model');
-const bcrypt = require('bcrypt');
 const localStrategy = require('passport-local').Strategy;
 
 module.exports = function(passport) {
@@ -13,7 +12,7 @@ module.exports = function(passport) {
         const retrievedUser = await User.findOne({ username });
         if(!retrievedUser) 
             return done({ path: 'user', type: 'exist' });
-        if(!await bcrypt.compare(password, retrievedUser.password))
+        if(!await retrievedUser.validatePassword(password))
             return done({ path: 'password', type: 'incorrect' });
         return done(null, retrievedUser);
     }));

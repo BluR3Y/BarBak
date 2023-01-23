@@ -1,5 +1,4 @@
 const User = require('../models/user-model');
-const bcrypt = require('bcrypt');
 const auth = require('../auth');
 
 module.exports.test = async (req, res) => {
@@ -15,8 +14,7 @@ module.exports.register = async (req, res) => {
     if(await User.exists({ email }))
         return res.status(400).send({ path: 'email', type: 'exist' });
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await User.hashPassword(password);
 
     try {
         await User.create({

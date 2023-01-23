@@ -1,0 +1,99 @@
+
+drink_model = {
+    name: String,
+    description: String,
+    drinkType: {
+        type: String,
+        enum: ['']
+    },
+    preparation_methods: {
+        type: Array of Strings,
+        enum: []
+    },
+    serving_styles: {
+        type: Array of Strings,
+        enum: []
+    },
+    chaser: Ingredient Object : Must be a beverage,
+    drinkware: Array of Drinkware Ids,
+    ingredients: Array of Objects,
+    tools: Array of tool Ids,
+    preparation: Array of Strings,
+    tags: Array of Strings[]
+}
+
+
+drinkType:
+    - cocktail  
+    - mocktail
+
+preparation_method:
+    - stir
+    - shake
+    - blend
+    - build
+    - muddle
+    - layer
+    - flame
+    - churn
+    - carbonate
+    - infuse
+    - smoke
+    - spherify
+
+serving_style:
+    - up (straight up)
+    - on-the-rocks
+    - frozen
+    - long
+    - straight
+    - diluted
+    - frappe
+    - floater
+    - flamed
+    - chaser
+
+
+Example#1:
+{
+    name: 'Long Island Iced Tea',
+    description: '...',
+    preparation_method: ["buid"],
+    serving_styles: ["on-the-rocks"],
+    drinkware: ["abc123","xyz987"],
+    tools: ["abc123","xyz987"],
+    preparation: [
+        "Add liquid ...",
+        "Add liquid ...",
+        "Add liquid ...",
+        "Add liquid ..."
+    ]
+    ingredients: [
+        { 
+            ingredientId: "abc123", 
+            measure: "ml", 
+            amount: 50 
+            optional: false,
+            garnish: false,
+            substitutes: [
+                "abc123",
+                "xyz123"
+            ]
+        },{ 
+            ingredientId: "abc123", 
+            measure: "ml", 
+            amount: 50 
+            optional: false,
+            garnish: false,
+            substitutes: [
+                "abc123",
+                "xyz123"
+            ]
+        },
+    ],
+    tags: [
+        "sweet",
+        "spicy",
+        "strong"
+    ]
+}

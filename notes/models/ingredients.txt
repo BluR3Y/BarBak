@@ -1,0 +1,72 @@
+
+ingredientModel = {
+    name: String,
+    description: String,
+    ingredientType: String,
+    category: String
+}
+
+ingredientType:
+    - spirit
+        category
+        * Whiskey
+        * Gin
+        * Vodka
+        * Rum
+        * Tequila
+        * Brandy
+    - liqueur
+        category
+        * Orange liqueur
+        * Coffee liqueur
+        * Cream liqueur
+        * Nut liqueur
+        * Herb liqueur
+        * Fruit liqueur
+    - beer
+        category
+        - lager
+        - ale
+        - wheat beer
+        - stout
+        - porters
+        - sour beer
+    - wine
+        category
+        - red wine
+        - white wine
+        - rose wine
+        - sparking wine
+        - fortified wine
+    - mixer
+        category
+        * Juice
+        * Syrup
+        * Soda
+        * Milk
+        * Cream
+        * Egg
+        * Bitters
+    - fruit
+        category
+        * Citrus
+        * Berries
+        * Melons
+        * Tropical
+        * Stone Fruits
+        * Pome Fruits
+    - spice
+        category
+        * Herbs
+        * Peppercorns
+        * Seeds
+        * Barks
+        * Flowers
+        * Roots
+    - herbs
+        category
+        * Culinary Herbs
+        * Aromatic Herbs
+        * Medicinal Herbs
+        * Bittersweet Herbs
+    - other
