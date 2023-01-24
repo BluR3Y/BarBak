@@ -7,7 +7,7 @@ ingredientModel = {
 }
 
 ingredientType:
-    - spirit
+    - liquor
         category
         * Whiskey
         * Gin
@@ -17,69 +17,103 @@ ingredientType:
         * Brandy
     - liqueur
         category
-        * Orange liqueur
-        * Coffee liqueur
-        * Cream liqueur
-        * Nut liqueur
-        * Herb liqueur
-        * Fruit liqueur
+        * Orange
+        * Coffee
+        * Cream
+        * Nut
+        * Herb
+        * Fruit
     - beer
         category
         - lager
         - ale
-        - wheat beer
+        - wheat
         - stout
-        - porters
-        - sour beer
+        - porter
+        - sour
+        - belgian
     - wine
         category
-        - red wine
-        - white wine
-        - rose wine
-        - sparking wine
-        - fortified wine
+        - red
+        - white
+        - rose
+        - sparking
+        - fortified
     - mixer
         category
         * Juice
         * Syrup
         * Soda
-        * Milk
-        * Cream
-        * Egg
-        * Bitters
+        * Dairy
+        * Bitter
+        * Spice
+        * Herbs
     - fruit
         category
         * Citrus
         * Berries
         * Melons
         * Tropical
-        * Stone Fruits
-        * Pome Fruits
-    - seasoning
+        * Stone
+        * Pome
+    - other
+        * Miscellaneous
+        * Exotic
+        * Ethnic
         
 
 
-Example#1:
-{
+Example#1: {
     name: "Orange Juice",
     description: "...",
     ingredientType: "Mixer",
     category: "Juice",
 }
 
+Example#2: {
+    name: "Olives",
+    description: "...",
+    ingredientType: "fruit",
+    category: "stone"
+}
 
-- spice
-    category
-    * Herbs
-    * Peppercorns
-    * Seeds
-    * Barks
-    * Flowers
-    * Roots
-- herbs
-    category
-    * Culinary Herbs
-    * Aromatic Herbs
-    * Medicinal Herbs
-    * Bittersweet Herbs
-    - other
+Example#3: {
+    name: "Sour Mixe",
+    description: "...",
+    ingredientType: "Mixer"
+    category: ""
+}
+
+Example#4: {
+    name: "Ice",
+    description: "...",
+    ingredientType: "other",
+    category: "Miscellaneous"
+}
+
+Example#5: {
+    name: "Coffee Beans",
+    description: "...",
+    ingredientType: "other",
+    category: "Miscellaneous"
+}
+
+Example#6: {
+    name: "kahlua",
+    description: "...",
+    ingredientType: "liqueur",
+    category: "Coffee"
+}
+
+Example#6: {
+    name: "sugar syrup",
+    description: "...",
+    ingredientType: "mixer",
+    category: "syrup"
+}
+
+Example#7: {
+    name: "espresso",
+    description: "...",
+    ingredientType: ""
+}
