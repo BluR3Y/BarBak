@@ -55,18 +55,31 @@ ingredientType:
         * Tropical
         * Stone Fruits
         * Pome Fruits
-    - spice
-        category
-        * Herbs
-        * Peppercorns
-        * Seeds
-        * Barks
-        * Flowers
-        * Roots
-    - herbs
-        category
-        * Culinary Herbs
-        * Aromatic Herbs
-        * Medicinal Herbs
-        * Bittersweet Herbs
+    - seasoning
+        
+
+
+Example#1:
+{
+    name: "Orange Juice",
+    description: "...",
+    ingredientType: "Mixer",
+    category: "Juice",
+}
+
+
+- spice
+    category
+    * Herbs
+    * Peppercorns
+    * Seeds
+    * Barks
+    * Flowers
+    * Roots
+- herbs
+    category
+    * Culinary Herbs
+    * Aromatic Herbs
+    * Medicinal Herbs
+    * Bittersweet Herbs
     - other

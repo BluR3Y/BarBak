@@ -27,6 +27,7 @@ services:
     container_name: barbak_backend
     depends_on:
       - mongo
+      - py_server
     build:
       dockerfile: Dockerfile
       context: ./barbak_backend
@@ -58,6 +59,13 @@ services:
     env_file:
       - ./api_backend/env/webhost.env
       
+  py_server:
+    container_name: py_server
+    build: 
+      dockerfile: Dockerfile
+      context: ./py_server
+    restart: on-failure
+
   mongo:
     container_name: mongo
     image: 'mongo'

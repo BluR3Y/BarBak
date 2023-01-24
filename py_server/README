@@ -1,0 +1,6 @@
+
+Start Virtual Environment:
+    env/Scripts/activate
+
+run development server:
+    python -m flask --app src/server.py --debug run --host=0.0.0.0

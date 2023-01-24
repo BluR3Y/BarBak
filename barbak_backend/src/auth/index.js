@@ -1,6 +1,7 @@
 const passport = require('passport');
 const User = require('../models/user-model');
 const Developer = require('../models/developer-model');
+const axios = require('axios');
 
 // Login Strategies:
 const localLogin = require('./local-login-strategy');
@@ -57,6 +58,9 @@ exports.sessionAuthenticationRequired = function(req, res, next) {
 exports.getUser = async function(req, res, next) {
     // console.log(req.session)
     // console.log(req.user)
+
+    // const request = await axios.get('http://127.0.0.1:5000');
+    // console.log(request.data)
 
     next();
 }
