@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const drinkwareMaterials = [ "crystal", "wood", "glass", "stainess-steel", "ceramic", "copper", "bamboo", "silicone", "acrylic", "paper", "other" ];
+
 const drinkwareSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -12,8 +14,20 @@ const drinkwareSchema = new mongoose.Schema({
         type: String,
         maxLength: 500,
     },
+    material: {
+        type: String,
+        required: true,
+        enum: drinkwareMaterials
+    },
+    // capacity: {
+    //     type: Number,
+    //     validate: {
+    //         validator: val => val > 0 && val < 3785   // standard unit of measurement for liquids are milliliters
+    //     }
+    // },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
         required: true,
         immutable: true,
     },
@@ -33,4 +47,4 @@ const drinkwareSchema = new mongoose.Schema({
     }
 }, { collection: 'drinkware' });
 
-module.exports = mongoose.model("drinkware", drinkwareSchema);
+module.exports = mongoose.model("Drinkware", drinkwareSchema);

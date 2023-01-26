@@ -64,13 +64,13 @@ module.exports.create = async (req, res) => {
     }
 
     for(const item in drinkware) {
-        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware[item].drinkwareId });
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware });
         if(!drinkwareInfo)
             return res.status(400).send({ path: 'drinkware', type: 'exist', item: drinkware[item].drinkwareId });
     }
 
     for(const item in tools) {
-        const toolInfo = await Tool.findOne({ _id: tools[item].toolId });
+        const toolInfo = await Tool.findOne({ _id: tools[item] });
         if(!toolInfo)
             return res.status(400).send({ path: 'tool', type: 'exist', item: tools[item].toolId });
     }
@@ -86,7 +86,9 @@ module.exports.create = async (req, res) => {
             drinkware,
             tools,
             preparation,
-            tags
+            tags,
+            user: req.user,
+            visibility: 'private'
         });
     } catch(err) {
         return res.status(500).send(err);

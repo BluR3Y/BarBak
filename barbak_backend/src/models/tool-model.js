@@ -35,7 +35,7 @@ const mongoose = require('mongoose');
 
 const toolTypes = [ "mixing", "measuring", "stirring", "muddling", "straining", "opening", "serving", "pouring", "garnishing", "cutting", "chilling", "cleaning", "other" ];
 
-const toolMaterials = [ "stainless-steel", "brass", "wood", "plastic", "aluminum", "silicone", "glass", "ceramic", "titanium", "graphite", "other" ];
+const toolMaterials = [ "stainless steel", "brass", "wood", "plastic", "aluminum", "silicone", "glass", "ceramic", "titanium", "graphite", "other" ];
 
 const toolVisibilities = ['private', 'public', 'in-review'];
 
@@ -61,6 +61,7 @@ const toolSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
         required: true,
         immutable: true,
     },
@@ -81,4 +82,4 @@ const toolSchema = new mongoose.Schema({
     }
 }, { collection: 'tools' });
 
-module.exports = mongoose.model("tool", toolSchema);
+module.exports = mongoose.model("Tool", toolSchema);

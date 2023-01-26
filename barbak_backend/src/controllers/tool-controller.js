@@ -27,7 +27,7 @@ const Tool = require('../models/tool-model');
 // }
 
 module.exports.create = async (req, res) => {
-    const { name, description } = req.body;
+    const { name, description, type, material } = req.body;
 
     if(await Tool.findOne({ user: req.user, name }))
         return res.status(400).send({ path: 'tool', type: 'exists' });
@@ -36,6 +36,8 @@ module.exports.create = async (req, res) => {
         await Tool.create({
             name,
             description,
+            type,
+            material,
             user: req.user,
             visibility: 'private'
         });

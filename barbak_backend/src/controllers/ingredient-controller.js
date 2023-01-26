@@ -1,23 +1,17 @@
 const { Ingredient, AlcoholicIngredient } = require('../models/ingredient-model');
+const _ = require('lodash');
 
-// module.exports.create_ingredient = async (req, res) => {
-//     const validation = req.body.category === 'alcohol' ? AlcoholicIngredient.validate(req.body) : Ingredient.validate(req.body);
-
-//     if(validation.error) {
-//         const { path, type } = validation.error.details[0];
-//         return res.status(400).send({ path: path[0], type });
-//     }
-//     const { name, description, category } = validation.value;
+// module.exports.create = async (req, res) => {
+//     const { name, description, type, category, alcohol_by_volume } = req.body;
 
 //     if(await Ingredient.findOne({ user: req.user, name }))
-//         return res.status(400).send({ path: 'ingredient', type: 'exists' });
+//         return res.status(400).send({ path: 'ingredient', type: 'exist' });
 
 //     try {
 //         if(category === 'alcohol') {
-//             const { alcohol_category ,alcohol_by_volume } = validation.value;
-
+//             const { alcohol_category, alcohol_by_volume } = req.body;
 //             await AlcoholicIngredient.create({
-//                 name,
+//                 name, 
 //                 description,
 //                 category,
 //                 alcohol_category,
@@ -25,8 +19,7 @@ const { Ingredient, AlcoholicIngredient } = require('../models/ingredient-model'
 //                 user: req.user,
 //                 visibility: 'private'
 //             });
-//             res.status(204).send();
-//         } else {
+//         }else{
 //             await Ingredient.create({
 //                 name,
 //                 description,
@@ -34,27 +27,26 @@ const { Ingredient, AlcoholicIngredient } = require('../models/ingredient-model'
 //                 user: req.user,
 //                 visibility: 'private'
 //             });
-//             res.status(204).send();
 //         }
 //     } catch(err) {
-//         res.status(500).send(err);
+//         return res.status(500).send(err);
 //     }
+//     res.status(204).send();
 // }
 
 module.exports.create = async (req, res) => {
-    const { name, description, category } = req.body;
+    const { name, description, type, category, alcohol_by_volume } = req.body;
 
-    if(await Ingredient.findOne({ user: req.user, name }))
-        return res.status(400).send({ path: 'ingredient', type: 'exist' });
+    if(await Ingredient.exists({ name, user: req.user }))
+        return res.status(400).send({ path: 'ingredient', type: 'exists' });
 
     try {
-        if(category === 'alcohol') {
-            const { alcohol_category, alcohol_by_volume } = req.body;
+        if(Ingredient.isAlcoholic(type, category)) {
             await AlcoholicIngredient.create({
-                name, 
+                name,
                 description,
+                type,
                 category,
-                alcohol_category,
                 alcohol_by_volume,
                 user: req.user,
                 visibility: 'private'
@@ -63,6 +55,7 @@ module.exports.create = async (req, res) => {
             await Ingredient.create({
                 name,
                 description,
+                type,
                 category,
                 user: req.user,
                 visibility: 'private'
@@ -71,5 +64,6 @@ module.exports.create = async (req, res) => {
     } catch(err) {
         return res.status(500).send(err);
     }
+
     res.status(204).send();
 }

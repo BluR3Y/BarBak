@@ -119,6 +119,7 @@ const ingredientSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
         required: true,
         immutable: true,
     },
@@ -158,7 +159,17 @@ const alcoholicIngredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-const Ingredient = mongoose.model("ingredient", ingredientSchema);
-const AlcoholicIngredient = Ingredient.discriminator('alcoholic-ingredient', alcoholicIngredientSchema);
+ingredientSchema.statics.isAlcoholic = function(type, category) {
+
+    if(_.includes([ "liquor", "liqueur", "beer", "wine" ], type))
+        return true;
+    else if(_.includes(["bitter", "alcoholic"], category))
+        return true;
+
+    return false;
+}
+
+const Ingredient = mongoose.model("Ingredient", ingredientSchema);
+const AlcoholicIngredient = Ingredient.discriminator('Alcoholic-Ingredient', alcoholicIngredientSchema);
 
 module.exports = { Ingredient, AlcoholicIngredient }

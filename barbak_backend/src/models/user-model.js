@@ -44,4 +44,4 @@ userSchema.methods.validatePassword = async function(attempt) {
     return match;
 }
 
-module.exports = mongoose.model("user", userSchema);
+module.exports = mongoose.model("User", userSchema);

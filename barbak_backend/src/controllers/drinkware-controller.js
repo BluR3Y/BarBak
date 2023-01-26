@@ -43,15 +43,16 @@ const Drinkware = require('../models/drinkware-model');
 // }
 
 module.exports.create = async (req, res) => {
-    const { name, description } = req.body;
+    const { name, description, material } = req.body;
 
     if(await Drinkware.findOne({ name, user: req.user })) 
         return res.status(400).send({ path: 'drinkware', type: 'exist' });
-    
+
     try {
         await Drinkware.create({
             name,
             description,
+            material,
             user: req.user,
             visibility: 'private'
         });

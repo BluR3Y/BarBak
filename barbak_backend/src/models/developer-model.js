@@ -34,6 +34,7 @@ const developerSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
         required: true,
         immutable: true,
     },
@@ -59,4 +60,4 @@ developerSchema.statics.generateAPIKey = async function() {
         return { apiKey, hashedAPIKey }; 
 };
 
-module.exports = mongoose.model("developer", developerSchema);
+module.exports = mongoose.model("Developer", developerSchema);
