@@ -1,4 +1,7 @@
+const FileOperations = require('../utils/file-operations');
+
 const Tool = require('../models/tool-model');
+
 
 // module.exports.create_tool = async (req, res) => {
 //     const validation = Tool.createToolValidator(req.body);
@@ -28,18 +31,19 @@ const Tool = require('../models/tool-model');
 
 module.exports.create = async (req, res) => {
     const { name, description, type, material } = req.body;
-    const toolImage = req.file;
 
     if(await Tool.findOne({ user: req.user, name }))
         return res.status(400).send({ path: 'tool', type: 'exists' });
 
     try {
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/tools/', req.file) : null;
+        
         await Tool.create({
             name,
             description,
             type,
             material,
-            image: toolImage ? toolImage.filename : null,
+            image: uploadInfo ? uploadInfo.filename : null,
             user: req.user,
             visibility: 'private'
         });

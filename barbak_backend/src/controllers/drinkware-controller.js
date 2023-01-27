@@ -1,21 +1,20 @@
 const Drinkware = require('../models/drinkware-model');
-const uploads = require('../utils/uploads');
+const FileOperations = require('../utils/file-operations');
 
 module.exports.create = async (req, res) => {
     const { name, description, material } = req.body;
-    // const drinkwareImage = req.file;
 
     if(await Drinkware.findOne({ name, user: req.user })) 
         return res.status(400).send({ path: 'drinkware', type: 'exist' });
 
     try {
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/drinkware/', req.file) : null;
 
-        // last here
         await Drinkware.create({
             name,
             description,
             material,
-            image: filename,
+            image: uploadInfo ? uploadInfo.filename : null,
             user: req.user,
             visibility: 'private'
         });

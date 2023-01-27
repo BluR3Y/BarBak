@@ -1,3 +1,5 @@
+const FileOperations = require('../utils/file-operations');
+
 const User = require('../models/user-model');
 const auth = require('../auth');
 
@@ -13,8 +15,7 @@ module.exports.testUploads = async (req,res) => {
 module.exports.register = async (req, res) => {
     
     const { username, email, password } = req.body;
-    const profileImage = req.file;
-    console.log(profileImage)
+
     if(await User.exists({ username }))
         return res.status(400).send({ path: 'username', type: 'exist' });
     if(await User.exists({ email }))
@@ -23,11 +24,13 @@ module.exports.register = async (req, res) => {
     const hashedPassword = await User.hashPassword(password);
 
     try {
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/users/', req.file) : null;
+
         await User.create({
             username,
             email,
             password: hashedPassword,
-            profile_image: profileImage ? profileImage.filename : null
+            profile_image: uploadInfo ? uploadInfo.filename : null,
         });
     } catch(err) {
         return res.status(500).send(err);

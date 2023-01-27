@@ -2,7 +2,7 @@ const Drink = require('../models/drink-model');
 const Drinkware = require('../models/drinkware-model');
 const { Ingredient } = require('../models/ingredient-model');
 const Tool = require('../models/tool-model');
-const uploads = require('../utils/uploads');
+const FileOperations = require('../utils/file-operations');
 
 module.exports.create = async (req, res) => {
 
@@ -32,14 +32,10 @@ module.exports.create = async (req, res) => {
         if(!toolInfo)
             return res.status(400).send({ path: 'tool', type: 'exist', item: tools[item].toolId });
     }
-
-    const drinkImages = [];
-    req.files.forEach(image => drinkImages.push(image.filename));
-
+    
     try {
-        const uploadedImages = await uploads.createMultiple('assets/drinks/', req.files);
-        const fileNames = [];
-        uploadedImages.forEach(image => fileNames.push(image.filename));
+        const uploadInfo = req.files ? await FileOperations.uploadMultiple('assets/drinks/', req.files) : null;
+        const filenames = uploadInfo.map(file => file.filename);
 
         await Drink.create({
             name,
@@ -51,12 +47,11 @@ module.exports.create = async (req, res) => {
             tools,
             preparation,
             tags,
-            images: fileNames,
+            images: filenames,
             user: req.user,
             visibility: 'private'
         });
     } catch(err) {
-        console.log('hllsads')
         return res.status(500).send(err);
     }
     res.status(204).send();
