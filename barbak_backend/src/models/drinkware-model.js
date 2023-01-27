@@ -19,12 +19,9 @@ const drinkwareSchema = new mongoose.Schema({
         required: true,
         enum: drinkwareMaterials
     },
-    // capacity: {
-    //     type: Number,
-    //     validate: {
-    //         validator: val => val > 0 && val < 3785   // standard unit of measurement for liquids are milliliters
-    //     }
-    // },
+    image: {
+        type: String
+    },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",

@@ -28,6 +28,7 @@ const Tool = require('../models/tool-model');
 
 module.exports.create = async (req, res) => {
     const { name, description, type, material } = req.body;
+    const toolImage = req.file;
 
     if(await Tool.findOne({ user: req.user, name }))
         return res.status(400).send({ path: 'tool', type: 'exists' });
@@ -38,6 +39,7 @@ module.exports.create = async (req, res) => {
             description,
             type,
             material,
+            image: toolImage ? toolImage.filename : null,
             user: req.user,
             visibility: 'private'
         });

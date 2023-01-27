@@ -59,6 +59,9 @@ const toolSchema = new mongoose.Schema({
         type: String,
         enum: toolMaterials,
     },
+    image: {
+        type: String
+    },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",

@@ -36,6 +36,7 @@ const _ = require('lodash');
 
 module.exports.create = async (req, res) => {
     const { name, description, type, category, alcohol_by_volume } = req.body;
+    const ingredientImage = req.file;
 
     if(await Ingredient.exists({ name, user: req.user }))
         return res.status(400).send({ path: 'ingredient', type: 'exists' });
@@ -48,6 +49,7 @@ module.exports.create = async (req, res) => {
                 type,
                 category,
                 alcohol_by_volume,
+                image: ingredientImage ? ingredientImage.filename : null,
                 user: req.user,
                 visibility: 'private'
             });
@@ -57,6 +59,7 @@ module.exports.create = async (req, res) => {
                 description,
                 type,
                 category,
+                image: ingredientImage ? ingredientImage.filename : null,
                 user: req.user,
                 visibility: 'private'
             });

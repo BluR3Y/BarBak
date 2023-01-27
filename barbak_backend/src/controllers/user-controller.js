@@ -5,10 +5,16 @@ module.exports.test = async (req, res) => {
     res.send('TEST');
 }
 
+module.exports.testUploads = async (req,res) => {
+    console.log(req.file)
+    res.send('Test')
+}
+
 module.exports.register = async (req, res) => {
     
     const { username, email, password } = req.body;
-
+    const profileImage = req.file;
+    console.log(profileImage)
     if(await User.exists({ username }))
         return res.status(400).send({ path: 'username', type: 'exist' });
     if(await User.exists({ email }))
@@ -20,12 +26,13 @@ module.exports.register = async (req, res) => {
         await User.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            profile_image: profileImage ? profileImage.filename : null
         });
-        res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        return res.status(500).send(err);
     }
+    res.status(204).send();
 };
 
 // Authenticate the user via email and password input fields

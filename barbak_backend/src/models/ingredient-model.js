@@ -117,6 +117,9 @@ const ingredientSchema = new mongoose.Schema({
             }
         }
     },
+    image: {
+        type: String
+    },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",
