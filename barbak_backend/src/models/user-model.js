@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema({
         required: true,
         minLength: 6,
     },
+    profile_image: {
+        type: String,
+    },
     registration_date: {
         type: Date,
         immutable: true,
@@ -25,7 +28,7 @@ const userSchema = new mongoose.Schema({
     }
 }, { collection: 'users' });
 
-userSchema.statics.hashPassword = async function(password) {
+userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
     const salt = randomBytes(16).toString('hex');
     const hashedPassword = scryptSync(password, salt, 64).toString('hex');

@@ -1,8 +1,15 @@
+const FileOperations = require('../utils/file-operations');
+
 const User = require('../models/user-model');
 const auth = require('../auth');
 
 module.exports.test = async (req, res) => {
     res.send('TEST');
+}
+
+module.exports.testUploads = async (req,res) => {
+    console.log(req.file)
+    res.send('Test')
 }
 
 module.exports.register = async (req, res) => {
@@ -17,15 +24,18 @@ module.exports.register = async (req, res) => {
     const hashedPassword = await User.hashPassword(password);
 
     try {
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/users/', req.file) : null;
+
         await User.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            profile_image: uploadInfo ? uploadInfo.filename : null,
         });
-        res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        return res.status(500).send(err);
     }
+    res.status(204).send();
 };
 
 // Authenticate the user via email and password input fields

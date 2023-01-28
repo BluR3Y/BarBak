@@ -184,6 +184,9 @@ const drinkSchema = new mongoose.Schema({
             }
         }
     },
+    images: {
+        type: [String]
+    },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",
