@@ -33,6 +33,7 @@ services:
     restart: on-failure
     volumes:
       - /app/node_modules
+      - assets:/app/assets
     env_file:
       - ./barbak_backend/env/webhost.env
     
@@ -55,6 +56,7 @@ services:
     restart: on-failure
     volumes:
       - /app/node_modules
+      - assets:/app/assets
     env_file:
       - ./api_backend/env/webhost.env
       
@@ -64,3 +66,7 @@ services:
     volumes:
       - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
       - ./db/mongo-volume:/data/db
+
+
+volumes:
+  assets:

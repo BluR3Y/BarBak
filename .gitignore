@@ -1,9 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-**/node_modules
-
-.env
-
 # dependencies
 /node_modules
 /.pnp
@@ -22,8 +18,13 @@
 .env.test.local
 .env.production.local
 
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Environment variables
 /env
+.env
 
 # Mongo db volume data for persistence storage
 /db/mongo-volume/*
