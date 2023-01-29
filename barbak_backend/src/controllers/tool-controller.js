@@ -2,38 +2,18 @@ const FileOperations = require('../utils/file-operations');
 
 const Tool = require('../models/tool-model');
 
-
-// module.exports.create_tool = async (req, res) => {
-//     const validation = Tool.createToolValidator(req.body);
-    
-//     if(validation.error) {
-//         const { path, type } = validation.error.details[0];
-//         return res.status(400).send({ path: path[0], type });
-//     }
-
-//     const { name, description } = validation.value;
-
-//     if(await Tool.findOne({ user: req.user, name }))
-//         return res.status(400).send({ path: 'tool', type: 'exists' });
-
-//     try {
-//         await Tool.create({
-//             name,
-//             description,
-//             user: req.user,
-//             visibility: 'private'
-//         });
-//         res.status(204).send();
-//     } catch(err) {
-//         res.status(500).send(err);
-//     }
-// }
-
 module.exports.create = async (req, res) => {
     const { name, description, type, material } = req.body;
 
     if(await Tool.findOne({ user: req.user, name }))
-        return res.status(400).send({ path: 'tool', type: 'exists' });
+        return res.status(400).send({ path: 'tool', type: 'exist' });
+
+    if(!await Tool.validateType(type)) 
+        return res.status(400).send({ path: 'type', type: 'valid' });
+
+    if(!await Tool.validateMaterial(material))
+        return res.status(400).send({ path: 'material', type: 'valid' });
+    
 
     try {
         const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/tools/', req.file) : null;

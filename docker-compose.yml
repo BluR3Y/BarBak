@@ -59,13 +59,23 @@ services:
       - assets:/app/assets
     env_file:
       - ./api_backend/env/webhost.env
-      
+
   mongo:
     container_name: mongo
-    image: 'mongo'
-    volumes:
-      - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-      - ./db/mongo-volume:/data/db
+    image: mongo:latest
+  mongo-seed:
+    build: 
+      context: ./database
+      dockerfile: Dockerfile
+    depends-on:
+      - mongo
+
+  # mongo:
+  #   container_name: mongo
+  #   image: 'mongo'
+  #   volumes:
+  #     - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+  #     - ./db/mongo-volume:/data/db
 
 
 volumes:

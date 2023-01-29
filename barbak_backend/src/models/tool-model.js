@@ -1,43 +1,6 @@
 const mongoose = require('mongoose');
-
-// const toolSchema = new mongoose.Schema({
-//     name: {
-//         type: String,
-//         minLength: 3,
-//         maxlength: 30,
-//         required: true,
-//     },
-//     description: {
-//         type: String,
-//         maxLength: 500,
-//     },
-//     user: {
-//         type: mongoose.SchemaTypes.ObjectId,
-//         required: true,
-//         immutable: true,
-//     },
-//     visibility: {
-//         type: String,
-//         required: true,
-//         lowercase: true,
-//         enum: {
-//             values: ['private', 'public', 'in-review'],
-//             message: props => `${props.value} is not a valid 'visibility' state`,
-//         }
-//     },
-//     creation_date: {
-//         type: Date,
-//         required: true,
-//         immutable: true,
-//         default: () => Date.now(),
-//     }
-// }, { collection: 'tools' });
-
-const toolTypes = [ "mixing", "measuring", "stirring", "muddling", "straining", "opening", "serving", "pouring", "garnishing", "cutting", "chilling", "cleaning", "other" ];
-
-const toolMaterials = [ "stainless steel", "brass", "wood", "plastic", "aluminum", "silicone", "glass", "ceramic", "titanium", "graphite", "other" ];
-
-const toolVisibilities = ['private', 'public', 'in-review'];
+const CategoricalData = require('../models/categorical-data');
+const _ = require('lodash');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -52,12 +15,12 @@ const toolSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: toolTypes,
+        ref: "Categorical-Data",
         required: true
     },
     material: {
         type: String,
-        enum: toolMaterials,
+        ref: "Categorical-Data",
     },
     image: {
         type: String
@@ -73,7 +36,7 @@ const toolSchema = new mongoose.Schema({
         required: true,
         lowercase: true,
         enum: {
-            values: toolVisibilities,
+            values: ['private', 'public', 'in-review'],
             message: props => `${props.value} is not a valid 'visibility' state`,
         }
     },
@@ -84,5 +47,15 @@ const toolSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 }, { collection: 'tools' });
+
+toolSchema.statics.validateType = async function(type) {
+    const types = await CategoricalData.findOne({ category: "tool_types" }).select("data");
+    return _.includes(types.data, type);
+}
+
+toolSchema.statics.validateMaterial = async function(type) {
+    const types = await CategoricalData.findOne({ category: "tool_materials" }).select("data");
+    return _.includes(types.data, type);
+}
 
 module.exports = mongoose.model("Tool", toolSchema);

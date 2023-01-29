@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const CategoricalData = require('../models/categorical-data');
+const _ = require('lodash');
 
-const drinkwareMaterials = [ "crystal", "wood", "glass", "stainess-steel", "ceramic", "copper", "bamboo", "silicone", "acrylic", "paper", "other" ];
+// const drinkwareMaterials = [ "crystal", "wood", "glass", "stainess-steel", "ceramic", "copper", "bamboo", "silicone", "acrylic", "paper", "other" ];
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -17,7 +19,6 @@ const drinkwareSchema = new mongoose.Schema({
     material: {
         type: String,
         required: true,
-        enum: drinkwareMaterials
     },
     image: {
         type: String
@@ -43,5 +44,10 @@ const drinkwareSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 }, { collection: 'drinkware' });
+
+drinkwareSchema.statics.validateMaterial = async function(type) {
+    const types = await CategoricalData.findOne({ category: "drinkware_materials" });
+    return _.includes(types.data, type);
+}
 
 module.exports = mongoose.model("Drinkware", drinkwareSchema);

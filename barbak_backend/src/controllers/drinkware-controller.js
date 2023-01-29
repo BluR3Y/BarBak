@@ -7,6 +7,9 @@ module.exports.create = async (req, res) => {
     if(await Drinkware.findOne({ name, user: req.user })) 
         return res.status(400).send({ path: 'drinkware', type: 'exist' });
 
+    if(!await Drinkware.validateMaterial(material))
+        return res.status(400).send({ path: 'material', type: 'valid' });
+
     try {
         const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/drinkware/', req.file) : null;
 
