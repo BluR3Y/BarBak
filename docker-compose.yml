@@ -27,6 +27,7 @@ services:
     container_name: barbak_backend
     depends_on:
       - mongo
+      - mysql
     build:
       dockerfile: Dockerfile
       context: ./barbak_backend
@@ -50,6 +51,7 @@ services:
     container_name: api_backend
     depends_on: 
       - mongo
+      - mysql
     build:
       dockerfile: Dockerfile
       context: ./api_backend
@@ -63,12 +65,11 @@ services:
   mongo:
     container_name: mongo
     image: mongo:latest
-  mongo-seed:
-    build: 
-      context: ./database
-      dockerfile: Dockerfile
-    depends-on:
-      - mongo
+
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password
 
   # mongo:
   #   container_name: mongo

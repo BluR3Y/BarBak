@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const CategoricalData = require('../models/categorical-data');
-const _ = require('lodash');
+const {executeSqlQuery} = require('../config/database-config');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -49,13 +48,20 @@ const toolSchema = new mongoose.Schema({
 }, { collection: 'tools' });
 
 toolSchema.statics.validateType = async function(type) {
-    const types = await CategoricalData.findOne({ category: "tool_types" }).select("data");
-    return _.includes(types.data, type);
+    if (type === "other") return true;
+
+    const category = await executeSqlQuery(`SELECT category_id FROM categorical_data WHERE category = "tool_types"`);
+    const category_item = await executeSqlQuery(`SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `)
+    return (category_item.length > 0);
 }
 
 toolSchema.statics.validateMaterial = async function(type) {
-    const types = await CategoricalData.findOne({ category: "tool_materials" }).select("data");
-    return _.includes(types.data, type);
+    if (type === "other") return true;
+
+    const category = await executeSqlQuery(`SELECT category_id FROM categorical_data WHERE category = "tool_materials"`);
+    const category_item = await executeSqlQuery(`SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `);
+
+    return (category_item.length > 0);
 }
 
 module.exports = mongoose.model("Tool", toolSchema);

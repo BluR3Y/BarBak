@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const CategoricalData = require('../models/categorical-data');
-const _ = require('lodash');
+const {executeSqlQuery} = require('../config/database-config');
 
 // const drinkwareMaterials = [ "crystal", "wood", "glass", "stainess-steel", "ceramic", "copper", "bamboo", "silicone", "acrylic", "paper", "other" ];
 
@@ -46,8 +45,12 @@ const drinkwareSchema = new mongoose.Schema({
 }, { collection: 'drinkware' });
 
 drinkwareSchema.statics.validateMaterial = async function(type) {
-    const types = await CategoricalData.findOne({ category: "drinkware_materials" });
-    return _.includes(types.data, type);
+    if (type === 'other') return true;
+
+    const category = await executeSqlQuery(` SELECT category_id FROM categorical_data WHERE category_group = "drinkware" AND category = "drinkware_materials" `);
+    const category_item = await executeSqlQuery(` SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `);
+    
+    return (category_item.length > 0);
 }
 
 module.exports = mongoose.model("Drinkware", drinkwareSchema);

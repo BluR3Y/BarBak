@@ -1,6 +1,6 @@
 const Drink = require('../models/drink-model');
 const Drinkware = require('../models/drinkware-model');
-const { Ingredient } = require('../models/ingredient-model');
+const Ingredient = require('../models/ingredient-model');
 const Tool = require('../models/tool-model');
 const FileOperations = require('../utils/file-operations');
 
