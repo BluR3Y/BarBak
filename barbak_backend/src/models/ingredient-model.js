@@ -45,18 +45,28 @@ const ingredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-ingredientSchema.statics.validateInfo = async function(type, given_category) {
-    const category = await executeSqlQuery(` SELECT category_id FROM categorical_data WHERE category_group = "ingredients" AND category = "ingredient_types" `);
-    const category_item = await executeSqlQuery(` SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `);
-    if (category_item.length === 0)
-        return { path: 'type', type: 'valid' };
-    else if(given_category === 'other')
-        return true;
-    const sub_category_item = await executeSqlQuery(` SELECT categorical_sub_item_id FROM categorical_sub_data_item WHERE category_item_id = ${category_item[0].category_item_id} AND data = "${given_category}" `);
-    if (sub_category_item.length === 0)
-        return { path: 'category', type: 'valid' };
+ingredientSchema.statics.getIngredientTypes = async function() {
+    const types = await executeSqlQuery(`SELECT name FROM ingredient_types`);
+    return (await types.map(type => type.name));
+}
 
-    return true;
+ingredientSchema.statics.getIngredientCategories = async function(type) {
+    const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
+        .then(res => res[0]);
+
+    if (!type_id) return Array();
+        
+    const categories = await executeSqlQuery(`SELECT name FROM ingredient_categories WHERE type_id = ${type_id}`);
+    return (await categories.map(item => item.name));
+}
+
+ingredientSchema.statics.validateInfo = async function(type, category) {
+    const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
+        .then(res => res.length ? res[0] : res);
+    if (!type_id) return Array();
+    const {category_id} = await executeSqlQuery(`SELECT category_id FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${category}';`)
+        .then(res => res.length ? res[0] : 0);
+    return category_id !== undefined;
 }
 
 module.exports = mongoose.model("Ingredient", ingredientSchema);

@@ -47,21 +47,23 @@ const toolSchema = new mongoose.Schema({
     }
 }, { collection: 'tools' });
 
+toolSchema.statics.getToolTypes = async function() {
+    const types = await executeSqlQuery(`SELECT name FROM tool_types`);
+    return (await types.map(type => type.name))
+}
+
 toolSchema.statics.validateType = async function(type) {
     if (type === "other") return true;
 
-    const category = await executeSqlQuery(`SELECT category_id FROM categorical_data WHERE category = "tool_types"`);
-    const category_item = await executeSqlQuery(`SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `)
-    return (category_item.length > 0);
+    const res = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`);
+    return (res.length > 0);
 }
 
-toolSchema.statics.validateMaterial = async function(type) {
-    if (type === "other") return true;
+toolSchema.statics.validateMaterial = async function(material) {
+    if (material === "other") return true;
 
-    const category = await executeSqlQuery(`SELECT category_id FROM categorical_data WHERE category = "tool_materials"`);
-    const category_item = await executeSqlQuery(`SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `);
-
-    return (category_item.length > 0);
+    const res = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`);
+    return (res.length > 0);
 }
 
 module.exports = mongoose.model("Tool", toolSchema);

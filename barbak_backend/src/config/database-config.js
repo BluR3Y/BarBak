@@ -16,7 +16,7 @@ const connectMongo = () => {
 
 const MySQLConnection = mysql.createConnection({
     host: '127.0.0.1',
-    port: '8080',
+    port: '3306',
     database: 'barbak',
     user: 'root',
     password: 'password@1234'

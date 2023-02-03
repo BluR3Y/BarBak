@@ -44,13 +44,17 @@ const drinkwareSchema = new mongoose.Schema({
     }
 }, { collection: 'drinkware' });
 
+drinkwareSchema.statics.getDrinkwareMaterials = async function() {
+    const materials = await executeSqlQuery(`SELECT name FROM drinkware_materials`);
+    return (await materials.map(item => item.name));
+}
+
 drinkwareSchema.statics.validateMaterial = async function(type) {
     if (type === 'other') return true;
 
-    const category = await executeSqlQuery(` SELECT category_id FROM categorical_data WHERE category_group = "drinkware" AND category = "drinkware_materials" `);
-    const category_item = await executeSqlQuery(` SELECT category_item_id FROM categorical_data_item WHERE category_id = ${category[0].category_id} AND data = "${type}" `);
-    
-    return (category_item.length > 0);
+    const {material_id} = await executeSqlQuery(`SELECT material_id FROM drinkware_materials WHERE name = '${type}';`)
+        .then(res => res.length ? res[0] : res);
+    return material_id !== undefined;
 }
 
 module.exports = mongoose.model("Drinkware", drinkwareSchema);
