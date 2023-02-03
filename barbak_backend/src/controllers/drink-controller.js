@@ -3,6 +3,7 @@ const Drinkware = require('../models/drinkware-model');
 const Ingredient = require('../models/ingredient-model');
 const Tool = require('../models/tool-model');
 const FileOperations = require('../utils/file-operations');
+const {executeSqlQuery} = require('../config/database-config');
 
 module.exports.create = async (req, res) => {
 
@@ -19,6 +20,11 @@ module.exports.create = async (req, res) => {
         const ingredientInfo = await Ingredient.findOne({ _id: ingredients[item].ingredientId });
         if(!ingredientInfo)
             return res.status(400).send({ path: 'ingredient', type: 'exist', item: ingredients[item].ingredientId });
+
+        const ingredient_type_id = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${ingredientInfo.type}';`)
+            .then(res => res[0].type_id);
+        const ingredient_measure_state = await executeSqlQuery(`SELECT measure_state FROM ingredient_categories WHERE type_id = ${ingredient_type_id} AND name = '${ingredientInfo.category}';`);
+        console.log(ingredient_measure_state)
     }
 
     for(const item in drinkware) {

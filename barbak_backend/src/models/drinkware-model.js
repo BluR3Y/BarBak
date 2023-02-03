@@ -32,6 +32,7 @@ const drinkwareSchema = new mongoose.Schema({
         type: String,
         required: true,
         lowercase: true,
+        default: 'private',
         enum: {
             values: ['private', 'public', 'in-review'],
             message: props => `${props.value} is not a valid 'visibility' state`,
@@ -44,7 +45,7 @@ const drinkwareSchema = new mongoose.Schema({
     }
 }, { collection: 'drinkware' });
 
-drinkwareSchema.statics.getDrinkwareMaterials = async function() {
+drinkwareSchema.statics.getMaterials = async function() {
     const materials = await executeSqlQuery(`SELECT name FROM drinkware_materials`);
     return (await materials.map(item => item.name));
 }

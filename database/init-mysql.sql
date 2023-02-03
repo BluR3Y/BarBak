@@ -57,6 +57,7 @@ CREATE TABLE ingredient_categories (
     `category_id` INT NOT NULL AUTO_INCREMENT,
     `type_id` INT NOT NULL,
     `name` VARCHAR(50) NOT NULL,
+    `measure_state` VARCHAR(50) NOT NULL,
     PRIMARY KEY (`category_id`),
     FOREIGN KEY (`type_id`) REFERENCES ingredient_types (`type_id`)
 );
@@ -71,53 +72,53 @@ INSERT INTO ingredient_types (`name`) VALUES
     ('fruit')
 ;
 
-INSERT INTO ingredient_categories (`type_id`, `name`) VALUES 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'whisky'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'gin'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'vodka'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'rum'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'tequila'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'brandy'),
+INSERT INTO ingredient_categories (`type_id`, `name`, `measure_state`) VALUES 
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'whisky', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'gin', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'vodka', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'rum', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'tequila', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liquor'), 'brandy', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'orange'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'coffee'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'cream'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'nut'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'herb'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'fruit'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'orange', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'coffee', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'cream', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'nut', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'herb', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'liqueur'), 'fruit', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'lager'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'ale'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'wheat'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'stout'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'porter'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'sour'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'belgia'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'lager', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'ale', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'wheat', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'stout', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'porter', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'sour', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'beer'), 'belgia', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'red'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'white'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'rosé'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'sparkling'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'fortified'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'red', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'white', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'rosé', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'sparkling', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'wine'), 'fortified', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'juice'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'syrup'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'soda'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'dairy'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'tea'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'coffee'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'juice', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'syrup', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'soda', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'dairy', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'tea', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'mixer'), 'coffee', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'spice'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'herb'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'salt'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'bitter'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'spice', 'mass'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'herb', 'quantity'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'salt', 'mass'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'enhancer'), 'bitter', 'volume'),
 
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'citrus'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'berry'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'melon'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'tropical'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'stone'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'pome');
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'citrus', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'berry', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'melon', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'tropical', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'stone', 'volume'),
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'pome', 'volume');
 
 -- Drinkware
 

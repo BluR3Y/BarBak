@@ -33,6 +33,7 @@ const ingredientSchema = new mongoose.Schema({
         type: String,
         required: true,
         lowercase: true,
+        default: 'private', 
         enum: {
             values: ['private', 'public', 'in-review'],
             message: props => `${props.value} is not a valid 'visibility' state`,
@@ -45,12 +46,12 @@ const ingredientSchema = new mongoose.Schema({
     }
 }, { collection: 'ingredients' });
 
-ingredientSchema.statics.getIngredientTypes = async function() {
+ingredientSchema.statics.getTypes = async function() {
     const types = await executeSqlQuery(`SELECT name FROM ingredient_types`);
     return (await types.map(type => type.name));
 }
 
-ingredientSchema.statics.getIngredientCategories = async function(type) {
+ingredientSchema.statics.getCategories = async function(type) {
     const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
         .then(res => res[0]);
 
@@ -61,12 +62,23 @@ ingredientSchema.statics.getIngredientCategories = async function(type) {
 }
 
 ingredientSchema.statics.validateInfo = async function(type, category) {
+    const err = new Error();
+    err.name = 'ValidationError';
+
     const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
         .then(res => res.length ? res[0] : res);
-    if (!type_id) return Array();
+    if (!type_id) {
+        err.path = 'type';
+        return err;
+    }
+    
     const {category_id} = await executeSqlQuery(`SELECT category_id FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${category}';`)
         .then(res => res.length ? res[0] : 0);
-    return category_id !== undefined;
+    if(!category_id) {
+        err.path = 'category';
+        return err;
+    }
+    return;
 }
 
 module.exports = mongoose.model("Ingredient", ingredientSchema);

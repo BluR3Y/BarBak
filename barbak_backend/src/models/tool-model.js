@@ -14,12 +14,10 @@ const toolSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        ref: "Categorical-Data",
         required: true
     },
     material: {
         type: String,
-        ref: "Categorical-Data",
     },
     image: {
         type: String
@@ -34,6 +32,7 @@ const toolSchema = new mongoose.Schema({
         type: String,
         required: true,
         lowercase: true,
+        default: 'private',
         enum: {
             values: ['private', 'public', 'in-review'],
             message: props => `${props.value} is not a valid 'visibility' state`,
@@ -47,9 +46,14 @@ const toolSchema = new mongoose.Schema({
     }
 }, { collection: 'tools' });
 
-toolSchema.statics.getToolTypes = async function() {
+toolSchema.statics.getTypes = async function() {
     const types = await executeSqlQuery(`SELECT name FROM tool_types`);
-    return (await types.map(type => type.name))
+    return (await types.map(item => item.name))
+}
+
+toolSchema.statics.getMaterials = async function() {
+    const materials = await executeSqlQuery(`SELECT name FROM tool_materials`);
+    return (await materials.map(item => item.name));
 }
 
 toolSchema.statics.validateType = async function(type) {
