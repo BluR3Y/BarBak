@@ -190,12 +190,12 @@ CREATE TABLE measure (
     `name` VARCHAR(50) NOT NULL,
     `abbriviation` VARCHAR(10),
     `is_standarized` BOOLEAN NOT NULL,
-    `use` VARCHAR(50) NOT NULL,
+    `measure_use` VARCHAR(50) NOT NULL,
     `ounce_equivalence` FLOAT,
     PRIMARY KEY(`measure_id`)
 );
 
-INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `use`, `ounce_equivalence`) VALUES 
+INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `ounce_equivalence`) VALUES 
     ('ounce', 'oz', true, 'mass', 1),
     ('fluid ounce', 'fl oz', true, 'volume', 1),
     ('milliliter', 'ml', true, 'volume', 29.5735),
