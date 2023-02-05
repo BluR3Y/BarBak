@@ -31,7 +31,7 @@ module.exports.register = async (req, res) => {
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
-            console.log('hello')
+            
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];

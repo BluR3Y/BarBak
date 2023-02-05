@@ -1,63 +1,99 @@
 const Developer = require('../models/developer-model');
 
 module.exports.register = async (req, res) => {
-    const { name, email, link, statement } = req.body;
-
-    if(await Developer.findOne({ email }))
-        return res.status(400).send({ path: 'email', type: 'exist' });
-    else if(await Developer.findOne({ link }))
-        return res.status(400).send({ path: 'link', type: 'exist' });
-    
-    const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
-
     try {
-        await Developer.create({
+        const { name, email, link, statement } = req.body;
+
+        if (await Developer.findOne({ user: req.user }))
+            return res.status(400).send({ path: 'developer', type: 'registered' });
+
+        const registeredDeveloper = new Developer({
             name,
             email,
             link,
             statement,
-            apiKey: hashedAPIKey,
             user: req.user
         });
-    } catch(err) {
+        await registeredDeveloper.validate();
+        await registeredDeveloper.customValidate();
+
+       const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
+
+        registeredDeveloper.apiKey = hashedAPIKey;
+        await registeredDeveloper.save();
+        return res.status(200).send({ apiKey });
+    } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const errorParts = error.split('.');
+                const errorPart = errorParts[0];
+                const indexPart = errorParts[1] || '0';
+                
+                errors.push({ 
+                    path: errorPart, 
+                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
+                    index: indexPart 
+                });
+            })
+            return res.status(400).send(errors);
+        }
         return res.status(500).send(err);
     }
-    res.status(200).send({ apiKey });
 }
 
 module.exports.regenerateAPIKey = async (req, res) => {
-    const developer = await Developer.findOne({ user: req.user });
-
-    if(!developer)
-        return res.status(401).send({ path: 'developer', type: 'registered' });
-
-    const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
-
     try {
-        await developer.updateOne({
+        const developer = await Developer.findOne({ user: req.user });
+        if (!developer)
+            return res.status(401).send({ path: 'developer', type: 'registered' });
+
+        const { apiKey, hashedAPIKey } = await Developer.generateAPIKey();
+
+        await developer.update({
             apiKey: hashedAPIKey
         });
-    } catch(err) {
-        return res.status(500).send(err);
+        return res.status(200).send({apiKey});
+    } catch (err) {
+        res.status(500).send(err);
     }
-    res.status(200).send({ apiKey });
 }
 
 module.exports.updateInfo = async (req, res) => {
-    const { name, email, link, statement } = req.body;
-    const developer = await Developer.findOne({ user: req.user });
-
-    if(!developer)
-        return res.status(401).send({ path: 'developer', type: 'registered' });
-
     try {
-        await developer.updateOne({
+        const { name, email, link, statement } = req.body;
+        const developer = await Developer.findOne({ user: req.user });
+
+        if (!developer) 
+            return res.status(401).send({ path: 'developer', type: 'registered' });
+
+        developer.set({
             name,
             email,
             link,
             statement
         });
-    } catch(err){
+        await developer.validate();
+        await developer.customValidate();
+        await developer.save();
+    } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const errorParts = error.split('.');
+                const errorPart = errorParts[0];
+                const indexPart = errorParts[1] || '0';
+                
+                errors.push({ 
+                    path: errorPart, 
+                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
+                    index: indexPart 
+                });
+            })
+            return res.status(400).send(errors);
+        }
         return res.status(500).send(err);
     }
     res.status(204).send();

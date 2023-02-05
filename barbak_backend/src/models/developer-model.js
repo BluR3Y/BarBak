@@ -22,16 +22,16 @@ const developerSchema = new mongoose.Schema({
         maxLength: 500,
         required: true,
     },
-    subscription: {
-        type: String,
-        lowercase: true,
-        default: 'free',
-        enum: {
-            values: ['free', 'business'],
-            message: props => `${props.value} is not a valid 'subscription' state`,
-        },
-        required: true,
-    },
+    // subscription: {
+    //     type: String,
+    //     lowercase: true,
+    //     default: 'free',
+    //     enum: {
+    //         values: ['free', 'business'],
+    //         message: props => `${props.value} is not a valid 'subscription' state`,
+    //     },
+    //     required: true,
+    // },
     user: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",
@@ -40,7 +40,6 @@ const developerSchema = new mongoose.Schema({
     },
     apiKey: {
         type: String,
-        required: true,
     },
     registrationDate: {
         type: Date,
@@ -59,5 +58,19 @@ developerSchema.statics.generateAPIKey = async function() {
     else
         return { apiKey, hashedAPIKey }; 
 };
+
+developerSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = {};
+    
+    if (await this.model('Developer').findOne({ email: this.email, user: { $ne: this.user._id } }))
+        error.errors['email'] = "exist";
+    if (await this.model('Developer').findOne({ link: this.link, user: { $ne: this.user._id } }))
+        error.errors['link'] = "exist";
+    
+    if (Object.keys(error.errors).length)
+        throw error;
+}
 
 module.exports = mongoose.model("Developer", developerSchema);

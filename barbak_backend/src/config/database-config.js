@@ -5,6 +5,7 @@ const mysql = require('mysql');
 const connectMongo = () => {
     return new Promise((resolve, reject) => {
         const { MONGODB_URI } = process.env;
+        mongoose.set('strictQuery', false);
         mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,

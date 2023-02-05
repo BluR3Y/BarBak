@@ -22,7 +22,7 @@ module.exports.create = async (req, res) => {
     } catch (err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
-            console.log('hello')
+
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];
@@ -39,4 +39,24 @@ module.exports.create = async (req, res) => {
         return res.status(500).send(err);
     }
     res.status(204).send();
+}
+
+module.exports.search = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) - 1 || 0;
+        const page_size = parseInt(req.query.page_size) || 5;
+        const query = req.query.query || "";
+        const type = req.query.type || "all";
+        const materials = req.query.materials || "all";
+
+
+
+        const result = await Tool.find({ name: { $regex: query } })
+            .skip(page * page_size)
+            .limit(page_size);
+        
+        res.status(200).send(result);
+    } catch (err) {
+        return res.status(500).send(err);
+    }
 }
