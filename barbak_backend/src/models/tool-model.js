@@ -56,6 +56,19 @@ toolSchema.statics.getMaterials = async function() {
     return (await materials.map(item => item.name));
 }
 
+toolSchema.statics.validateType = async function(type) {
+    const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`)
+        .then(res => res.length ? res[0] : res);
+    console.log(type_id)
+    return (type_id !== undefined);
+}
+
+toolSchema.statics.validateMaterial = async function(material) {
+    const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
+        .then(res => res.length ? res[0] : res);
+    return (material_id !== undefined);
+}
+
 toolSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";

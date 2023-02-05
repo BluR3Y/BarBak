@@ -43,16 +43,37 @@ module.exports.create = async (req, res) => {
 
 module.exports.search = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) - 1 || 0;
+        const page = parseInt(req.query.page) || 1;
         const page_size = parseInt(req.query.page_size) || 5;
         const query = req.query.query || "";
-        const type = req.query.type || "all";
-        const materials = req.query.materials || "all";
+        var types = req.query.types ? JSON.parse(req.query.types) : null;
+        var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
 
+        if (page <= 0)
+            return res.status(400).send({ path: 'page', type: 'valid' });
+        else if (page_size > 20 || page_size < 1)
+            return res.status(400).send({ path: 'page_size', type: 'valid' });
+        
+        if (types !== null) {
+            for(const index in types) {
+                if (!await Tool.validateType(types[index]))
+                    return res.status(400).send({ path: 'types', type: 'valid', index });
+            }
+        } else 
+            types = await Tool.getTypes();
 
+        if (materials !== null) {
+            for(const index in materials) {
+                if (!await Tool.validateMaterial(materials[index]))
+                    return res.status(400).send({ path: 'materials', type: 'valid', index });
+            }
+        } else
+            materials = await Tool.getMaterials();
 
         const result = await Tool.find({ name: { $regex: query } })
-            .skip(page * page_size)
+            .where("type").in(types)
+            .where("material").in(materials)
+            .skip((page - 1) * page_size)
             .limit(page_size);
         
         res.status(200).send(result);
