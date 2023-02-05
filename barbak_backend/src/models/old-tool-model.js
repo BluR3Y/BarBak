@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
-const { executeSqlQuery } = require('../config/database-config');
+const {executeSqlQuery} = require('../config/database-config');
 
-const publicToolSchema = new mongoose.Schema({
+const toolSchema = new mongoose.Schema({
     name: {
         type: String,
         minLength: 3,
         maxLength: 30,
-        required: true,
+        required: true
     },
     description: {
         type: String,
-        maxLength: 500,
+        maxLength: 500
     },
     type: {
         type: String,
@@ -20,14 +20,23 @@ const publicToolSchema = new mongoose.Schema({
         type: String,
     },
     image: {
-        type: String,
+        type: String
+    },
+    user: {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
+        required: true,
+        immutable: true,
     },
     visibility: {
         type: String,
         required: true,
         lowercase: true,
-        immutable: true,
-        default: 'public',
+        default: 'private',
+        enum: {
+            values: ['private', 'public', 'in-review'],
+            message: props => `${props.value} is not a valid 'visibility' state`,
+        }
     },
     creation_date: {
         type: Date,
@@ -37,54 +46,37 @@ const publicToolSchema = new mongoose.Schema({
     }
 }, { collection: 'tools' });
 
-const privateToolSchema = new mongoose.Schema({
-    visibility: {
-        type: String,
-        required: true,
-        lowercase: true,
-        default: 'private',
-        enum: {
-            values: [ 'in-review', 'private' ]
-        }
-    },
-    user: {
-        type: mongoose.SchemaTypes.ObjectId,
-        ref: 'User',
-        required: true,
-        immutable: true
-    }
-});
-
-privateToolSchema.statics.getTypes = async function() {
+toolSchema.statics.getTypes = async function() {
     const types = await executeSqlQuery(`SELECT name FROM tool_types`);
     return (await types.map(item => item.name))
 }
 
-privateToolSchema.statics.getMaterials = async function() {
+toolSchema.statics.getMaterials = async function() {
     const materials = await executeSqlQuery(`SELECT name FROM tool_materials`);
     return (await materials.map(item => item.name));
 }
 
-privateToolSchema.statics.validateType = async function(type) {
+toolSchema.statics.validateType = async function(type) {
     const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`)
         .then(res => res.length ? res[0] : res);
     console.log(type_id)
     return (type_id !== undefined);
 }
 
-privateToolSchema.statics.validateMaterial = async function(material) {
+toolSchema.statics.validateMaterial = async function(material) {
     const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
         .then(res => res.length ? res[0] : res);
     return (material_id !== undefined);
 }
 
-privateToolSchema.query.visibility = function(user) {
+toolSchema.query.visibility = function(user) {
+    console.log(user)
     if (!user)
         return this.where({ visibility: 'public' });
     return this.or([ { visibility: 'public' }, { user } ]);
 }
 
-privateToolSchema.methods.customValidate = async function() {
+toolSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";
     error.errors = [];
@@ -105,7 +97,4 @@ privateToolSchema.methods.customValidate = async function() {
         throw error;
 }
 
-const publicTool = mongoose.model('Public Tool', publicToolSchema);
-const privateTool = publicTool.discriminator('Private Tool', privateToolSchema);
-
-module.exports = { privateTool, publicTool };
+module.exports = mongoose.model("Tool", toolSchema);

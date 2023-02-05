@@ -1,15 +1,14 @@
 const FileOperations = require('../utils/file-operations');
-
-const Tool = require('../models/tool-model');
+const { privateTool, publicTool } = require('../models/tool-model');
 
 module.exports.create = async (req, res) => {
     try {
         const { name, description, type, material } = req.body;
 
-        if (await Tool.findOne({ user: req.user, name }))
+        if (await privateTool.findOne({ user: req.user, name }))
             return res.status(400).send({ path: 'name', type: 'exist' });
 
-        const createdTool = new Tool({
+        const createdTool = new privateTool({
             name,
             description,
             type,
@@ -47,20 +46,52 @@ module.exports.create = async (req, res) => {
 module.exports.publicize = async (req, res) => {
     try {
         const { toolId } = req.body;
-        console.log(req.user)
-        const toolInfo = await Tool.findOne({ _id: toolId });
+        const toolInfo = await privateTool.findOne({ _id: toolId });
         if (!toolInfo)
             return res.status(400).send({ path: 'toolId', type: 'exist' });
         else if (!toolInfo.user.equals(req.user._id))
             return res.status(400).send({ path: 'toolId', type: 'valid' });
-
-        // Ended Here
-
+        else if (toolInfo.visibility === 'in-review')
+            return res.status(400).send({ path: 'toolId', type: 'process' });
+        
+        toolInfo["visibility"] = 'in-review';
+        await toolInfo.save();
     } catch (err) {
-
+        return res.status(500).send(err);
     }
     res.status(204).send();
 }
+
+// *** template for successful publishing
+// module.exports.publicize = async (req, res) => {
+//     try {
+//         const { toolId } = req.body;
+//         const toolInfo = await privateTool.findOne({ _id: toolId });
+//         if (!toolInfo)
+//             return res.status(400).send({ path: 'toolId', type: 'exist' });
+//         else if (!toolInfo.user.equals(req.user._id))
+//             return res.status(400).send({ path: 'toolId', type: 'valid' });
+//         else if (await privateTool.findOne({ visibility: 'public', name: toolInfo.name }))
+//             return res.status(400).send({ path: 'tool', type: 'exist' });
+
+//         const { name, description, type, material, image } = toolInfo;
+        
+//         var createdPublicTool = new publicTool({
+//             name,
+//             description,
+//             type,
+//             material,
+//         });
+//         await createdPublicTool.validate();
+
+//         const uploadInfo = image ? await FileOperations.copySingle('assets/tools/', image) : null;
+//         createdPublicTool.image = uploadInfo;
+//         await createdPublicTool.save();
+//     } catch (err) {
+//         return res.status(500).send(err);
+//     }
+//     res.status(204).send();
+// }
 
 module.exports.search = async (req, res) => {
     try {
@@ -77,21 +108,21 @@ module.exports.search = async (req, res) => {
         
         if (types !== null) {
             for(const index in types) {
-                if (!await Tool.validateType(types[index]))
+                if (!await privateTool.validateType(types[index]))
                     return res.status(400).send({ path: 'types', type: 'valid', index });
             }
         } else 
-            types = await Tool.getTypes();
+            types = await privateTool.getTypes();
 
         if (materials !== null) {
             for(const index in materials) {
-                if (!await Tool.validateMaterial(materials[index]))
+                if (!await privateTool.validateMaterial(materials[index]))
                     return res.status(400).send({ path: 'materials', type: 'valid', index });
             }
         } else
-            materials = await Tool.getMaterials();
+            materials = await privateTool.getMaterials();
 
-        const result = await Tool.find({ name: { $regex: query } })
+        const result = await privateTool.find({ name: { $regex: query } })
             .visibility(req.user)
             .where("type").in(types)
             .where("material").in(materials)
@@ -101,6 +132,6 @@ module.exports.search = async (req, res) => {
         
         res.status(200).send(result);
     } catch (err) {
-        return res.status(500).send(err);
+        res.status(500).send(err);
     }
 }
