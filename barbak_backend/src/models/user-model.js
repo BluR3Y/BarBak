@@ -47,4 +47,18 @@ userSchema.methods.validatePassword = async function(attempt) {
     return match;
 }
 
+userSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = [];
+
+    if (await this.model('User').findOne({ username: this.username }))
+        error.errors['username'] = "exist";
+    if (await this.model('User').findOne({ email: this.email }))
+        error.errors['email'] = "exist";
+
+    if (Object.keys(error.errors).length)
+        throw error;0
+}
+
 module.exports = mongoose.model("User", userSchema);

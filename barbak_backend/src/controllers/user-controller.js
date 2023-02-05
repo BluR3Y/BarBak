@@ -13,30 +13,42 @@ module.exports.testUploads = async (req,res) => {
 }
 
 module.exports.register = async (req, res) => {
-    
-    const { username, email, password } = req.body;
-
-    if(await User.exists({ username }))
-        return res.status(400).send({ path: 'username', type: 'exist' });
-    if(await User.exists({ email }))
-        return res.status(400).send({ path: 'email', type: 'exist' });
-
-    const hashedPassword = await User.hashPassword(password);
-
     try {
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/users/', req.file) : null;
-
-        await User.create({
+        const { username, email, password } = req.body;
+        
+        const createdUser = new User({
             username,
             email,
-            password: hashedPassword,
-            profile_image: uploadInfo ? uploadInfo.filename : null,
+            password
         });
+        await createdUser.validate();
+        await createdUser.customValidate();
+
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/users/', req.file) : null;
+        createdUser.profile_image = uploadInfo ? uploadInfo.filename : null;
+
+        await createdUser.save();
     } catch(err) {
+        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+            var errors = [];
+            console.log('hello')
+            Object.keys(err.errors).forEach(error => {
+                const errorParts = error.split('.');
+                const errorPart = errorParts[0];
+                const indexPart = errorParts[1] || '0';
+                
+                errors.push({ 
+                    path: errorPart, 
+                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
+                    index: indexPart 
+                });
+            })
+            return res.status(400).send(errors);
+        }
         return res.status(500).send(err);
     }
     res.status(204).send();
-};
+}
 
 // Authenticate the user via email and password input fields
 module.exports.login = auth.authenticate.localLogin;
