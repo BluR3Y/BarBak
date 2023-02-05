@@ -56,18 +56,25 @@ toolSchema.statics.getMaterials = async function() {
     return (await materials.map(item => item.name));
 }
 
-toolSchema.statics.validateType = async function(type) {
-    if (type === "other") return true;
+toolSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = [];
 
-    const res = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`);
-    return (res.length > 0);
-}
-
-toolSchema.statics.validateMaterial = async function(material) {
-    if (material === "other") return true;
-
-    const res = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`);
-    return (res.length > 0);
+    if (this.type !== "other") {
+        const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${this.type}';`)
+            .then(res => res.length ? res[0] : res);
+        if (!type_id)
+            error.errors[`type`] = "valid";
+    }
+    if (this.material !== "other") {
+        const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${this.material}';`)
+            .then(res => res.length? res[0] : res);
+        if (!material_id)
+            error.errors[`material`] = "valid";
+    }
+    if (Object.keys(error.errors).length)
+        throw error;
 }
 
 module.exports = mongoose.model("Tool", toolSchema);

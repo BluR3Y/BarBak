@@ -61,24 +61,28 @@ ingredientSchema.statics.getCategories = async function(type) {
     return (await categories.map(item => item.name));
 }
 
-ingredientSchema.statics.validateInfo = async function(type, category) {
-    const err = new Error();
-    err.name = 'ValidationError';
+ingredientSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = [];
 
-    const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
-        .then(res => res.length ? res[0] : res);
-    if (!type_id) {
-        err.path = 'type';
-        return err;
-    }
+    if (await this.model('Ingredient').findOne({ name: this.name }))
+        error.errors['name'] = "exist";
     
-    const {category_id} = await executeSqlQuery(`SELECT category_id FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${category}';`)
-        .then(res => res.length ? res[0] : 0);
-    if(!category_id) {
-        err.path = 'category';
-        return err;
+    const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${this.type}';`)
+        .then(res => res.length ? res[0] : res);
+    if (!type_id)
+        error.errors['type'] = "valid";
+
+    if (!error.errors['type']) {
+        const {category_id} = await executeSqlQuery(`SELECT category_id FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${this.category}';`)
+            .then(res => res.length ? res[0] : res);
+        if (!category_id)
+            error.errors['category'] = "valid";
     }
-    return;
+
+    if(Object.keys(error.errors).length)
+        throw error;
 }
 
 module.exports = mongoose.model("Ingredient", ingredientSchema);

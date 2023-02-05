@@ -50,12 +50,23 @@ drinkwareSchema.statics.getMaterials = async function() {
     return (await materials.map(item => item.name));
 }
 
-drinkwareSchema.statics.validateMaterial = async function(type) {
-    if (type === 'other') return true;
+drinkwareSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = {};
 
-    const {material_id} = await executeSqlQuery(`SELECT material_id FROM drinkware_materials WHERE name = '${type}';`)
-        .then(res => res.length ? res[0] : res);
-    return material_id !== undefined;
+    if(await this.model('Drinkware').findOne({ user: this.user._id, name: this.name }))
+        error.errors['name'] = "exist";
+    
+    if (this.material !== "other") {
+        const { material_id } = await executeSqlQuery(`SELECT material_id FROM drinkware_materials WHERE name = '${this.material}'`)
+            .then(res => res.length ? res[0] : res);
+        if (!material_id) 
+            error.errors['material'] = "valid";
+    }
+
+    if (Object.keys(error.errors).length)
+        throw error;
 }
 
 module.exports = mongoose.model("Drinkware", drinkwareSchema);

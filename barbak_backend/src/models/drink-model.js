@@ -183,46 +183,27 @@ drinkSchema.statics.getMeasures = async function(type, category) {
     return allowedUnits.map(item => item.name);
 }
 
-drinkSchema.methods.validateDrinkware = async function() {
+drinkSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";
     error.errors = {};
-    
-    const drinkware = await Drinkware.findOne({ _id: this.drinkware });
-    if (!drinkware) {
-        error.errors.drinkware = "exist";
-        throw error;
-    }
-    else if (drinkware.visibility !== 'public' && !drinkware.user.equals(this.user._id)) {
-        error.errors.drinkware = "valid";
-        throw error;
-    } 
-}
 
-drinkSchema.methods.validateTools = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
+    if (await this.model('Drink').findOne({ user: this.user._id, name: this.name }))
+        error.errors['name'] = "exist";
+
+    const drinkware = await Drinkware.findOne({ _id: this.drinkware });
+    if (!drinkware)
+        error.errors['drinkware'] = "exist";
+    else if (drinkware.visibility !== 'public' && !drinkware.user.equals(this.user._id))
+        error.errors['drinkware'] = "valid";
 
     for (const index in this.tools) {
         const toolInfo = await Tool.findOne({ _id: this.tools[index] });
-        if (!toolInfo) {
+        if (!toolInfo)
             error.errors[`tools.${index}`] = "exist";
-            continue;
-        }
-        if (toolInfo.visibility !== 'public' && !toolInfo.user.equals(this.user._id)) {
+        else if (toolInfo.visibility !== 'public' && !toolInfo.user.equals(this.user._id))
             error.errors[`tools.${index}`] = "valid";
-            continue;
-        }
     }
-    if (Object.keys(error.errors).length > 0)
-        throw error;
-}
-
-drinkSchema.methods.validateIngredients = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
 
     for (const index in this.ingredients) {
         const ingredientInfo = await Ingredient.findOne({ _id: this.ingredients[index].ingredientId });
@@ -234,22 +215,82 @@ drinkSchema.methods.validateIngredients = async function() {
             error.errors[`ingredients.${index}`] = "valid";
             continue;
         }
-
+        
         const {type_id} = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${ingredientInfo.type}';`)
-            .then(res => res[0]);
-
+            .then(res => res.length ? res[0] : res);
         const {measure_state} = await executeSqlQuery(`SELECT measure_state FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${ingredientInfo.category}';`)
-            .then(res => res[0]);
+            .then(res => res.length ? res[0] : res);
+        const {measure_id} = await executeSqlQuery(`SELECT measure_id FROM measure WHERE measure_use = '${measure_state}' AND name = '${this.ingredients[index].measure.unit}';`)
+            .then(res => res.length ? res[0] : res);
 
-        const measure_id = await executeSqlQuery(`SELECT measure_id FROM measure WHERE measure_use = '${measure_state}' AND name = '${this.ingredients[index].measure.unit}';`);
-
-        if (measure_id.length === 0) {
-            error.errors[`ingredients.${index}`] = "measure invalid";
-            continue;
-        }
+        if (!measure_id)
+            error.errors[`ingredients.${index}.measure`] = "invalid";
     }
-    if (Object.keys(error.errors).length > 0)
+
+    if (Object.keys(error.errors).length)
         throw error;
 }
 
 module.exports = mongoose.model('Drink', drinkSchema);
+
+// const testDrink = new Drink({ 
+//     name: 'espresso martini',
+//     description: 'drink info here',
+//     preparation_method: 'stir',
+//     serving_style: 'straight-up',
+//     drinkware: '63cc5ab8ac6f54c022e836ab',
+//     ingredients: [
+//         {
+//             ingredientId: '63cc5ab8ac6f54c022e836ab',
+//             measure: {
+//                 unit: 'ml',
+//                 quantity: 100
+//             },
+//             substitutes: [
+//                 {
+//                     ingredientId: '63cc5ab8ac6f54c022e836ab',
+//                     measure: {
+//                         unit: 'ml',
+//                         quantity: 200,
+//                     }
+//                 },{
+//                     ingredientId: '63cc5ab8ac6f54c022e836ab',
+//                     measure: {
+//                         unit: 'oz',
+//                         quantity: 100
+//                     }
+//                 }
+//             ],
+//             optional: false,
+//             garnish: false,
+//         },
+//         {
+//             ingredientId: '63cc5ab8ac6f54c022e836ab',
+//             measure: {
+//                 unit: 'ml',
+//                 quantity: 100
+//             },
+//             substitutes: [
+//                 {
+//                     ingredientId: '63cc5ab8ac6f54c022e836ab',
+//                     measure: {
+//                         unit: 'ml',
+//                         quantity: 200,
+//                     }
+//                 },{
+//                     ingredientId: '63cc5ab8ac6f54c022e836ab',
+//                     measure: {
+//                         unit: 'oz',
+//                         quantity: 100
+//                     }
+//                 }
+//             ],
+//             optional: false,
+//             garnish: false,
+//         }
+//     ],
+//     tools: [ "63cc5ab8ac6f54c022e836ab", '63cc5ab8ac6f54c022e836ab', '63cc5ab8ac6f54c022e836ab' ],
+//     preparation: [ "first", "second", "third" ],
+//     tags: [ "sweet", "strong", "summer", "refreshing" ]
+// });
+// testDrink.save()
