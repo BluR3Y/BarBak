@@ -6,6 +6,9 @@ module.exports.create = async (req, res) => {
     try {
         const { name, description, type, material } = req.body;
 
+        if (await Tool.findOne({ user: req.user, name }))
+            return res.status(400).send({ path: 'name', type: 'exist' });
+
         const createdTool = new Tool({
             name,
             description,
@@ -41,6 +44,24 @@ module.exports.create = async (req, res) => {
     res.status(204).send();
 }
 
+module.exports.publicize = async (req, res) => {
+    try {
+        const { toolId } = req.body;
+        console.log(req.user)
+        const toolInfo = await Tool.findOne({ _id: toolId });
+        if (!toolInfo)
+            return res.status(400).send({ path: 'toolId', type: 'exist' });
+        else if (!toolInfo.user.equals(req.user._id))
+            return res.status(400).send({ path: 'toolId', type: 'valid' });
+
+        // Ended Here
+
+    } catch (err) {
+
+    }
+    res.status(204).send();
+}
+
 module.exports.search = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -71,10 +92,12 @@ module.exports.search = async (req, res) => {
             materials = await Tool.getMaterials();
 
         const result = await Tool.find({ name: { $regex: query } })
+            .visibility(req.user)
             .where("type").in(types)
             .where("material").in(materials)
             .skip((page - 1) * page_size)
-            .limit(page_size);
+            .limit(page_size)
+            .select("name type material")
         
         res.status(200).send(result);
     } catch (err) {

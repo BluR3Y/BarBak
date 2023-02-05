@@ -69,6 +69,13 @@ toolSchema.statics.validateMaterial = async function(material) {
     return (material_id !== undefined);
 }
 
+toolSchema.query.visibility = function(user) {
+    console.log(user)
+    if (!user)
+        return this.where({ visibility: 'public' });
+    return this.or([ { visibility: 'public' }, { user } ]);
+}
+
 toolSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";

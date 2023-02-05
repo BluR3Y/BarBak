@@ -7,6 +7,8 @@ const auth = require('../auth/index');
 
 function connectRoutes(router) {
     router.post('/tools/create', auth.sessionAuthenticationRequired, upload.single('toolImage'), toolController.create);
+    router.post('/tools/publicize', auth.sessionAuthenticationRequired, toolController.publicize);
+
     router.get('/tools/search', toolController.search);
 }
 
