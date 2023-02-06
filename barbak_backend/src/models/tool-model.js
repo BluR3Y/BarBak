@@ -35,7 +35,13 @@ const publicToolSchema = new mongoose.Schema({
         immutable: true,
         default: () => Date.now(),
     }
-}, { collection: 'tools' });
+}, { collection: 'tools', discriminatorKey: 'model' });
+
+publicToolSchema.query.visibility = function(user) {
+    if (!user)
+        return this.where({ visibility: 'public' });
+    return this.or([ { visibility: 'public' }, { user: user._id } ]);
+}
 
 const privateToolSchema = new mongoose.Schema({
     visibility: {
@@ -76,12 +82,6 @@ privateToolSchema.statics.validateMaterial = async function(material) {
     const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
         .then(res => res.length ? res[0] : res);
     return (material_id !== undefined);
-}
-
-privateToolSchema.query.visibility = function(user) {
-    if (!user)
-        return this.where({ visibility: 'public' });
-    return this.or([ { visibility: 'public' }, { user } ]);
 }
 
 privateToolSchema.methods.customValidate = async function() {

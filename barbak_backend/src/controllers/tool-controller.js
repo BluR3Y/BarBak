@@ -43,7 +43,7 @@ module.exports.create = async (req, res) => {
     res.status(204).send();
 }
 
-module.exports.publicize = async (req, res) => {
+module.exports.submiPublication = async (req, res) => {
     try {
         const { toolId } = req.body;
         const toolInfo = await privateTool.findOne({ _id: toolId });
@@ -53,7 +53,9 @@ module.exports.publicize = async (req, res) => {
             return res.status(400).send({ path: 'toolId', type: 'valid' });
         else if (toolInfo.visibility === 'in-review')
             return res.status(400).send({ path: 'toolId', type: 'process' });
-        
+        else if (await publicTool.findOne({ name: toolInfo.name, visibility: 'public' }))
+            return res.status(400).send({ path: 'name', type: 'exist' });
+
         toolInfo["visibility"] = 'in-review';
         await toolInfo.save();
     } catch (err) {
@@ -62,36 +64,43 @@ module.exports.publicize = async (req, res) => {
     res.status(204).send();
 }
 
-// *** template for successful publishing
-// module.exports.publicize = async (req, res) => {
-//     try {
-//         const { toolId } = req.body;
-//         const toolInfo = await privateTool.findOne({ _id: toolId });
-//         if (!toolInfo)
-//             return res.status(400).send({ path: 'toolId', type: 'exist' });
-//         else if (!toolInfo.user.equals(req.user._id))
-//             return res.status(400).send({ path: 'toolId', type: 'valid' });
-//         else if (await privateTool.findOne({ visibility: 'public', name: toolInfo.name }))
-//             return res.status(400).send({ path: 'tool', type: 'exist' });
+module.exports.validatePublication = async (req, res) => {
+    try {
 
-//         const { name, description, type, material, image } = toolInfo;
+        const { toolId, validation, reason } = req.body;
+
+        if (req.user.experience !== 'expert')
+            return res.status(401).send({ path: 'user', type: 'unauthorized' });
         
-//         var createdPublicTool = new publicTool({
-//             name,
-//             description,
-//             type,
-//             material,
-//         });
-//         await createdPublicTool.validate();
+        const toolInfo = await privateTool.findOne({ _id: toolId });
+        if (!toolInfo)
+            return res.status(400).send({ path: 'toolId', type: 'exist' });
+        else if (toolInfo.visibility !== 'in-review')
+            return res.status(400).send({ path: 'toolId', type: 'valid' });
+        else if (await privateTool.findOne({ name: toolInfo.name, visibility: 'public' }))
+            return res.status(400).send({ path: 'name', type: 'exist' });
 
-//         const uploadInfo = image ? await FileOperations.copySingle('assets/tools/', image) : null;
-//         createdPublicTool.image = uploadInfo;
-//         await createdPublicTool.save();
-//     } catch (err) {
-//         return res.status(500).send(err);
-//     }
-//     res.status(204).send();
-// }
+        if (validation === "approve") {
+            const { name, description, type, material, image } = toolInfo;
+            const createdPublicTool = new publicTool({
+                name,
+                description,
+                type,
+                material
+            });
+            await createdPublicTool.validate();
+
+            const uploadInfo = image ? await FileOperations.copySingle('assets/tools/', image) : null;
+            createdPublicTool["image"] = uploadInfo;
+            await createdPublicTool.save();
+        }
+        toolInfo["visibility"] = 'private';
+        await toolInfo.save();
+    } catch (err) {
+        return res.status(500).send(err);
+    }
+    res.status(204).send();
+}
 
 module.exports.search = async (req, res) => {
     try {
@@ -122,13 +131,13 @@ module.exports.search = async (req, res) => {
         } else
             materials = await privateTool.getMaterials();
 
-        const result = await privateTool.find({ name: { $regex: query } })
+        const result = await publicTool.find({ name: { $regex: query } })
             .visibility(req.user)
             .where("type").in(types)
             .where("material").in(materials)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .select("name type material")
+            .select("name type material -model");
         
         res.status(200).send(result);
     } catch (err) {

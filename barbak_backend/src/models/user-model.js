@@ -21,6 +21,12 @@ const userSchema = new mongoose.Schema({
     profile_image: {
         type: String,
     },
+    experience: {
+        type: String,
+        lowercase: true,
+        default: 'novice',
+        enum: [ "novice", "experienced", "expert" ]
+    },
     registration_date: {
         type: Date,
         immutable: true,
