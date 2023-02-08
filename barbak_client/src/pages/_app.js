@@ -9,20 +9,11 @@ export default function App({ Component, pageProps }) {
   const siteThemes = {
     classic: {
       type: 'classic',
-      primary: '#bf1313',
-      secondary: '#ffffff',
+      primary: '#E55812',
+      secondary: '#fafafa',
       tertiary: '#bbc4c4',
       quaternary: '#41495a',
-      background: '#fafafa'
     },
-    dark: {
-      type: 'dark',
-      primary: '#bf1313',
-      secondary: '#41495a',
-      tertiary: '#bbc4c4',
-      quaternary: '#ffffff',
-      background: '#202634'
-    }
   }
 
   return <ThemeProvider theme={siteThemes[activeTheme]}>

@@ -6,26 +6,49 @@ export const StyledLogin = styled.div`
     flex-direction: row;
     justify-content: center;
     height: 100vh;
-    /* min-height: 100vh; */
+    background-color: ${props => props.theme.secondary};
 
-    .loginForm {
-        min-width: 400px;
-        width: 50%;
-
-        background-color: green;
-    }
-
-    /* .loginForm {
-        font-size: 20px;
-        width: 325px;
-        height: 400px;
+    .authentication {
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
+        justify-content: center;
         align-items: center;
-        background-color: #fff;
-        border-radius: 12px;
-        padding: 0 30px;
+    }
+`;
 
-        border: 1px solid black;
-    } */
+export const AuthenticationForm = styled.form`
+    max-width: 440px;
+    width: 80%;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid ${props => props.theme.tertiary};
+    
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+        outline: none;
+    }
+`;
+
+export const InputField = styled.div`
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+
+    label {
+        font-size: 18px;
+        font-family: 'Poppins', sans-serif;  
+    }
+    input {
+        border: 1px solid green;
+        height: 25px;
+        border-radius: 5px;
+        font-family: 'Montserrat';
+    }
 `;
