@@ -1,8 +1,9 @@
 import Head from 'next/head';
 import React from 'react';
-import { StyledLogin, AuthenticationForm, InputField } from '../styles/login.module';
+import { StyledLogin, AuthenticationForm } from '@/styles/pages/login';
 
 import SlideShow from '@/components/slideshow';
+import AuthInput from '@/components/authInput';
 
 export default class Login extends React.Component {
 
@@ -26,10 +27,18 @@ export default class Login extends React.Component {
                 />
                 <div className='authentication'>
                     <AuthenticationForm>
-                        <InputField>
+                        <AuthInput
+                            labelText={'Email or Username'}
+                        />
+                        {/* <InputField>
                             <label for='username'>Username</label>
                             <input type='text' id='username'/>
                         </InputField>
+                        <InputField>
+                            <label for='password'>Password</label>
+                            <input type='text' id='password'/>
+                        </InputField> */}
+                        
                     </AuthenticationForm>
                 </div>
             </StyledLogin>

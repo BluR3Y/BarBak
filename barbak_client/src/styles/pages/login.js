@@ -24,6 +24,7 @@ export const AuthenticationForm = styled.form`
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 0 50px;
     justify-content: center;
     border-radius: 12px;
     border: 1px solid ${props => props.theme.tertiary};
@@ -36,19 +37,21 @@ export const AuthenticationForm = styled.form`
     }
 `;
 
-export const InputField = styled.div`
-    display: flex;
-    flex-direction: column;
-    width: 300px;
+// export const InputField = styled.div`
+//     display: flex;
+//     flex-direction: column;
+//     width: 300px;
 
-    label {
-        font-size: 18px;
-        font-family: 'Poppins', sans-serif;  
-    }
-    input {
-        border: 1px solid green;
-        height: 25px;
-        border-radius: 5px;
-        font-family: 'Montserrat';
-    }
-`;
+//     label {
+//         font-size: 16px;
+//         font-family: 'Montserrat', sans-serif;  
+//         font-weight: 400;
+//     }
+//     input {
+//         border: 1px solid green;
+//         height: 25px;
+//         border-radius: 5px;
+//         font-family: 'Montserrat';
+//         font-weight: 500;
+//     }
+// `;

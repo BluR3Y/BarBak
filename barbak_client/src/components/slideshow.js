@@ -1,5 +1,5 @@
 import React from "react";
-import { StyledSlideShow, ImageItem } from "@/styles/slideshow.component";
+import { StyledSlideShow, ImageItem } from "@/styles/components/slideshow";
 
 export default class SlideShow extends React.Component {
     constructor(props) {
