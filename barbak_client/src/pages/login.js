@@ -14,12 +14,8 @@ export default class Login extends React.Component {
             password: '',
             emailError: '',
             passwordError: '',
+            otherError: ''
         }
-    }
-
-    componentDidMount() {
-        fetch('http://localhost:3001/getTest')
-        .then(res => console.log(res))
     }
 
     emailCallback = (email) => {
@@ -30,23 +26,35 @@ export default class Login extends React.Component {
         this.setState({ password });
     }
 
-    submitLogin = async (event) => {
+    handleSubmit = async (event) => {
         event.preventDefault();
         const { email, password } = this.state;
-        const loginAttempt = await fetch('http://localhost:3001/users/login', {
+
+        fetch('http://localhost:3001/users/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 username: email,
                 password
             })
         })
+        .then(res => {
+            if (res.ok) {
+                return res.json()
+            } else {
+                throw new Error('Something went wrong')
+            }
+        })
+        .then(data => console.log('data'))
+        .catch(err => console.log('err'))
     }
 
     render() {
-        const { emailCallback, passwordCallback, submitLogin } = this;
+        const { emailCallback, passwordCallback, handleSubmit } = this;
         const { email, emailError, password, passwordError } = this.state;
         const images = [
             '/images/cocktail-1.jpg',
@@ -62,14 +70,16 @@ export default class Login extends React.Component {
                 <title>BarBak | Login</title>
             </Head>
             <StyledLogin
-                onSubmit={submitLogin}
+                onSubmit={handleSubmit}
             >
                 <SlideShow
                     images={images}
                 />
                 <div className='authentication'>
                     <AuthenticationForm>
-                        <Logo/>
+                        <Logo
+                            onClick={this.testFunction}
+                        />
                         <AuthInput
                             labelText={'Email or Username'}
                             errorText={emailError}

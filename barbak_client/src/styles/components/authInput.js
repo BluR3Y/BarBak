@@ -47,6 +47,31 @@ export const StyledInput = styled.div`
                 border: 2px solid rgba(232, 33, 19, 0.8);
             `}
         }
+
+        .passwordVisibility {
+            background: transparent;
+            position: absolute;
+            right:6px;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            height: fit-content;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3px 2px;
+
+            svg {
+                height: 22px;
+                width: auto;
+            }
+        }
+        .passwordVisibility:focus {
+            border: 1px solid blue;   
+        }
     }
 
     h1 {
