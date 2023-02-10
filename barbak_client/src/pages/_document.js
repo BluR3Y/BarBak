@@ -1,9 +1,9 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document';
-import { ServerStyleSheet as StyledComponentsSheet } from 'styled-components';
+import { ServerStyleSheet } from 'styled-components';
 
 class MyDocument extends Document {
   static async getInitialProps(ctx) {
-    const sheet = new StyledComponentsSheet();
+    const sheet = new ServerStyleSheet();
     const originalRenderPage = ctx.renderPage;
 
     try {

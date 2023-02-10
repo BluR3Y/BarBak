@@ -35,6 +35,23 @@ const GlobalStyles = createGlobalStyle`
         src: local('Poppins'), url('/fonts/poppins/Poppins-Medium.ttf') format('truetype');
     }
 
+    /* Open Sans */
+    @font-face {
+        font-family: 'Open Sans';
+        font-weight: 300;
+        src: local('Open Sans'), url('/fonts/open_sans/OpenSans-Light.ttf') format('truetype');
+    }
+    @font-face {
+        font-family: 'Open Sans';
+        font-weight: 400;
+        src: local('Open Sans'), url('/fonts/open_sans/OpenSans-Regular.ttf') format('truetype');
+    }
+    @font-face {
+        font-family: 'Open Sans';
+        font-weight: 500;
+        src: local('Open Sans'), url('/fonts/open_sans/OpenSans-Medium.ttf') format('truetype');
+    }
+
     * {
         box-sizing: border-box;
         padding: 0;

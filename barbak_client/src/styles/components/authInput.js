@@ -3,52 +3,68 @@ import styled, { css } from "styled-components";
 export const StyledInput = styled.div`
     display: flex;
     flex-direction: column;
-    width: inherit;
-    font-family: 'Poppins';
+    width: 100%;
+    margin: 20px 0 5px 0;
 
     .inputContainer {
-        display: flex;
-        flex-direction: column;
         position: relative;
-        
+        border: 1px solid ${props => props.theme.secondary};
+        border-radius: 6px;
+
         label {
             font-size: 16px;
             font-weight: 400;
             position: absolute;
-            margin: auto;
             height: fit-content;
             line-height: 20px;
-            ${props => props.isFocused ? css`
-            
+            pointer-events: none;
+            user-select: none;
+            transition-duration: 0.2s;
+            font-family: 'Poppins';
+
+            ${props => props.isFocused || !props.isEmpty ? css`
+                top: -22px;
+                left: 0;
             ` : css `
-                top: 0;
-                bottom: 0;
                 left: 8px;
+                opacity: 0.8;
+                top: 50%;
+                transform: translateY(-50%);
             `}
-                            background-color:red;
         }
         input {
-            height: 30px;
+            font-size: 16px;
+            font-family: 'Open Sans';
+            font-weight: 400;
+            height: 35px;
+            width: 100%;
             padding-left: 8px;
+            border-radius: 5px;
+
+            ${props => props.emptyError ? css`
+                border: none;
+            ` : css`
+                border: 2px solid rgba(232, 33, 19, 0.8);
+            `}
         }
     }
+
+    h1 {
+        font-size: 14px;
+        font-family: 'Poppins';
+        font-weight: 300;
+        top: 100%;
+        color: #e82113;
+        line-height: 18px;
+        margin-left: 8px;
+    }
+
+    ${props => props.theme.type === 'dark' && css`
+        label {
+            color: ${props.theme.secondary};
+        }
+        input {
+            background-color: ${props.theme.accent};
+        }
+    `}
 `;
-
-// export const InputField = styled.div`
-//     display: flex;
-//     flex-direction: column;
-//     width: 300px;
-
-//     label {
-//         font-size: 16px;
-//         font-family: 'Montserrat', sans-serif;  
-//         font-weight: 400;
-//     }
-//     input {
-//         border: 1px solid green;
-//         height: 25px;
-//         border-radius: 5px;
-//         font-family: 'Montserrat';
-//         font-weight: 500;
-//     }
-// `;

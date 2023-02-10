@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { StyledLogo } from "../components/logo";
 
 
 export const StyledLogin = styled.div`
@@ -6,7 +7,6 @@ export const StyledLogin = styled.div`
     flex-direction: row;
     justify-content: center;
     height: 100vh;
-    background-color: ${props => props.theme.secondary};
 
     .authentication {
         flex: 1 1 auto;
@@ -14,21 +14,27 @@ export const StyledLogin = styled.div`
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        position: relative;
     }
 `;
 
 export const AuthenticationForm = styled.form`
-    max-width: 440px;
+    max-width: 370px;
     width: 80%;
-    height: 500px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 50px;
     justify-content: center;
-    border-radius: 12px;
-    border: 1px solid ${props => props.theme.tertiary};
-    
+    border-radius: 3px;
+    padding: 30px 40px;
+    border: 1px solid ${props => props.theme.secondary};
+    background-color: ${props => props.theme.type === 'classic' ? '#fff' : '#2b2c36'};
+
+    & ${StyledLogo} {
+        font-size: 40px;
+        margin: 0 0 25px 0;
+    }
+
     input:focus,
     select:focus,
     textarea:focus,
@@ -37,21 +43,23 @@ export const AuthenticationForm = styled.form`
     }
 `;
 
-// export const InputField = styled.div`
-//     display: flex;
-//     flex-direction: column;
-//     width: 300px;
+export const AssistLink = styled.a`
+    font-family: 'Poppins';
+    font-weight: 500;
+    font-size: 14px;
+    text-decoration: none;
+    align-self: flex-start;
+    color: ${props => props.theme.accent};
+`;
 
-//     label {
-//         font-size: 16px;
-//         font-family: 'Montserrat', sans-serif;  
-//         font-weight: 400;
-//     }
-//     input {
-//         border: 1px solid green;
-//         height: 25px;
-//         border-radius: 5px;
-//         font-family: 'Montserrat';
-//         font-weight: 500;
-//     }
-// `;
+export const SubmitBtn = styled.button`
+    width: inherit;
+    padding: 6px 0;
+    border-radius: 20px;
+    background-color: ${props => props.theme.primary};
+    border: none;
+    font-family: 'Poppins';
+    font-size: 18px;
+    margin-top: 25px;
+    cursor: pointer;
+`;
