@@ -4,9 +4,6 @@ const User = require('../models/user-model');
 const auth = require('../auth');
 
 module.exports.test = async (req, res) => {
-    console.log(req.session)
-    console.log(req.user)
-
     res.send('TEST');
 }
 

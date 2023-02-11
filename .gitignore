@@ -25,10 +25,6 @@ yarn-error.log*
 # Environment variables
 /env
 .env
-.env*.local
-
-# vercel
-.vercel
 
 # Mongo db volume data for persistence storage
 /db/mongo-volume/*

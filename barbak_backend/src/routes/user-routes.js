@@ -8,7 +8,7 @@ const auth = require('../auth/index');
 
 function connectRoutes(router) {
     router.post('/test', userController.test);
-    router.get('/getTest', auth.sessionAuthenticationRequired, userController.test);
+    router.get('/getTest', userController.test);
     // router.post('/testupload', userUploads.single('testImage'), userController.testUploads);
 
     router.post('/users/register', upload.single('profileImage'), userController.register);
