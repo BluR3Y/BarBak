@@ -13,6 +13,7 @@ function connectRoutes(router) {
 
     router.post('/users/register', upload.single('profileImage'), userController.register);
     router.post('/users/login', userController.login);
+    router.get('/users/check-session', userController.checkSession);
     router.get('/users/logout', auth.sessionAuthenticationRequired, userController.logout);
 };
 
