@@ -14,7 +14,7 @@ export default class SlideShow extends React.Component {
     startCycle = () => {
         const imageCycle = setInterval(() => {
             this.nextImage();
-        }, 5000);
+        }, 7000);
         this.setState({ imageCycle });
     }
 

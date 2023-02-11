@@ -41,6 +41,7 @@ export default class AuthInput extends React.Component {
                 { inputType === 'password' && (
                 <button 
                     className="passwordVisibility" 
+                    type="button"
                     onClick={() => this.setState(prevState => ({ passwordVisible: !prevState.passwordVisible }))}
                 >
                     { passwordVisible ? <EyeOpen/> : <EyeClose/> }

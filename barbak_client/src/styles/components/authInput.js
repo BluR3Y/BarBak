@@ -21,6 +21,7 @@ export const StyledInput = styled.div`
             user-select: none;
             transition-duration: 0.2s;
             font-family: 'Poppins';
+            color: ${props => !props.isEmpty || props.isFocused ? props.theme.accent : props.theme.secondary };
 
             ${props => props.isFocused || !props.isEmpty ? css`
                 top: -22px;
@@ -70,7 +71,7 @@ export const StyledInput = styled.div`
             }
         }
         .passwordVisibility:focus {
-            border: 1px solid blue;   
+            border: 2px solid ${props => props.theme.secondary};   
         }
     }
 
@@ -83,7 +84,7 @@ export const StyledInput = styled.div`
         line-height: 18px;
         margin-left: 8px;
     }
-
+/* 
     ${props => props.theme.type === 'dark' && css`
         label {
             color: ${props.theme.secondary};
@@ -91,5 +92,5 @@ export const StyledInput = styled.div`
         input {
             background-color: ${props.theme.accent};
         }
-    `}
+    `} */
 `;

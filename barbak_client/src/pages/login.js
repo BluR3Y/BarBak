@@ -95,7 +95,7 @@ export default class Login extends React.Component {
                             inputCallback={passwordCallback}
                         />
                         <AssistLink href='/'>Forgot Password?</AssistLink>
-                        <SubmitBtn>Sign In</SubmitBtn>
+                        <SubmitBtn value='Sign In' />
                     </AuthenticationForm>
                 </div>
             </StyledLogin>
