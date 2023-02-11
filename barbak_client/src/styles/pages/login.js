@@ -40,6 +40,16 @@ export const AuthenticationForm = styled.form`
         margin-bottom: 10px;
     }
 
+    .otherError {
+        font-size: 16px;
+        font-family: 'Poppins';
+        font-weight: 400;
+        top: 100%;
+        color: #e82113;
+        line-height: 18px;
+        margin-left: 8px;
+    }
+
     input:focus,
     select:focus,
     textarea:focus,

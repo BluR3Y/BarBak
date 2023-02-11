@@ -19,10 +19,14 @@ export default class Login extends React.Component {
     }
 
     emailCallback = (email) => {
+        if (this.state.emailError)
+            this.setState({ emailError: '' });
         this.setState({ email });
     }
 
     passwordCallback = (password) => {
+        if (this.state.passwordError) 
+            this.setState({ passwordError: '' });
         this.setState({ password });
     }
 
@@ -30,32 +34,53 @@ export default class Login extends React.Component {
         event.preventDefault();
         const { email, password } = this.state;
 
-        fetch('http://localhost:3001/users/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                username: email,
-                password
-            })
-        })
-        .then(res => {
-            if (res.ok) {
-                return res.json()
-            } else {
-                throw new Error('Something went wrong')
+        try {
+            const loginResponse = await fetch('http://localhost:3001/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: email,
+                    password
+                })
+            });
+            const resData = await loginResponse.json();
+            if (!loginResponse.ok) {
+                const error = new Error(loginResponse.statusText);
+                error.status = loginResponse.status;
+                error.info = resData;
+                throw error;
             }
+
+        } catch (err) {
+            const setErrors = {};
+            if (err.status !== 500) {
+                const { path, type, message } = err.info;
+                if (path === 'user')
+                    setErrors.emailError = message;
+                else if (path === 'password')
+                    setErrors.passwordError = message;
+            } else setErrors.otherError = err.name;
+
+            this.setState(setErrors)
+        }
+    }
+
+    handleTesting = async (event) => {
+        event.preventDefault();
+        const user = await fetch('http://localhost:3001/users/check-session', {
+            credentials: 'include'
         })
-        .then(data => console.log('data'))
-        .catch(err => console.log('err'))
+        .then(res => res.json())
+        console.log(user)
     }
 
     render() {
         const { emailCallback, passwordCallback, handleSubmit } = this;
-        const { email, emailError, password, passwordError } = this.state;
+        const { email, emailError, password, passwordError, otherError } = this.state;
         const images = [
             '/images/cocktail-1.jpg',
             '/images/cocktail-2.jpg',
@@ -78,8 +103,9 @@ export default class Login extends React.Component {
                 <div className='authentication'>
                     <AuthenticationForm>
                         <Logo
-                            onClick={this.testFunction}
+                            onClick={this.handleTesting}
                         />
+                        <h1 className='otherError'>{otherError}</h1>
                         <AuthInput
                             labelText={'Email or Username'}
                             errorText={emailError}

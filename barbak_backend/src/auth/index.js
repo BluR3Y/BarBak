@@ -34,14 +34,21 @@ exports.authenticate = {
     // Email/Password:
     localLogin: async function(req, res, next) {
         return passport.authenticate('local-login', (err, user, info) => {
-            if(err)
+            if (err)
                 return res.status(400).send(err);
-            else if(!user)
+            else if (!user)
                 return res.status(500).send("An error occured while processing your request");
-            
             req.logIn(user, err => {
                 if (err) throw err;
-                res.status(204).send();
+                const { _id, username, email, profile_image, experience } = user;
+                const userInfo = {
+                    userId: _id,
+                    username,
+                    email,
+                    profile_image,
+                    experience
+                };
+                res.status(200).send(userInfo);
             })
         })(req, res, next);
     }

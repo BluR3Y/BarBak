@@ -56,6 +56,21 @@ module.exports.register = async (req, res) => {
 // Authenticate the user via email and password input fields
 module.exports.login = auth.authenticate.localLogin;
 
+module.exports.checkSession = (req, res) => {
+    if (!req.isAuthenticated())
+        return res.status(401).send({ path: 'user', type: 'authenticated' });
+        
+    const { _id, username, email, profile_image, experience } = req.user;
+    const userInfo = {
+        userId: _id,
+        username,
+        email,
+        profile_image,
+        experience
+    };
+    res.status(200).send(userInfo);
+}
+
 module.exports.logout = (req, res) => {
     req.session.destroy((err) => {
         if (err) 
