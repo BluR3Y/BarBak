@@ -7,6 +7,9 @@ import SlideShow from '@/components/slideshow';
 import AuthInput from '@/components/authInput';
 import { withOutAuth } from '@/hocs/authWrapper';
 
+import { connect } from 'react-redux';
+import { setUserInfo } from '@/redux/actions';
+
 class Login extends React.Component {
     constructor(props) {
         super(props);
@@ -17,6 +20,10 @@ class Login extends React.Component {
             passwordError: '',
             otherError: ''
         }
+    }
+    
+    componentDidMount() {
+        console.log(this.props.userId)
     }
 
     emailCallback = (email) => {
@@ -50,33 +57,24 @@ class Login extends React.Component {
             });
             const resData = await loginResponse.json();
             if (!loginResponse.ok) {
-                const error = new Error(loginResponse.statusText);
-                error.status = loginResponse.status;
-                error.info = resData;
-                throw error;
+                const errorObj = new Error(loginResponse.statusText);
+                errorObj.info = await resData;
+                throw errorObj;
             }
-
         } catch (err) {
-            const setErrors = {};
-            if (err.status !== 500) {
-                const { path, type, message } = err.info;
-                if (path === 'user')
-                    setErrors.emailError = message;
-                else if (path === 'password')
-                    setErrors.passwordError = message;
-            } else setErrors.otherError = err.name;
-
-            this.setState(setErrors)
+            console.log(err)
         }
     }
 
     handleTesting = async (event) => {
         event.preventDefault();
-        const user = await fetch('http://localhost:3001/users/check-session', {
-            credentials: 'include'
-        })
-        .then(res => res.json())
-        console.log(user)
+        const { updateUserInfo } = this.props;
+        updateUserInfo({
+            user_id: 123456,
+            user_name: 'blu-rey',
+            user_email: 'rey@gmail.com',
+            user_profile_image: 'abc123'
+        });
     }
 
     render() {
@@ -130,5 +128,17 @@ class Login extends React.Component {
     }
 }
 
+const mapStateToProps = (state) => {
+    return {
+        userId: state.userReducer.user_id
+    }
+}
 
-export default withOutAuth( Login, '/');
+const mapDispatchToProps = (dispatch) => {
+    return {
+        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo))
+    }
+}
+
+export default withOutAuth(connect(mapStateToProps, mapDispatchToProps)(Login), '/');
+// export default withOutAuth( Login, '/' );
