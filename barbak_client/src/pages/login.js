@@ -5,8 +5,9 @@ import Logo from '@/components/logo';
 
 import SlideShow from '@/components/slideshow';
 import AuthInput from '@/components/authInput';
+import { withOutAuth } from '@/hocs/authWrapper';
 
-export default class Login extends React.Component {
+class Login extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -128,3 +129,6 @@ export default class Login extends React.Component {
         </>)
     }
 }
+
+
+export default withOutAuth( Login, '/');
