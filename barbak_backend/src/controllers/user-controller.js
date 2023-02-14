@@ -18,11 +18,12 @@ module.exports.testUploads = async (req,res) => {
 module.exports.register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+        const hashedPassword = await User.hashPassword(password)
         
         const createdUser = new User({
             username,
             email,
-            password
+            password: hashedPassword
         });
         await createdUser.validate();
         await createdUser.customValidate();

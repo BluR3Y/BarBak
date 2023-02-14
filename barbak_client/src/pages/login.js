@@ -68,13 +68,21 @@ class Login extends React.Component {
                 throw errorObj;
             }
         } catch (err) {
-            console.log(err)
+            console.log("error")
         }
     }
 
     handleTesting = async (event) => {
         event.preventDefault();
-        console.log(this.props)
+        const res = await fetch('http://localhost:3000/users/check-session', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        });
+        console.log(res.status);
     }
 
     render() {
@@ -140,5 +148,4 @@ const mapDispatchToProps = (dispatch) => {
     }
 }
 
-export default withOutAuth(connect(mapStateToProps, mapDispatchToProps)(Login), '/');
-// export default withOutAuth( Login, '/' );
+export default withOutAuth(connect(mapStateToProps, mapDispatchToProps)(Login), '/testing');
