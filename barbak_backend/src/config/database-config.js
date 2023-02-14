@@ -20,7 +20,7 @@ const MySQLConnection = mysql.createConnection({
     port: '3306',
     database: 'barbak',
     user: 'root',
-    password: 'password@1234'
+    password: process.env.MYSQL_PASSWORD
 });
 
 const connectMySQL = () => {

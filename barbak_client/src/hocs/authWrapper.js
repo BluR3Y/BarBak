@@ -1,33 +1,49 @@
 import React from 'react';
 import Router from 'next/router';
+import { getCookie } from '@/utils/methods';
+import { connect } from 'react-redux';
+import { setUserInfo } from '@/redux/actions';
 
-export const withAuth = ( WrappedComponent, redirectPath = '/') => {
-    return class extends React.Component {
+export const withAuth = ( WrappedComponent, redirectPath = '/' ) => {
+    class Authentication extends React.Component {
         static async getInitialProps(ctx) {
             try {
-                const sessionToken = ctx.req.headers.cookie;
-
+                const sessionToken = getCookie(ctx.req.headers.cookie, 'session');
+                
                 if (!sessionToken)
                     throw new Error('User Not Authenticated');
-                const res = await fetch('http://localhost:3001/users/check-session', {
+                const res = await fetch(process.env.BARBAK_BACKEND + '/users/check-session', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'cookie': sessionToken
-                    },
+                        'cookie': `session=${sessionToken}`
+                    }
                 });
                 if (res.status !== 200)
                     throw new Error('User Not Authenticated');
-                const user = await res.json();
-                return {user};
+                
+                const componentProps = WrappedComponent.getInitialProps && (await WrappedComponent.getInitialProps(ctx));
+                componentProps.user = await res.json();
+
+                return {...componentProps};
             } catch (err) {
-                return { user: null };
+                return { user:null }
             }
         }
 
         componentDidMount() {
-            if (!this.props.user)
+            const { user, updateUserInfo } = this.props;
+            const { userId = null, username = null, email = null, profile_image = null, experience = null } = user ? user : {};
+            updateUserInfo({
+                user_id: userId,
+                user_name: username,
+                user_email: email,
+                user_profile_image: profile_image,
+                user_experience: experience
+            });
+
+            if (!user)
                 Router.push(redirectPath);
         }
 
@@ -35,69 +51,64 @@ export const withAuth = ( WrappedComponent, redirectPath = '/') => {
             return <WrappedComponent {...this.props} />
         }
     }
+    const mapDispatchToProps = (dispatch) => {
+        return {
+            updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo))
+        };
+    }
+    return connect(null, mapDispatchToProps)(Authentication);
 }
 
-export const withOutAuth = ( WrappedComponent, redirectPath = '/') => {
-    return class extends React.Component {
+export const withOutAuth = ( WrappedComponent, redirectPath = '/' ) => {
+    class Authentication extends React.Component {
         static async getInitialProps(ctx) {
             try {
-                const sessionToken = ctx.req.headers.cookie;
-
+                const sessionToken = getCookie(ctx.req.headers.cookie, 'session');
+                
                 if (!sessionToken)
                     throw new Error('User Not Authenticated');
-                const res = await fetch('http://localhost:3001/users/check-session', {
+                const res = await fetch(process.env.BARBAK_BACKEND + '/users/check-session', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'cookie': sessionToken
-                    },
+                        'cookie': `session=${sessionToken}`
+                    }
                 });
                 if (res.status !== 200)
                     throw new Error('User Not Authenticated');
-                const user = await res.json();
-                return {user};
+
+                return {
+                    user: await res.json(),
+                    wrappedProps: WrappedComponent.getInitialProps && (await WrappedComponent.getInitialProps(ctx))
+                };
             } catch (err) {
-                return { user: null };
+                return { user:null }
             }
         }
 
         componentDidMount() {
-            if (this.props.user)
+            const { user, updateUserInfo } = this.props;
+            const { userId = null, username = null, email = null, profile_image = null, experience = null } = user ? user : {};
+            updateUserInfo({
+                user_id: userId,
+                user_name: username,
+                user_email: email,
+                user_profile_image: profile_image,
+                user_experience: experience
+            });
+            if (user)
                 Router.push(redirectPath);
         }
 
         render() {
-            return <WrappedComponent {...this.props} />
+            return <WrappedComponent {...this.props.wrappedProps} />
         }
     }
+    const mapDispatchToProps = (dispatch) => {
+        return {
+            updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo))
+        };
+    }
+    return connect(null, mapDispatchToProps)(Authentication);
 }
-
-// const withAuth = (WrappedComponent) => {
-//   return class extends React.Component {
-//     static async getInitialProps(ctx) {
-//       const componentProps =
-//         WrappedComponent.getInitialProps &&
-//         (await WrappedComponent.getInitialProps(ctx));
-
-//       if (!ctx.req || ctx.req.session.user) {
-//         return { ...componentProps };
-//       }
-
-//       if (ctx.res) {
-//         ctx.res.writeHead(302, { Location: '/login' });
-//         ctx.res.end();
-//         return;
-//       }
-
-//       Router.push('/login');
-//       return { ...componentProps };
-//     }
-
-//     render() {
-//       return <WrappedComponent {...this.props} />;
-//     }
-//   };
-// };
-
-// export default withAuth;

@@ -21,9 +21,15 @@ class Login extends React.Component {
             otherError: ''
         }
     }
+
+    static async getInitialProps(ctx) {
+        const barbak_backend_uri = process.env.BARBAK_BACKEND;
+
+        return { barbak_backend_uri };
+    }
     
     componentDidMount() {
-        console.log(this.props.userId)
+        console.log(this.props)
     }
 
     emailCallback = (email) => {
@@ -43,7 +49,7 @@ class Login extends React.Component {
         const { email, password } = this.state;
 
         try {
-            const loginResponse = await fetch('http://localhost:3001/users/login', {
+            const loginResponse = await fetch('http://localhost:3000/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -68,13 +74,7 @@ class Login extends React.Component {
 
     handleTesting = async (event) => {
         event.preventDefault();
-        const { updateUserInfo } = this.props;
-        updateUserInfo({
-            user_id: 123456,
-            user_name: 'blu-rey',
-            user_email: 'rey@gmail.com',
-            user_profile_image: 'abc123'
-        });
+        console.log(this.props)
     }
 
     render() {
