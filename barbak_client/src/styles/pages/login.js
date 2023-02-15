@@ -50,13 +50,6 @@ export const AuthenticationForm = styled.form`
         line-height: 18px;
         margin-left: 8px;
     }
-
-    input:focus,
-    select:focus,
-    textarea:focus,
-    button:focus {
-        outline: none;
-    }
 `;
 
 export const AssistLink = styled.a`
@@ -75,6 +68,7 @@ export const SubmitBtn = styled.input.attrs(() => ({
     font-size: 18px;
     cursor: pointer;
     border: none;
+    color: ${props => props.theme.background};
     background-color: ${props => props.theme.primary};
     border-radius: 6px;
     padding: 5px 0;

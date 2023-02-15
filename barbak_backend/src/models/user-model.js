@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         lowercase: true,
     },
+    fullname: {
+        type: String,
+        lowercase: true,
+        default: null,
+    },
     password: {
         type: String,
         required: true,
@@ -20,6 +25,7 @@ const userSchema = new mongoose.Schema({
     },
     profile_image: {
         type: String,
+        default: null
     },
     experience: {
         type: String,
@@ -73,6 +79,7 @@ userSchema.methods.getPublicInfo = function() {
         _id,
         username,
         email,
+        fullname,
         profile_image,
         experience
     };

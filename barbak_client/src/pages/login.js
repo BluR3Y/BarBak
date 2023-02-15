@@ -96,6 +96,8 @@ class Login extends React.Component {
                         case 'password':
                             this.setState({ passwordError: errors[error].message });
                             break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -125,7 +127,7 @@ class Login extends React.Component {
                 <div className='authentication'>
                     <AuthenticationForm onSubmit={handleSubmit}>
                         <Logo/>
-                        <h1 className='otherError'>{otherError}</h1>
+                        { otherError && <h1 className='otherError'>{otherError}</h1> }
                         <AuthInput
                             labelText={'Email or Username'}
                             errorText={emailError}

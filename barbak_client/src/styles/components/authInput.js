@@ -84,6 +84,13 @@ export const StyledInput = styled.div`
         line-height: 18px;
         margin-left: 8px;
     }
+    
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+        outline: none;
+    }
 /* 
     ${props => props.theme.type === 'dark' && css`
         label {
