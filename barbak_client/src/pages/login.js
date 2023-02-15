@@ -11,6 +11,7 @@ import { withOutAuth } from '@/hocs/authWrapper';
 import { connect } from 'react-redux';
 import { setUserInfo } from '@/redux/actions';
 import axios from 'axios';
+import Link from 'next/link';
 
 class Login extends React.Component {
     constructor(props) {
@@ -121,7 +122,7 @@ class Login extends React.Component {
                         <SubmitBtn value='Sign In' />
                     </AuthenticationForm>
                     <RegisterContainer>
-                        ds
+                        <h1>Don't have an account? <Link href='/register'>Sign Up</Link></h1>
                     </RegisterContainer>
                 </div>
             </StyledLogin>
