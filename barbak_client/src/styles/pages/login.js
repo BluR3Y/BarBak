@@ -76,8 +76,8 @@ export const SubmitBtn = styled.input.attrs(() => ({
     cursor: pointer;
     border: none;
     background-color: ${props => props.theme.primary};
-    border-radius: 20px;
-    padding: 6px 0;
+    border-radius: 6px;
+    padding: 5px 0;
     width: 100%;
     margin: 35px 0 0 0;
 `;

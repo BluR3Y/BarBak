@@ -48,6 +48,16 @@ class Login extends React.Component {
             const { email, password } = this.state;
             const { barbak_backend_uri, updateUserInfo } = this.props;
 
+            if (!email.length || !password.length) {
+                const errorObj = new Error('Empty Fields');
+                errorObj.errors = [];
+                if (!email.length)
+                    errorObj.errors.push({ path: 'user', type: 'empty', message: 'Field is empty' });
+                if (!password.length)
+                    errorObj.errors.push({ path: 'password', type: 'empty', message: 'Field is empty' });
+                throw errorObj;
+            }
+
             const {data} = await axios.post(`${barbak_backend_uri}/users/login`, {
                 username: email,
                 password
@@ -61,19 +71,33 @@ class Login extends React.Component {
             updateUserInfo(data);
             Router.push('/');
         } catch(err) {
-            const errorResponse = err.response;
-            if (errorResponse.status === 400) {
-                const { data } = errorResponse;
-                switch (data.path) {
-                    case 'user':
-                        this.setState({ emailError: data.message });
-                        break;
-                    case 'password':
-                        this.setState({ passwordError: data.message });
-                        break;
+            if (err.name === "AxiosError") {
+                const errorResponse = err.response;
+                if (errorResponse.status === 400) {
+                    const { data } = errorResponse;
+                    switch (data.path) {
+                        case 'user':
+                            this.setState({ emailError: data.message });
+                            break;
+                        case 'password':
+                            this.setState({ passwordError: data.message });
+                            break;
+                    }
+                } else if (errorResponse.status === 500) {
+                    this.setState({ otherError: 'An error occured while processing your request' });
                 }
-            } else if (errorResponse.status === 500) {
-                this.setState({ otherError: 'An error occured while processing your request' });
+            } else {
+                const errors = err.errors;
+                for (const error in errors) {
+                    switch (errors[error].path) {
+                        case 'user':
+                            this.setState({ emailError: errors[error].message });
+                            break;
+                        case 'password':
+                            this.setState({ passwordError: errors[error].message });
+                            break;
+                    }
+                }
             }
         }
     }
@@ -94,14 +118,12 @@ class Login extends React.Component {
             <Head>
                 <title>BarBak | Login</title>
             </Head>
-            <StyledLogin
-                onSubmit={handleSubmit}
-            >
+            <StyledLogin>
                 <SlideShow
                     images={images}
                 />
                 <div className='authentication'>
-                    <AuthenticationForm>
+                    <AuthenticationForm onSubmit={handleSubmit}>
                         <Logo/>
                         <h1 className='otherError'>{otherError}</h1>
                         <AuthInput

@@ -116,8 +116,8 @@ const TestFonts = styled.div.attrs(() => ({
 `;
 
 const TestImageDownload = styled.img`
-    width: 500px;
-    height: auto;
+    max-width: 500px;
+    max-height: 400px;
     align-self: center;
 `;
 
@@ -169,7 +169,7 @@ class Testing extends React.Component {
                 {userInfo && Object.keys(userInfo).map((item,index) => <h1 key={index}>{`${item} : ${userInfo[item]}`}</h1>)}
             </TestRedux>
             { profile_image && <TestImageDownload src={profile_image} /> }
-            <TestImageDownload src='/static/images/cocktail-1.jpg' />
+            <TestImageDownload src='/images/cocktail-1.jpg' />
         </StyledTesting>;
     }
 }
