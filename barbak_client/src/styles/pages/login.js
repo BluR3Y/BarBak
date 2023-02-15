@@ -79,5 +79,19 @@ export const SubmitBtn = styled.input.attrs(() => ({
     padding: 6px 0;
     width: 100%;
     margin: 35px 0 0 0;
+`;
 
+export const RegisterContainer = styled.div`
+    margin-top: 30px;
+    margin-bottom: 50px;
+    max-width: 370px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    padding: 20px 40px;
+    border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
+    background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
 `;

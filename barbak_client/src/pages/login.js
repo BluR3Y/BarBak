@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import React from 'react';
-import { StyledLogin, AuthenticationForm, SubmitBtn, AssistLink } from '@/styles/pages/login';
+import { StyledLogin, AuthenticationForm, SubmitBtn, AssistLink, RegisterContainer } from '@/styles/pages/login';
+import Router from 'next/router';
 import Logo from '@/components/logo';
 
 import SlideShow from '@/components/slideshow';
@@ -9,6 +10,7 @@ import { withOutAuth } from '@/hocs/authWrapper';
 
 import { connect } from 'react-redux';
 import { setUserInfo } from '@/redux/actions';
+import axios from 'axios';
 
 class Login extends React.Component {
     constructor(props) {
@@ -24,12 +26,7 @@ class Login extends React.Component {
 
     static async getInitialProps(ctx) {
         const barbak_backend_uri = process.env.BARBAK_BACKEND;
-
         return { barbak_backend_uri };
-    }
-    
-    componentDidMount() {
-        console.log(this.props)
     }
 
     emailCallback = (email) => {
@@ -45,44 +42,39 @@ class Login extends React.Component {
     }
 
     handleSubmit = async (event) => {
-        event.preventDefault();
-        const { email, password } = this.state;
-
         try {
-            const loginResponse = await fetch('http://localhost:3000/users/login', {
-                method: 'POST',
+            event.preventDefault();
+            const { email, password } = this.state;
+            const { barbak_backend_uri, updateUserInfo } = this.props;
+
+            const {data} = await axios.post(`${barbak_backend_uri}/users/login`, {
+                username: email,
+                password
+            }, {
+                withCredentials: true,
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    username: email,
-                    password
-                })
+                }
             });
-            const resData = await loginResponse.json();
-            if (!loginResponse.ok) {
-                const errorObj = new Error(loginResponse.statusText);
-                errorObj.info = await resData;
-                throw errorObj;
+            updateUserInfo(data);
+            Router.push('/');
+        } catch(err) {
+            const errorResponse = err.response;
+            if (errorResponse.status === 400) {
+                const { data } = errorResponse;
+                switch (data.path) {
+                    case 'user':
+                        this.setState({ emailError: data.message });
+                        break;
+                    case 'password':
+                        this.setState({ passwordError: data.message });
+                        break;
+                }
+            } else if (errorResponse.status === 500) {
+                this.setState({ otherError: 'An error occured while processing your request' });
             }
-        } catch (err) {
-            console.log("error")
         }
-    }
-
-    handleTesting = async (event) => {
-        event.preventDefault();
-        const res = await fetch('http://localhost:3000/users/check-session', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'include'
-        });
-        console.log(res.status);
     }
 
     render() {
@@ -109,9 +101,7 @@ class Login extends React.Component {
                 />
                 <div className='authentication'>
                     <AuthenticationForm>
-                        <Logo
-                            onClick={this.handleTesting}
-                        />
+                        <Logo/>
                         <h1 className='otherError'>{otherError}</h1>
                         <AuthInput
                             labelText={'Email or Username'}
@@ -130,6 +120,9 @@ class Login extends React.Component {
                         <AssistLink href='/'>Forgot Password?</AssistLink>
                         <SubmitBtn value='Sign In' />
                     </AuthenticationForm>
+                    <RegisterContainer>
+                        ds
+                    </RegisterContainer>
                 </div>
             </StyledLogin>
         </>)
@@ -138,7 +131,7 @@ class Login extends React.Component {
 
 const mapStateToProps = (state) => {
     return {
-        userId: state.userReducer.user_id
+        userInfo: state.userReducer.userInfo
     }
 }
 
@@ -148,4 +141,4 @@ const mapDispatchToProps = (dispatch) => {
     }
 }
 
-export default withOutAuth(connect(mapStateToProps, mapDispatchToProps)(Login), '/testing');
+export default withOutAuth(connect(mapStateToProps, mapDispatchToProps)(Login), '/');

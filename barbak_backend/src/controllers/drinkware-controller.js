@@ -14,7 +14,7 @@ module.exports.create = async (req, res) => {
         await createdDrinkware.validate();
         await createdDrinkware.customValidate();
 
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/drinkware/', req.file) : null;
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/images/', req.file) : null;
         createdDrinkware.image = uploadInfo ? uploadInfo.filename : null;
         createdDrinkware.save();
     } catch (err) {

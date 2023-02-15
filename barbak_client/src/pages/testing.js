@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { connect } from "react-redux";
+import axios from "axios";
 
 const StyledTesting = styled.div`
     height: 100vh;
@@ -114,35 +115,68 @@ const TestFonts = styled.div.attrs(() => ({
     }
 `;
 
+const TestImageDownload = styled.img`
+    width: 500px;
+    height: auto;
+    align-self: center;
+`;
+
 const TestRedux = styled.div`
     font-family: 'Courier New', Courier, monospace;
     font-size: 10px;
 `;
 
 class Testing extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            profile_image: null
+        };
+    }
+
+    static getInitialProps = async (ctx) => {
+        const barbak_backend_uri = process.env.BARBAK_BACKEND;
+        return { barbak_backend_uri };
+    }
+
+    componentDidMount() {
+        if (this.props.user !== null)
+            this.getProfileImage();
+    }
+
+    getProfileImage = async () => {
+        try {
+            const { userInfo, barbak_backend_uri } = this.props;
+            const res = await axios.get( barbak_backend_uri + '/assets/' + userInfo.profile_image, {
+                withCredentials: true,
+                responseType: 'blob'
+            });
+            const blob = new Blob([res.data], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            this.setState({ profile_image: url });
+        } catch(err) {
+            console.log(err)
+        }
+    }
+
     render() {
-        const { userId, username, userEmail, userProfileImage, userExperience } = this.props;
+        const { userInfo } = this.props;
+        const { profile_image } = this.state;
         return <StyledTesting>
             <TestThemes/>
             <TestFonts/>
             <TestRedux>
-                <h1>{userId}</h1>
-                <h1>{username}</h1>
-                <h1>{userEmail}</h1>
-                <h1>{userProfileImage}</h1>
-                <h1>{userExperience}</h1>
+                {userInfo && Object.keys(userInfo).map((item,index) => <h1 key={index}>{`${item} : ${userInfo[item]}`}</h1>)}
             </TestRedux>
+            { profile_image && <TestImageDownload src={profile_image} /> }
+            <TestImageDownload src='/static/images/cocktail-1.jpg' />
         </StyledTesting>;
     }
 }
 
 const mapStateToProps = (state) => {
     return {
-        userId: state.userReducer.user_id,
-        username: state.userReducer.user_name,
-        userEmail: state.userReducer.user_email,
-        userProfileImage: state.userReducer.user_profile_image,
-        userExperience: state.userReducer.user_experience
+        userInfo: state.userReducer.userInfo
     }
 }
 

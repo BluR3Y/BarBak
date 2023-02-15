@@ -67,4 +67,15 @@ userSchema.methods.customValidate = async function() {
         throw error;0
 }
 
+userSchema.methods.getPublicInfo = function() {
+    const { _id, username, email, profile_image, experience } = this;
+    return {
+        _id,
+        username,
+        email,
+        profile_image,
+        experience
+    };
+}
+
 module.exports = mongoose.model("User", userSchema);

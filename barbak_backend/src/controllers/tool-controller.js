@@ -18,7 +18,7 @@ module.exports.create = async (req, res) => {
         await createdTool.validate();
         await createdTool.customValidate();
 
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/tools/', req.file) : null;
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/images/', req.file) : null;
         createdTool.image = uploadInfo ? uploadInfo.filename : null;
         await createdTool.save();
     } catch (err) {
@@ -90,7 +90,7 @@ module.exports.validatePublication = async (req, res) => {
             });
             await createdPublicTool.validate();
 
-            const uploadInfo = image ? await FileOperations.copySingle('assets/tools/', image) : null;
+            const uploadInfo = image ? await FileOperations.copySingle('assets/images/', image) : null;
             createdPublicTool["image"] = uploadInfo;
             await createdPublicTool.save();
         }

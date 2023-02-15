@@ -15,6 +15,18 @@ module.exports.testUploads = async (req,res) => {
     res.send('Test')
 }
 
+module.exports.testDownloads = async (req, res) => {
+    try {
+        const { filename } = req.body;
+
+        const image = await FileOperations.readSingle('assets/images/', filename)
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        res.end(image, 'binary');
+    } catch (err) {
+        return res.status(500).send(err);
+    }
+}
+
 module.exports.register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -28,7 +40,7 @@ module.exports.register = async (req, res) => {
         await createdUser.validate();
         await createdUser.customValidate();
 
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/users/', req.file) : null;
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/images/', req.file) : null;
         createdUser.profile_image = uploadInfo ? uploadInfo.filename : null;
 
         await createdUser.save();

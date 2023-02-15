@@ -33,26 +33,22 @@ exports.configureMiddleware = function(app) {
 exports.authenticate = {
     // Email/Password:
     localLogin: async function(req, res, next) {
-        return passport.authenticate('local-login', (err, user, info) => {
-            if (err)
-                return res.status(400).send(err);
-            else if (!user)
-                return res.status(500).send("An error occured while processing your request");
-            req.logIn(user, err => {
-                if (err) throw err;
-                const { _id, username, email, profile_image, experience } = user;
-                const userInfo = {
-                    userId: _id,
-                    username,
-                    email,
-                    profile_image,
-                    experience
-                };
-                res.status(200).send(userInfo);
-            })
-        })(req, res, next);
+        return passport.authenticate('local-login', authenticationStrategyCallback(req, res, next))(req, res, next);
     }
-};
+}
+
+function authenticationStrategyCallback(req, res, next) {
+    return (err, user, info) => {
+        if (err)
+            return res.status(400).send(err);
+        req.logIn(user, function(err) {
+            if (err)
+                return res.status(500).send('An error occured while processing your request');
+            const publicInfo = user.getPublicInfo();
+            res.status(200).send(publicInfo);
+        })
+    }
+}
 
 // Middleware that checks if session exists
 exports.sessionAuthenticationRequired = function(req, res, next) {

@@ -37,3 +37,14 @@ module.exports.copySingle = function(uploadPath, file) {
         });
     });
 }
+
+module.exports.readSingle = function(filepath, file) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(filepath + file))
+            reject("File does not exist");
+        fs.readFile(filepath + file, function(err , data) {
+            if (err) return reject(err);
+            resolve(data);
+        })
+    })
+}
