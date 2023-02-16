@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { scryptSync, randomBytes, timingSafeEqual } = require('crypto');
+const { scryptSync, randomBytes, timingSafeEqual, randomInt } = require('crypto');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
         default: 'novice',
         enum: [ "novice", "experienced", "expert" ]
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
     registration_date: {
         type: Date,
         immutable: true,
@@ -45,6 +49,11 @@ userSchema.statics.hashPassword = function(password) {
     const salt = randomBytes(16).toString('hex');
     const hashedPassword = scryptSync(password, salt, 64).toString('hex');
     return `${salt}:${hashedPassword}`;
+}
+
+userSchema.statics.generateVerificationCode = function() {
+    const code = randomInt(100000, 999999);
+    return code.toString();
 }
 
 userSchema.methods.validatePassword = async function(attempt) {

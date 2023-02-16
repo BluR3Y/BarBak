@@ -11,6 +11,7 @@ function connectRoutes(router) {
     router.get('/getTest', auth.sessionAuthenticationRequired, userController.test);
     // router.post('/testupload', userUploads.single('testImage'), userController.testUploads);
     router.post('/get-image', userController.testDownloads);
+    router.get('/test-nodemailer', userController.testNodeMailer);
 
     router.post('/users/register', upload.single('profileImage'), userController.register);
     router.post('/users/login', userController.login);

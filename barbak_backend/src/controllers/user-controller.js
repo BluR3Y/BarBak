@@ -1,4 +1,5 @@
 const FileOperations = require('../utils/file-operations');
+const NodeMailerOperations = require('../utils/nodemailer-operations');
 
 const User = require('../models/user-model');
 const auth = require('../auth');
@@ -25,6 +26,13 @@ module.exports.testDownloads = async (req, res) => {
     } catch (err) {
         return res.status(500).send(err);
     }
+}
+
+module.exports.testNodeMailer = async (req, res) => {
+    const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
+    console.log(mailerRes);
+
+    res.status(200).send('hello')
 }
 
 // module.exports.register = async (req, res) => {
@@ -80,6 +88,8 @@ module.exports.register = async (req, res) => {
         await createdUser.validate();
         await createdUser.customValidate();
         await createdUser.save();
+
+        // to do: 1. generate verification code, store code
 
         // temporary res
         res.status(204).send();
