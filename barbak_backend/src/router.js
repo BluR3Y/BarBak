@@ -14,5 +14,6 @@ require('./routes/drinkware-routes').connect(router);
 require('./routes/ingredient-routes').connect(router);
 require('./routes/tool-routes').connect(router);
 require('./routes/developer-routes').connect(router);
+require('./routes/asset-routes').connect(router);
 
 module.exports = router;

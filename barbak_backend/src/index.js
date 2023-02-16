@@ -18,7 +18,7 @@ connectDB.ready.then(_ => {
     // for parsing application/x-www-form-urlencoded
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cors({
-        origin: 'http://localhost:3000',    // replaced with WEB_SERVER_URI
+        origin: 'http://localhost:8000',    // replaced with WEB_SERVER_URI
         credentials: true,
     }));
     // for parsing cookies

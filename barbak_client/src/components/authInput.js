@@ -9,7 +9,7 @@ export default class AuthInput extends React.Component {
         super(props);
         this.state = {
             labelText: props.labelText || '',
-            errorText: props.errorText || '',
+            // errorText: props.errorText || '',
             isFocused: false,
         }
     }
@@ -25,8 +25,8 @@ export default class AuthInput extends React.Component {
         const { inputValue, inputCallback, errorText, inputType } = this.props;
         return <StyledInput 
             isFocused={isFocused} 
-            isEmpty={inputValue === ''}  
-            emptyError={errorText === ''}
+            isEmpty={!inputValue.length}  
+            emptyError={!errorText || !errorText.length}
         >
             <div className="inputContainer">
                 <label htmlFor="input">{labelText}</label>

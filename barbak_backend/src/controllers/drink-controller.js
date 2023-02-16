@@ -24,7 +24,7 @@ module.exports.create = async (req, res) => {
         await createdDrink.validate();
         await createdDrink.customValidate();
 
-        const uploadInfo = req.files ? await FileOperations.uploadMultiple('assets/drinks/', req.files) : null;
+        const uploadInfo = req.files ? await FileOperations.uploadMultiple('assets/images/', req.files) : null;
         const filenames = uploadInfo.map(file => file.filename);
         createdDrink.images = filenames;
         await createdDrink.save();

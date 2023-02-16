@@ -5,8 +5,6 @@ services:
     depends_on:
       - barbak_client
       - barbak_backend
-      - api_client
-      - api_backend
     build:
       dockerfile: Dockerfile
       context: ./webserver
@@ -36,31 +34,7 @@ services:
       - /app/node_modules
       - assets:/app/assets
     env_file:
-      - ./barbak_backend/env/webhost.env
-    
-  api_client:
-    container_name: api_client
-    build:
-      dockerfile: Dockerfile
-      context: ./api_client
-    restart: on-failure
-    volumes:
-      - /app/node_modules
-    
-  api_backend:
-    container_name: api_backend
-    depends_on: 
-      - mongo
-      - mysql
-    build:
-      dockerfile: Dockerfile
-      context: ./api_backend
-    restart: on-failure
-    volumes:
-      - /app/node_modules
-      - assets:/app/assets
-    env_file:
-      - ./api_backend/env/webhost.env
+      - ./barbak_backend/env/production.env
 
   mongo:
     container_name: mongo
@@ -70,6 +44,8 @@ services:
     container_name: mysql
     image: mysql:latest
     command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - ./database/production.env
 
   # mongo:
   #   container_name: mongo

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { scryptSync, randomBytes, timingSafeEqual } = require('crypto');
+const { scryptSync, randomBytes, timingSafeEqual, randomInt } = require('crypto');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         lowercase: true,
     },
+    fullname: {
+        type: String,
+        lowercase: true,
+        default: null,
+    },
     password: {
         type: String,
         required: true,
@@ -20,12 +25,17 @@ const userSchema = new mongoose.Schema({
     },
     profile_image: {
         type: String,
+        default: null
     },
     experience: {
         type: String,
         lowercase: true,
         default: 'novice',
         enum: [ "novice", "experienced", "expert" ]
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
     },
     registration_date: {
         type: Date,
@@ -39,6 +49,11 @@ userSchema.statics.hashPassword = function(password) {
     const salt = randomBytes(16).toString('hex');
     const hashedPassword = scryptSync(password, salt, 64).toString('hex');
     return `${salt}:${hashedPassword}`;
+}
+
+userSchema.statics.generateVerificationCode = function() {
+    const code = randomInt(100000, 999999);
+    return code.toString();
 }
 
 userSchema.methods.validatePassword = async function(attempt) {
@@ -65,6 +80,18 @@ userSchema.methods.customValidate = async function() {
 
     if (Object.keys(error.errors).length)
         throw error;0
+}
+
+userSchema.methods.getPublicInfo = function() {
+    const { _id, username, email, profile_image, experience } = this;
+    return {
+        _id,
+        username,
+        email,
+        fullname,
+        profile_image,
+        experience
+    };
 }
 
 module.exports = mongoose.model("User", userSchema);

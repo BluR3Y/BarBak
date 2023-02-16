@@ -17,9 +17,10 @@ export const ImageItem = styled.img.attrs(_ => ({
     left: 50%;
     top: 50%;
     transform: translate(-50%,-50%);
-    width: 100%;
-    height: fit-content;
     display: none;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
 
     ${props => props.active && `
         display: block;

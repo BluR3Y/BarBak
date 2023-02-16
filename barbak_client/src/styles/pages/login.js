@@ -17,6 +17,7 @@ export const StyledLogin = styled.div`
         justify-content: center;
         align-items: center;
         position: relative;
+        user-select: none;
     }
 `;
 
@@ -49,13 +50,6 @@ export const AuthenticationForm = styled.form`
         line-height: 18px;
         margin-left: 8px;
     }
-
-    input:focus,
-    select:focus,
-    textarea:focus,
-    button:focus {
-        outline: none;
-    }
 `;
 
 export const AssistLink = styled.a`
@@ -74,10 +68,37 @@ export const SubmitBtn = styled.input.attrs(() => ({
     font-size: 18px;
     cursor: pointer;
     border: none;
+    color: ${props => props.theme.background};
     background-color: ${props => props.theme.primary};
-    border-radius: 20px;
-    padding: 6px 0;
+    border-radius: 6px;
+    padding: 5px 0;
     width: 100%;
     margin: 35px 0 0 0;
+`;
 
+export const RegisterContainer = styled.div`
+    margin-top: 10px;
+    margin-bottom: 50px;
+    max-width: 370px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    padding: 20px 40px;
+    border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
+    background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
+
+    h1 {
+        font-family: 'Open Sans';
+        font-size: 14px;
+        font-weight: 400;
+        color: ${props => props.theme.accent};
+        a {
+            text-decoration: none;
+            font-weight: 500;
+            color: ${props => props.theme.primary};
+        }
+    }
 `;
