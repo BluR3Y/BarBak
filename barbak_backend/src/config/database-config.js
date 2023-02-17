@@ -1,54 +1,51 @@
 const mongoose = require('mongoose');
-const Promise = require('bluebird');
 const mysql = require('mysql');
+const redis = require('redis');
+const Promise = require('bluebird');
 
-const connectMongo = () => {
-    return new Promise((resolve, reject) => {
-        const { MONGODB_URI } = process.env;
-        mongoose.set('strictQuery', false);
-        mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        })
-        .then((db) => resolve(db))
-        .catch(err => reject(err));
-    })
+// MongoDB Connection
+const mongoConnect = () => {
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
+    mongoose.set('strictQuery', false);
+    return mongoose.connect(mongoUri, mongoConfig);
 }
 
-const MySQLConnection = mysql.createConnection({
-    host: '127.0.0.1',
-    port: '3306',
-    database: 'barbak',
-    user: 'root',
-    password: process.env.MYSQL_PASSWORD
+// MYSQL Connection
+const mysqlConnection = mysql.createConnection({
+    host: process.env.MYSQL_HOST,
+    port: process.env.MYSQL_PORT,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: 'barbak'
 });
-
-const connectMySQL = () => {
-    return new Promise((resolve, reject) => {
-        MySQLConnection.connect(function(err) {
-            if (err) return reject(err);
-            resolve();
-        })
-    })
-}
-
 const executeSqlQuery = function(query, values) {
     return new Promise((resolve, reject) => {
-        MySQLConnection.query(query, values, (err, results) => {
+        mysqlConnection.query(query, values, (err, results) => {
             if (err) return reject(err);
             return resolve(results);
         })
     })
 }
 
+// Redis Connection
+const redisClient = redis.createClient({
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT
+});
+
 const ready = Promise.all([
-    connectMongo(),
-    connectMySQL()
+    mongoConnect(), 
+    mysqlConnection.connect(), 
+    redisClient.connect()
 ]);
 
 module.exports = {
     ready,
     // Returns the current mongoose instance
     getMongoose: () => mongoose,
-    executeSqlQuery: executeSqlQuery
+    // Query MySQL Database
+    executeSqlQuery,
+    // Returns the current redis instance
+    redisClient
 }
