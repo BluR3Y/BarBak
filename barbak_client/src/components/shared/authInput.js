@@ -1,6 +1,6 @@
 import React from "react";
 
-import { StyledInput } from '@/styles/components/authInput';
+import { StyledInput } from '@/styles/components/shared/authInput';
 import EyeClose from 'public/icons/eye-close.js';
 import EyeOpen from 'public/icons/eye-open.js';
 
