@@ -14,7 +14,7 @@ import { StyledSubmitBtn } from '@/styles/components/register/submitBtn';
 import Logo from '@/components/shared/logo';
 import SlideShow from '@/components/shared/slideshow';
 import AuthInput from '@/components/shared/authInput';
-import { withOutAuth } from '@/hocs/authWrapper';
+import { withOutAuth } from '@/components/hocs/authWrapper';
 
 
 class Login extends React.Component {

@@ -1,46 +1,42 @@
 import Head from 'next/head';
 import React from "react";
-import Router from 'next/router';
-import Link from 'next/link';
-import axios from 'axios';
 
-import { withOutAuth } from "@/hocs/authWrapper";
+import { withOutAuth } from "@/components/hocs/authWrapper";
 import { StyledRegister } from '@/styles/pages/register';
 
-// import Logo from '@/components/shared/logo';
 import SlideShow from '@/components/shared/slideshow';
-import AuthInput from '@/components/shared/authInput';
-
-// import { connect } from 'react-redux';
-// import { setUserInfo } from '@/redux/actions';
 
 import RegistrationOne from '@/components/register/registerOne';
 import RegistrationTwo from '@/components/register/registerTwo';
+
+const registrationSteps = [RegistrationOne, RegistrationTwo]
 
 class Register extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            registrationStep: 0
+            registrationStep: 0,
+            registrationInfo: {}
         }
     }
 
-    activeRegistration = () => {
-        const { registrationStep } = this.state;
-
-        if (registrationStep === 0)
-            return RegistrationOne;
-        else if (registrationStep === 1)
-            return RegistrationTwo;
+    updateActiveRegistration = (direction) => {
+        if (direction === 'next')
+            this.setState(prevState => ({ registrationStep: prevState.registrationStep + 1 }));
+        else if (direction === 'prev')
+            this.setState(prevState => ({ registrationStep: prevState.registrationStep - 1 }));
     }
 
-    updateActiveRegistration = (val) => {
-        this.setState({ registrationStep: val });
+    updateRegistrationInfo = (info) => {
+        this.setState(prevState => ({ registrationInfo: {
+            ...prevState.registrationInfo,
+            ...info
+        } }));
     }
 
     render() {
-        const { activeRegistration, updateActiveRegistration } = this;
-        const ActiveComponent = activeRegistration(); 
+        const { registrationStep, registrationInfo } = this.state;
+        const { updateRegistrationInfo, updateActiveRegistration } = this;
         const images = [
             '/test/test-1.jpg',
             '/test/test-2.jpg',
@@ -60,7 +56,15 @@ class Register extends React.Component {
                     images={images}
                 />
                 <div className='authentication'>
-                    <ActiveComponent updateActiveRegistration={updateActiveRegistration} />
+                    { registrationSteps.map((Component, index) => (
+                        <Component 
+                            key={index} 
+                            activeForm={registrationStep === index}
+                            updateActiveRegistration={updateActiveRegistration}
+                            updateRegistrationInfo={updateRegistrationInfo}
+                            registrationInfo={registrationInfo}
+                        />
+                    ))}
                 </div>
             </StyledRegister>
         </>

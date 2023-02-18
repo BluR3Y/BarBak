@@ -1,12 +1,11 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { StyledLogo } from "./logo";
 import { StyledInput } from "./authInput";
 import { hexToRgba } from "../../utils/color_conversion";
 
 export const AuthenticationForm = styled.form`
-    max-width: 370px;
+    max-width: 400px;
     width: 80%;
-    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -14,6 +13,13 @@ export const AuthenticationForm = styled.form`
     padding: 30px 40px;
     border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
     background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
+
+    ${({ activeForm }) => activeForm === undefined && css`
+        display: flex;
+    `}
+    ${({ activeForm }) => activeForm !== undefined && css`
+        display: ${activeForm ? 'flex' : 'none'};
+    `}
 
     & ${StyledLogo} {
         font-size: 40px;

@@ -38,7 +38,7 @@ module.exports.testNodeMailer = async (req, res) => {
 module.exports.register = async (req, res) => {
     try {
         const { fullname, email, password } = req.body;
-        
+
         if (await User.findOne({ email }))
             return res.status(400).send({ path: 'email', type: 'exist', message: 'Email is already associated with another account' });
 
