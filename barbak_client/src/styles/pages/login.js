@@ -31,7 +31,7 @@ export const AssistLink = styled.a`
 export const RegisterContainer = styled.div`
     margin-top: 10px;
     margin-bottom: 50px;
-    max-width: 370px;
+    max-width: 400px;
     width: 80%;
     display: flex;
     flex-direction: column;

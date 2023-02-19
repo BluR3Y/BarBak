@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import React from "react";
+import Router from 'next/router';
 
 import { withOutAuth } from "@/components/hocs/authWrapper";
 import { StyledRegister } from '@/styles/pages/register';
@@ -8,16 +9,22 @@ import SlideShow from '@/components/shared/slideshow';
 
 import RegistrationOne from '@/components/register/registerOne';
 import RegistrationTwo from '@/components/register/registerTwo';
+import RegistrationThree from '@/components/register/registerThree';
 
-const registrationSteps = [RegistrationOne, RegistrationTwo]
+const registrationSteps = [RegistrationOne, RegistrationTwo, RegistrationThree]
 
 class Register extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             registrationStep: 0,
-            registrationInfo: {}
+            registrationInfo: new Array()
         }
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (this.state.registrationStep === 3)
+            Router.push('/');
     }
 
     updateActiveRegistration = (direction) => {

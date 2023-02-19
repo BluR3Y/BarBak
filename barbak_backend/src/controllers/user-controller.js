@@ -127,6 +127,12 @@ module.exports.usernameSelection = async (req, res) => {
         delete req.session.registrationInfoEncryptionKey;
         delete req.session.registrationInfoIV;
 
+        await new Promise((resolve, reject) => {
+            req.logIn(createdUser, (err) => {
+                if (err) return reject(err);
+                resolve();
+            })
+        });
         res.status(200).send(createdUser.getPublicInfo());
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {

@@ -42,6 +42,7 @@ function RegistrationOne(props) {
         } catch(err) {
             if (err.name === "AxiosError") {
                 const errorResponse = err.response;
+                console.log(errorResponse)
                 if (errorResponse.status === 400) {
                     const { data } = errorResponse;
                     switch (data.path) {
