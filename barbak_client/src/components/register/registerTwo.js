@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import Logo from "../shared/logo";
-import { SubmitBtn } from "@/styles/pages/register_old";
+import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import { FormHeaders, CodeContainer, DigitInput, ResendLink, ErrorMessage } from "@/styles/components/register/registerTwo";
 import axios from "axios";
 
@@ -93,7 +93,7 @@ function RegistrationTwo(props) {
             <ResendLink onClick={resendVerificationCode}>Resend Code</ResendLink>
             {/* { error && <h1 className="otherError">{error}</h1> } */}
             { error && <ErrorMessage>{error}</ErrorMessage> }
-        <SubmitBtn/>
+        <StyledSubmitBtn value='Next' />
     </AuthenticationForm>;
 }
 

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import Logo from "../shared/logo";
 import AuthInput from "../shared/authInput";
-import { SubmitBtn } from "@/styles/pages/register_old";
+import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "@/redux/actions";
@@ -56,7 +56,7 @@ function RegistrationThree(props) {
             inputCallback={(val) => setUsername(val)}
         />
             { otherError && <h1 className="otherError">{otherError}</h1> }
-        <SubmitBtn value='Sign Up' />
+        <StyledSubmitBtn value='Sign Up' />
     </AuthenticationForm>;
 }
 export default RegistrationThree;

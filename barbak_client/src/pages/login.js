@@ -7,9 +7,10 @@ import Link from 'next/link';
 import { connect } from 'react-redux';
 import { setUserInfo } from '@/redux/actions';
 
-import { StyledLogin, AssistLink, RegisterContainer } from '@/styles/pages/login';
+import { StyledLogin, AssistLink } from '@/styles/pages/login';
 import { AuthenticationForm } from '@/styles/components/shared/authForm';
 import { StyledSubmitBtn } from '@/styles/components/register/submitBtn';
+import { RedirectContainer } from '@/styles/components/shared/authRedirect';
 
 import Logo from '@/components/shared/logo';
 import SlideShow from '@/components/shared/slideshow';
@@ -73,6 +74,9 @@ class Login extends React.Component {
                 }
             });
             updateUserInfo(data);
+
+            // To prevent users from returning to login page, replace login page path with home page path in browser's history
+            window.history.replaceState({}, '', '/');
             Router.push('/');
         } catch(err) {
             if (err.name === "AxiosError") {
@@ -149,9 +153,9 @@ class Login extends React.Component {
                         <AssistLink href='/'>Forgot Password?</AssistLink>
                         <StyledSubmitBtn value='Sign In' />
                     </AuthenticationForm>
-                    <RegisterContainer>
+                    <RedirectContainer>
                         <h1>Don't have an account? <Link href='/register'>Sign Up</Link></h1>
-                    </RegisterContainer>
+                    </RedirectContainer>
                 </div>
             </StyledLogin>
         </>)

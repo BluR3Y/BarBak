@@ -23,8 +23,11 @@ class Register extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (this.state.registrationStep === 3)
+        if (this.state.registrationStep === 3) {
+            // To prevent users from returning to registration page, replace registration page path with home page path in browser's history
+            window.history.replaceState({}, '', '/');
             Router.push('/');
+        }
     }
 
     updateActiveRegistration = (direction) => {

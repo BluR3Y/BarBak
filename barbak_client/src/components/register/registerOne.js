@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
+import { RedirectContainer } from "@/styles/components/shared/authRedirect";
 
 import Logo from "../shared/logo";
 import AuthInput from "../shared/authInput";
@@ -76,32 +78,37 @@ function RegistrationOne(props) {
         }
     }
 
-    return <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
-        <Logo/>
-        { otherError && <h1 className='otherError'>{otherError}</h1> }
-        <AuthInput
-            labelText={'Full Name'}
-            errorText={fullnameError}
-            inputValue={fullname}
-            inputType={'text'}
-            inputCallback={(val) => setFullName(val)}
-        />
-        <AuthInput
-            labelText={'Email'}
-            errorText={emailError}
-            inputValue={email}
-            inputType={'text'}
-            inputCallback={(val) => setEmail(val)}
-        />
-        <AuthInput
-            labelText={'Password'}
-            errorText={passwordError}
-            inputValue={password}
-            inputType={'password'}
-            inputCallback={(val) => setPassword(val)}
-        />
-        <StyledSubmitBtn value='next' />
-    </AuthenticationForm>;
+    return <>
+        <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
+            <Logo/>
+            { otherError && <h1 className='otherError'>{otherError}</h1> }
+            <AuthInput
+                labelText={'Full Name'}
+                errorText={fullnameError}
+                inputValue={fullname}
+                inputType={'text'}
+                inputCallback={(val) => setFullName(val)}
+            />
+            <AuthInput
+                labelText={'Email'}
+                errorText={emailError}
+                inputValue={email}
+                inputType={'text'}
+                inputCallback={(val) => setEmail(val)}
+            />
+            <AuthInput
+                labelText={'Password'}
+                errorText={passwordError}
+                inputValue={password}
+                inputType={'password'}
+                inputCallback={(val) => setPassword(val)}
+            />
+            <StyledSubmitBtn value='Next' />
+        </AuthenticationForm>
+        <RedirectContainer>
+            <h1>Already Registered? <Link href='/login'>Log In</Link></h1>
+        </RedirectContainer>
+    </>;
 }
 
 export default RegistrationOne;
