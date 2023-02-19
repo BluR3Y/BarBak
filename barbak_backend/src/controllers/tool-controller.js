@@ -6,7 +6,7 @@ module.exports.create = async (req, res) => {
         const { name, description, type, material } = req.body;
 
         if (await privateTool.findOne({ user: req.user, name }))
-            return res.status(400).send({ path: 'name', type: 'exist' });
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'Each private tool is required to have a unique name' });
 
         const createdTool = new privateTool({
             name,
@@ -43,18 +43,18 @@ module.exports.create = async (req, res) => {
     res.status(204).send();
 }
 
-module.exports.submiPublication = async (req, res) => {
+module.exports.submitPublication = async (req, res) => {
     try {
         const { toolId } = req.body;
         const toolInfo = await privateTool.findOne({ _id: toolId });
         if (!toolInfo)
-            return res.status(400).send({ path: 'toolId', type: 'exist' });
+            return res.status(400).send({ path: 'toolId', type: 'exist', message: 'Tool does not exist' });
         else if (!toolInfo.user.equals(req.user._id))
-            return res.status(400).send({ path: 'toolId', type: 'valid' });
+            return res.status(400).send({ path: 'toolId', type: 'valid', message: 'You do not have ownership of tool' });
         else if (toolInfo.visibility === 'in-review')
-            return res.status(400).send({ path: 'toolId', type: 'process' });
+            return res.status(400).send({ path: 'toolId', type: 'process', message: 'Tool in currently being reviewed' });
         else if (await publicTool.findOne({ name: toolInfo.name, visibility: 'public' }))
-            return res.status(400).send({ path: 'name', type: 'exist' });
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A public tool with this name currently exists' });
 
         toolInfo["visibility"] = 'in-review';
         await toolInfo.save();
@@ -64,21 +64,46 @@ module.exports.submiPublication = async (req, res) => {
     res.status(204).send();
 }
 
+module.exports.getPendingPublications = async (req, res) => {
+    try {
+        const { 
+            page = 1,
+            page_size = 10
+        } = req.query;
+
+        if (req.user.experience !== 'expert')
+            return res.status(401).send({ path: 'experience', type: 'insufficient', message: 'Users must have an experience level of "expert" to validate publication requests' });
+        else if (page < 1)
+            return res.status(400).send({ path: 'page', type: 'valid', message: 'page must be greater or equal to 1' });
+        else if (page_size < 1 || page_size > 10)
+            return res.status(400).send({ path: 'page_size', type: 'valid', message: 'page_size must be greater than 0 and less than 11' });
+
+        const pendingTools = await privateTool.find({ visibility: 'in-review' })
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .publicInfo();
+
+        res.status(200).send(pendingTools);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
 module.exports.validatePublication = async (req, res) => {
     try {
-
+        // Allow multiple experts, 3, to validate each tool
         const { toolId, validation, reason } = req.body;
 
         if (req.user.experience !== 'expert')
-            return res.status(401).send({ path: 'user', type: 'unauthorized' });
+            return res.status(401).send({ path: 'user', type: 'unauthorized', message: 'You are not authorized to validate publication requests' });
         
         const toolInfo = await privateTool.findOne({ _id: toolId });
         if (!toolInfo)
-            return res.status(400).send({ path: 'toolId', type: 'exist' });
+            return res.status(400).send({ path: 'toolId', type: 'exist', message: 'Tool does not exist' });
         else if (toolInfo.visibility !== 'in-review')
-            return res.status(400).send({ path: 'toolId', type: 'valid' });
+            return res.status(400).send({ path: 'toolId', type: 'valid', message: 'Review of tool was not requested' });
         else if (await privateTool.findOne({ name: toolInfo.name, visibility: 'public' }))
-            return res.status(400).send({ path: 'name', type: 'exist' });
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool public tool with this name currently exists' });
 
         if (validation === "approve") {
             const { name, description, type, material, image } = toolInfo;
@@ -121,7 +146,7 @@ module.exports.search = async (req, res) => {
                     return res.status(400).send({ path: 'types', type: 'valid', index });
             }
         } else 
-            types = await privateTool.getTypes();
+            types = await publicTool.getTypes();
 
         if (materials !== null) {
             for(const index in materials) {
@@ -129,7 +154,7 @@ module.exports.search = async (req, res) => {
                     return res.status(400).send({ path: 'materials', type: 'valid', index });
             }
         } else
-            materials = await privateTool.getMaterials();
+            materials = await publicTool.getMaterials();
 
         const result = await publicTool.find({ name: { $regex: query } })
             .visibility(req.user)
@@ -141,6 +166,35 @@ module.exports.search = async (req, res) => {
         
         res.status(200).send(result);
     } catch (err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.getPrivateTools = async (req, res) => {
+    try {
+        const {_id} = req.user;
+        const userTools = await privateTool.find({ user: _id }).publicInfo();
+
+        res.status(200).send(userTools);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.getToolTypes = async (req, res) => {
+    try {
+        const toolTypes = await publicTool.getTypes();
+        res.status(200).send(toolTypes);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.getToolMaterials = async (req, res) => {
+    try {
+        const toolMaterials = await publicTool.getMaterials();
+        res.status(200).send(toolMaterials);
+    } catch(err) {
         res.status(500).send(err);
     }
 }

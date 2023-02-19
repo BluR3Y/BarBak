@@ -43,6 +43,32 @@ publicToolSchema.query.visibility = function(user) {
     return this.or([ { visibility: 'public' }, { user: user._id } ]);
 }
 
+publicToolSchema.query.publicInfo = function() {
+    return this.select('name description type material image -model');
+}
+
+publicToolSchema.statics.getTypes = async function() {
+    const types = await executeSqlQuery(`SELECT name FROM tool_types`);
+    return (await types.map(item => item.name))
+}
+
+publicToolSchema.statics.getMaterials = async function() {
+    const materials = await executeSqlQuery(`SELECT name FROM tool_materials`);
+    return (await materials.map(item => item.name));
+}
+
+publicToolSchema.statics.validateType = async function(type) {
+    const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`)
+        .then(res => res.length ? res[0] : res);
+    return (type_id !== undefined);
+}
+
+publicToolSchema.statics.validateMaterial = async function(material) {
+    const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
+        .then(res => res.length ? res[0] : res);
+    return (material_id !== undefined);
+}
+
 const privateToolSchema = new mongoose.Schema({
     visibility: {
         type: String,
@@ -60,29 +86,6 @@ const privateToolSchema = new mongoose.Schema({
         immutable: true
     }
 });
-
-privateToolSchema.statics.getTypes = async function() {
-    const types = await executeSqlQuery(`SELECT name FROM tool_types`);
-    return (await types.map(item => item.name))
-}
-
-privateToolSchema.statics.getMaterials = async function() {
-    const materials = await executeSqlQuery(`SELECT name FROM tool_materials`);
-    return (await materials.map(item => item.name));
-}
-
-privateToolSchema.statics.validateType = async function(type) {
-    const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`)
-        .then(res => res.length ? res[0] : res);
-    console.log(type_id)
-    return (type_id !== undefined);
-}
-
-privateToolSchema.statics.validateMaterial = async function(material) {
-    const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
-        .then(res => res.length ? res[0] : res);
-    return (material_id !== undefined);
-}
 
 privateToolSchema.methods.customValidate = async function() {
     const error = new Error();
