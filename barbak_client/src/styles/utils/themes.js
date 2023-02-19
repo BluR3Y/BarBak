@@ -10,7 +10,7 @@ export const siteThemes = {
     dark: {
         type: 'dark',
         primary: '#FF5733',
-        secondary: '#2852a0',
+        secondary: '#385ddf',
         accent: '#adc5d4',
         background: '#202731'
     }

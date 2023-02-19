@@ -1,7 +1,4 @@
 import styled from "styled-components";
-import { StyledLogo } from "../components/logo";
-import { StyledInput } from "../components/authInput";
-import { hexToRgba } from "../utils/color_conversion";
 
 export const StyledRegister = styled.div`
     display: flex;
@@ -18,76 +15,9 @@ export const StyledRegister = styled.div`
         position: relative;
         user-select: none;
     }
-`;
 
-export const RegistrationForm = styled.form`
-    max-width: 370px;
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    padding: 30px 40px;
-    border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
-    background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
-
-    & ${StyledLogo} {
-        font-size: 40px;
-        margin: 0 0 25px 0;
-    }
-    & ${StyledInput} {
-        margin-bottom: 10px;
-    }
-
-    .otherError {
-        font-size: 16px;
-        font-family: 'Poppins';
-        font-weight: 400;
-        top: 100%;
-        color: #e82113;
-        line-height: 18px;
-        margin-left: 8px;
+    form {
+        
     }
 `;
 
-export const SubmitBtn = styled.input.attrs(() => ({
-    type: 'submit'
-}))`
-    font-family: 'Poppins';
-    font-size: 18px;
-    cursor: pointer;
-    border: none;
-    color: ${props => props.theme.background};
-    background-color: ${props => props.theme.primary};
-    border-radius: 6px;
-    padding: 5px 0;
-    width: 100%;
-    margin: 35px 0 0 0;
-`;
-
-export const LoginContainer = styled.div`
-    margin-top: 10px;
-    max-width: 370px;
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    padding: 20px 40px;
-    border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
-    background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
-
-    h1 {
-        font-family: 'Open Sans';
-        font-size: 14px;
-        font-weight: 400;
-        color: ${props => props.theme.accent};
-        a {
-            text-decoration: none;
-            font-weight: 500;
-            color: ${props => props.theme.primary};
-        }
-    }
-`;

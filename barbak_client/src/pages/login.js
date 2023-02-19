@@ -1,17 +1,21 @@
 import Head from 'next/head';
 import React from 'react';
-import { StyledLogin, AuthenticationForm, SubmitBtn, AssistLink, RegisterContainer } from '@/styles/pages/login';
 import Router from 'next/router';
-import Logo from '@/components/logo';
-
-import SlideShow from '@/components/slideshow';
-import AuthInput from '@/components/authInput';
-import { withOutAuth } from '@/hocs/authWrapper';
+import axios from 'axios';
+import Link from 'next/link';
 
 import { connect } from 'react-redux';
 import { setUserInfo } from '@/redux/actions';
-import axios from 'axios';
-import Link from 'next/link';
+
+import { StyledLogin, AssistLink, RegisterContainer } from '@/styles/pages/login';
+import { AuthenticationForm } from '@/styles/components/shared/authForm';
+import { StyledSubmitBtn } from '@/styles/components/register/submitBtn';
+
+import Logo from '@/components/shared/logo';
+import SlideShow from '@/components/shared/slideshow';
+import AuthInput from '@/components/shared/authInput';
+import { withOutAuth } from '@/components/hocs/authWrapper';
+
 
 class Login extends React.Component {
     constructor(props) {
@@ -143,7 +147,7 @@ class Login extends React.Component {
                             inputCallback={passwordCallback}
                         />
                         <AssistLink href='/'>Forgot Password?</AssistLink>
-                        <SubmitBtn value='Sign In' />
+                        <StyledSubmitBtn value='Sign In' />
                     </AuthenticationForm>
                     <RegisterContainer>
                         <h1>Don't have an account? <Link href='/register'>Sign Up</Link></h1>

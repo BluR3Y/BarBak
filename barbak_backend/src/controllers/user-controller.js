@@ -38,7 +38,7 @@ module.exports.testNodeMailer = async (req, res) => {
 module.exports.register = async (req, res) => {
     try {
         const { fullname, email, password } = req.body;
-        
+
         if (await User.findOne({ email }))
             return res.status(400).send({ path: 'email', type: 'exist', message: 'Email is already associated with another account' });
 
@@ -127,6 +127,12 @@ module.exports.usernameSelection = async (req, res) => {
         delete req.session.registrationInfoEncryptionKey;
         delete req.session.registrationInfoIV;
 
+        await new Promise((resolve, reject) => {
+            req.logIn(createdUser, (err) => {
+                if (err) return reject(err);
+                resolve();
+            })
+        });
         res.status(200).send(createdUser.getPublicInfo());
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
