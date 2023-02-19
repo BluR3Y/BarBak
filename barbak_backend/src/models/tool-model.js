@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
+const PublicationRequest = require('./publication-request-model');
+const PublicationValidation = require('./publication-validation-model');
 
 const publicToolSchema = new mongoose.Schema({
     name: {
@@ -106,6 +108,25 @@ privateToolSchema.methods.customValidate = async function() {
     }
     if (Object.keys(error.errors).length)
         throw error;
+}
+
+privateToolSchema.methods.requestPublication = async function() {
+    
+}
+
+privateToolSchema.methods.createPublicationValidationItem = async function( validator, validation, reasoning) {
+    const createdValidation = new PublicationValidation({
+        referencedDocument: this._id,
+        referencedModel: 'Private Tool',
+        validator,
+        validation,
+        reasoning
+    });
+    await createdValidation.validate();
+    await createdValidation.save();
+
+    // createdValidation.populate({ path: 'referencedDocument', model: 'Private Tool', select: 'user name description type material -model' })
+    // .then(res => console.log(res))
 }
 
 const publicTool = mongoose.model('Public Tool', publicToolSchema);

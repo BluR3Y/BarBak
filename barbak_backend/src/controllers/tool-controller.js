@@ -56,8 +56,9 @@ module.exports.submitPublication = async (req, res) => {
         else if (await publicTool.findOne({ name: toolInfo.name, visibility: 'public' }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A public tool with this name currently exists' });
 
-        toolInfo["visibility"] = 'in-review';
-        await toolInfo.save();
+        // toolInfo["visibility"] = 'in-review';
+        // await toolInfo.save();
+        await toolInfo.requestPublication();
     } catch (err) {
         return res.status(500).send(err);
     }
@@ -92,7 +93,7 @@ module.exports.getPendingPublications = async (req, res) => {
 module.exports.validatePublication = async (req, res) => {
     try {
         // Allow multiple experts, 3, to validate each tool
-        const { toolId, validation, reason } = req.body;
+        const { toolId, validation, reasoning } = req.body;
 
         if (req.user.experience !== 'expert')
             return res.status(401).send({ path: 'user', type: 'unauthorized', message: 'You are not authorized to validate publication requests' });
@@ -104,8 +105,10 @@ module.exports.validatePublication = async (req, res) => {
             return res.status(400).send({ path: 'toolId', type: 'valid', message: 'Review of tool was not requested' });
         else if (await privateTool.findOne({ name: toolInfo.name, visibility: 'public' }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool public tool with this name currently exists' });
+        // else if (toolInfo.user.equals(req.user._id))
+        //     return res.status(400).send({ path: 'user', type: 'valid', message: 'You are not allowed to validate your own publication requests' });
 
-        if (validation === "approve") {
+        if (validation === 'approve') {
             const { name, description, type, material, image } = toolInfo;
             const createdPublicTool = new publicTool({
                 name,
@@ -114,17 +117,19 @@ module.exports.validatePublication = async (req, res) => {
                 material
             });
             await createdPublicTool.validate();
-
+            
             const uploadInfo = image ? await FileOperations.copySingle('assets/images/', image) : null;
             createdPublicTool["image"] = uploadInfo;
             await createdPublicTool.save();
         }
-        toolInfo["visibility"] = 'private';
-        await toolInfo.save();
+        await toolInfo.createPublicationValidationItem( req.user._id, validation, reasoning);
+
+        // toolInfo["visibility"] = 'private';
+        // await toolInfo.save();
+        res.status(204).send();
     } catch (err) {
-        return res.status(500).send(err);
+        res.status(500).send(err);
     }
-    res.status(204).send();
 }
 
 module.exports.search = async (req, res) => {
