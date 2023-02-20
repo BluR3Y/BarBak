@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
-const PublicationRequest = require('./publication-request-model');
-const PublicationValidation = require('./publication-validation-model');
 
 const publicToolSchema = new mongoose.Schema({
     name: {
@@ -81,7 +79,7 @@ const privateToolSchema = new mongoose.Schema({
             values: [ 'in-review', 'private' ]
         }
     },
-    user: {
+    user_id: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User',
         required: true,
@@ -108,10 +106,6 @@ privateToolSchema.methods.customValidate = async function() {
     }
     if (Object.keys(error.errors).length)
         throw error;
-}
-
-privateToolSchema.methods.requestPublication = async function() {
-    
 }
 
 privateToolSchema.methods.createPublicationValidationItem = async function( validator, validation, reasoning) {

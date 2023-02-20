@@ -7,14 +7,14 @@ const auth = require('../auth/index');
 
 
 function connectRoutes(router) {
-    router.post('/test', userController.test);
-    router.get('/getTest', auth.sessionAuthenticationRequired, userController.test);
-    // router.post('/testupload', userUploads.single('testImage'), userController.testUploads);
-    router.post('/get-image', userController.testDownloads);
-    router.get('/test-nodemailer', userController.testNodeMailer);
-    
-
+    // router.post('/test', userController.test);
+    // router.get('/getTest', auth.sessionAuthenticationRequired, userController.test);
+    // // router.post('/testupload', userUploads.single('testImage'), userController.testUploads);
+    // router.post('/get-image', userController.testDownloads);
+    // router.get('/test-nodemailer', userController.testNodeMailer);
     // router.post('/users/register', upload.single('profileImage'), userController.register);
+
+    
     router.post('/users/register', userController.register);
     router.post('/users/register/verify', userController.validateRegistrationCode);
     router.get('/users/register/resend', userController.resendRegistrationCode);
@@ -23,6 +23,7 @@ function connectRoutes(router) {
     router.post('/users/login', userController.login);
     router.get('/users/check-session', userController.checkSession);
     router.get('/users/logout', auth.sessionAuthenticationRequired, userController.logout);
+    router.post('/users/upload-profile-image', upload.single('profileImage'), auth.sessionAuthenticationRequired, userController.uploadProfileImage);
 };
 
 module.exports.connect = connectRoutes;

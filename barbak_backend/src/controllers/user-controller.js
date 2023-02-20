@@ -4,36 +4,36 @@ const NodeMailerOperations = require('../utils/nodemailer-operations');
 const User = require('../models/user-model');
 const auth = require('../auth');
 
-module.exports.test = async (req, res) => {
-    console.log(req.session)
-    console.log(req.user)
+// module.exports.test = async (req, res) => {
+//     console.log(req.session)
+//     console.log(req.user)
 
-    res.send('TEST');
-}
+//     res.send('TEST');
+// }
 
-module.exports.testUploads = async (req,res) => {
-    console.log(req.file)
-    res.send('Test')
-}
+// module.exports.testUploads = async (req,res) => {
+//     console.log(req.file)
+//     res.send('Test')
+// }
 
-module.exports.testDownloads = async (req, res) => {
-    try {
-        const { filename } = req.body;
+// module.exports.testDownloads = async (req, res) => {
+//     try {
+//         const { filename } = req.body;
 
-        const image = await FileOperations.readSingle('assets/images/', filename)
-        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-        res.end(image, 'binary');
-    } catch (err) {
-        res.status(500).send(err);
-    }
-}
+//         const image = await FileOperations.readSingle('assets/images/', filename)
+//         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+//         res.end(image, 'binary');
+//     } catch (err) {
+//         res.status(500).send(err);
+//     }
+// }
 
-module.exports.testNodeMailer = async (req, res) => {
-    const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
-    console.log(mailerRes);
+// module.exports.testNodeMailer = async (req, res) => {
+//     const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
+//     console.log(mailerRes);
 
-    res.status(200).send('hello')
-}
+//     res.status(200).send('hello')
+// }
 
 module.exports.register = async (req, res) => {
     try {
@@ -155,50 +155,26 @@ module.exports.usernameSelection = async (req, res) => {
     }
 }
 
-// Steps:
-    // 1. client: enters registration info: username, password, etc ; server: validates email availability and temporarily stores info in redis
-    // 2: User provides verification code sent to email address ; server: validates verification code 
-    // 3: User provides a username and optionally a profile image ; server: validates username availability and image 
+module.exports.uploadProfileImage = async (req, res) => {
+    try {
+        const upload = req.file || null;
 
-// module.exports.register = async (req, res) => {
-//     try {
-//         const { username, email, fullname, password } = req.body;
-//         const hashedPassword = await User.hashPassword(password);
+        if (!upload)
+            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
 
-//         const createdUser = new User({
-//             username,
-//             email,
-//             fullname,
-//             password: hashedPassword
-//         });
-//         await createdUser.validate();
-//         await createdUser.customValidate();
-//         await createdUser.save();
+        const userInfo = await User.findOne({ _id: req.user._id });
+        const uploadInfo = await FileOperations.uploadSingle('assets/public/images/', upload);
 
-//         // to do: 1. generate verification code, store code
+        if (userInfo.profile_image)
+            await FileOperations.deleteSingle(userInfo.profile_image);
 
-//         // temporary res
-//         res.status(204).send();
-//     } catch(err) {
-//         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
-//             var errors = [];
-            
-//             Object.keys(err.errors).forEach(error => {
-//                 const errorParts = error.split('.');
-//                 const errorPart = errorParts[0];
-//                 const indexPart = errorParts[1] || '0';
-                
-//                 errors.push({ 
-//                     path: errorPart, 
-//                     type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
-//                     index: indexPart 
-//                 });
-//             })
-//             return res.status(400).send(errors);
-//         }
-//         return res.status(500).send(err);
-//     }
-// }
+        userInfo.profile_image = uploadInfo.filepath;
+        userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
 
 // Authenticate the user via email and password input fields
 module.exports.login = auth.authenticate.localLogin;

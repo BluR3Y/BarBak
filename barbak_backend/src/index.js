@@ -9,6 +9,7 @@ const app = express();
 
 const auth = require('./auth');
 const connectDB = require('./config/database-config');
+const assets = require('./config/asset-config');
 
 connectDB.ready.then(_ => {
     const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;
@@ -47,6 +48,8 @@ connectDB.ready.then(_ => {
 
     // Setup Authentication
     auth.configureMiddleware(app);
+    // Setup Asset Middleware
+    assets.configureMiddleware(app);
     // Set the router entry point
     app.use('/', router);
     // Start the web server
