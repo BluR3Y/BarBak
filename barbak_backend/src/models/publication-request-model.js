@@ -1,23 +1,5 @@
 const mongoose = require('mongoose');
 
-const expertValidators = {
-    validator: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
-    },
-    validation: {
-        type: Boolean,
-        required: true,
-    },
-    reasoning: {
-        type: String,
-        required: true,
-        minLength: 30,
-        maxLength: 400
-    }
-};
-
 const publicationRequestSchema = new mongoose.Schema({
     referenced_document: {
         type: mongoose.Schema.Types.ObjectId,
@@ -38,13 +20,6 @@ const publicationRequestSchema = new mongoose.Schema({
         required: true,
         ref: 'User',
     },
-    validations: {
-        type: [expertValidators],
-        default: [],
-        validate: (val) => {
-            return val.length <= 3;
-        },
-    },
     activeRequest: {
         type: Boolean,
         required: true,
@@ -57,19 +32,38 @@ const publicationRequestSchema = new mongoose.Schema({
     }
 }, { collection: 'publication-requests' });
 
-publicationRequestSchema.query.allowedInfo = function() {
-    return this.select('snapshot');
-};
+const publicationValidationSchema = new mongoose.Schema({
+    referenced_request: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'Publication Request'
+    },
+    validator: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+    },
+    validation: {
+        type: Boolean,
+        required: true
+    },
+    reasoning: {
+        type: String,
+        required: true,
+    },
+    date_validated: {
+        type: Date,
+        immutable: true,
+        default: () => Date.now()
+    }
+},{ collection: 'publication-validations' });
 
-publicationRequestSchema.methods.submitExpertValidation = async function( validator, validation, reasoning) {
-    const createdValidation = {
-        validator,
-        validation,
-        reasoning
-    };
-    this.validations.push(createdValidation);
-    console.log(this)
-}
+publicationValidationSchema.post('save', async function(doc) {
+    const requestValidations = await PublicationValidation.find({ referenced_request: doc.referenced_request });
+    if (requestValidations.length >= 3)
+        await PublicationRequest.findOneAndUpdate({ _id: doc.referenced_request }, { activeRequest: false });
+})
 
-
-module.exports = mongoose.model("Publication Request", publicationRequestSchema);
+const PublicationRequest = mongoose.model("Publication Request", publicationRequestSchema);
+const PublicationValidation = mongoose.model("Publication Validation", publicationValidationSchema);
+module.exports = { PublicationRequest, PublicationValidation };

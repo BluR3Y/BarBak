@@ -1,6 +1,8 @@
 const FileOperations = require('../utils/file-operations');
 const { privateTool, publicTool } = require('../models/tool-model');
-const PublicationRequest = require('../models/publication-request-model');
+// const PublicationRequest = require('../models/publication-request-model');
+// const PublicationValidation = require('../models/publication-validation-model');
+const { PublicationRequest, PublicationValidation } = require('../models/publication-request-model');
 
 module.exports.create = async (req, res) => {
     try {
@@ -88,9 +90,9 @@ module.exports.getPendingPublications = async (req, res) => {
             page_size = 10
         } = req.query;
 
-        if (req.user.experience !== 'expert')
-            return res.status(401).send({ path: 'experience', type: 'insufficient', message: 'Users must have an experience level of "expert" to validate publication requests' });
-        else if (page < 1)
+        // if (req.user.experience !== 'expert')
+        //     return res.status(401).send({ path: 'experience', type: 'insufficient', message: 'Users must have an experience level of "expert" to validate publication requests' });
+        if (page < 1)
             return res.status(400).send({ path: 'page', type: 'valid', message: 'page must be greater or equal to 1' });
         else if (page_size < 1 || page_size > 10)
             return res.status(400).send({ path: 'page_size', type: 'valid', message: 'page_size must be greater than 0 and less than 11' });
@@ -98,7 +100,7 @@ module.exports.getPendingPublications = async (req, res) => {
         const pendingTools = await PublicationRequest.find()
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .allowedInfo();
+            .select('snapshot');
 
         res.status(200).send(pendingTools);
     } catch(err) {
@@ -108,25 +110,35 @@ module.exports.getPendingPublications = async (req, res) => {
 
 module.exports.validatePublication = async (req, res) => {
     try {
-        const { publication_request_id, validation, reasoning } = req.body;
+        const { referenced_request, validation, reasoning } = req.body;
 
-        if (req.user.experience !== 'expert')
-            return res.status(401).send({ path: 'user', type: 'unauthorized', message: 'You are not authorized to validate publication requests' });
+        // if (req.user.experience !== 'expert')
+        //     return res.status(401).send({ path: 'user', type: 'unauthorized', message: 'You are not authorized to validate publication requests' });
         
-        const requestedPublication = await PublicationRequest.findOne({ _id: publication_request_id, referenced_model: 'Private Tool' });
+        const requestedPublication = await PublicationRequest.findOne({ _id: referenced_request, referenced_model: 'Private Tool' });
 
         if (!requestedPublication)
-            return res.status(400).send({ path: 'publication_request_id', type: 'exist', message: 'Publication request does not exist' });
+            return res.status(400).send({ path: 'request', type: 'exist', message: 'Publication request does not exist' });
         else if (!requestedPublication.activeRequest)
             return res.status(401).send({ path: 'request', type: 'valid', message: 'Request is inactive' });
-        // else if (requestedPublication.user_id.equals(req.user._id))
-        //     return res.status(401).send({ path: 'user', type: 'valid', message: 'You are not allowed to validate your own publication requests' })
+        else if (requestedPublication.user_id.equals(req.user._id))
+            return res.status(401).send({ path: 'user', type: 'valid', message: 'You are not allowed to validate your own publication requests' });
+        else if (PublicationValidation.exists({ referenced_request, validator: req.user._id }))
+            return res.status(400).send({ path: 'user', type: 'exist', message: 'You already submitted a validation for this Request' });
         
-        await requestedPublication.submitExpertValidation(validation, reasoning);
-    } catch(err) {
+        const createdValidation = new PublicationValidation({
+            referenced_request,
+            validator: req.user._id,
+            validation,
+            reasoning
+        });
+        await createdValidation.validate();
+        await createdValidation.save();
 
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
     }
-    res.send('lol')
 }
 
 // module.exports.validatePublication = async (req, res) => {
@@ -202,7 +214,6 @@ module.exports.search = async (req, res) => {
             materials = await publicTool.getMaterials();
 
         const result = await publicTool.find({ name: { $regex: query } })
-            .visibility(req.user)
             .where("type").in(types)
             .where("material").in(materials)
             .skip((page - 1) * page_size)

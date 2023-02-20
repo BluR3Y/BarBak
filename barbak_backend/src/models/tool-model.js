@@ -22,13 +22,6 @@ const publicToolSchema = new mongoose.Schema({
     image: {
         type: String,
     },
-    visibility: {
-        type: String,
-        required: true,
-        lowercase: true,
-        immutable: true,
-        default: 'public',
-    },
     creation_date: {
         type: Date,
         required: true,
@@ -36,12 +29,6 @@ const publicToolSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 }, { collection: 'tools', discriminatorKey: 'model' });
-
-publicToolSchema.query.visibility = function(user) {
-    if (!user)
-        return this.where({ visibility: 'public' });
-    return this.or([ { visibility: 'public' }, { user: user._id } ]);
-}
 
 publicToolSchema.query.publicInfo = function() {
     return this.select('name description type material image -model');
@@ -70,15 +57,6 @@ publicToolSchema.statics.validateMaterial = async function(material) {
 }
 
 const privateToolSchema = new mongoose.Schema({
-    visibility: {
-        type: String,
-        required: true,
-        lowercase: true,
-        default: 'private',
-        enum: {
-            values: [ 'in-review', 'private' ]
-        }
-    },
     user_id: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User',
@@ -108,20 +86,20 @@ privateToolSchema.methods.customValidate = async function() {
         throw error;
 }
 
-privateToolSchema.methods.createPublicationValidationItem = async function( validator, validation, reasoning) {
-    const createdValidation = new PublicationValidation({
-        referencedDocument: this._id,
-        referencedModel: 'Private Tool',
-        validator,
-        validation,
-        reasoning
-    });
-    await createdValidation.validate();
-    await createdValidation.save();
+// privateToolSchema.methods.createPublicationValidationItem = async function( validator, validation, reasoning) {
+//     const createdValidation = new PublicationValidation({
+//         referencedDocument: this._id,
+//         referencedModel: 'Private Tool',
+//         validator,
+//         validation,
+//         reasoning
+//     });
+//     await createdValidation.validate();
+//     await createdValidation.save();
 
-    // createdValidation.populate({ path: 'referencedDocument', model: 'Private Tool', select: 'user name description type material -model' })
-    // .then(res => console.log(res))
-}
+//     // createdValidation.populate({ path: 'referencedDocument', model: 'Private Tool', select: 'user name description type material -model' })
+//     // .then(res => console.log(res))
+// }
 
 const publicTool = mongoose.model('Public Tool', publicToolSchema);
 const privateTool = publicTool.discriminator('Private Tool', privateToolSchema);

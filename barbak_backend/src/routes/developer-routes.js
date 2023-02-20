@@ -1,5 +1,5 @@
 const developerController = require('../controllers/developer-controller');
-const auth = require('../auth/index');
+const auth = require('../middleware/auth');
 
 function connectRoutes(router) {
     router.post('/developers/register', auth.sessionAuthenticationRequired, developerController.register);

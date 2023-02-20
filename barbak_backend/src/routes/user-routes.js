@@ -3,7 +3,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 const userController = require('../controllers/user-controller');
-const auth = require('../auth/index');
+const auth = require('../middleware/auth');
 
 
 function connectRoutes(router) {

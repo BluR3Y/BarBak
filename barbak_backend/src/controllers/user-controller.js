@@ -2,7 +2,7 @@ const FileOperations = require('../utils/file-operations');
 const NodeMailerOperations = require('../utils/nodemailer-operations');
 
 const User = require('../models/user-model');
-const auth = require('../auth');
+const auth = require('../middleware/auth');
 
 // module.exports.test = async (req, res) => {
 //     console.log(req.session)

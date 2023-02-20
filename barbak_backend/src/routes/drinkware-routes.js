@@ -3,7 +3,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 const drinkwareController = require('../controllers/drinkware-controller');
-const auth = require('../auth/index');
+const auth = require('../middleware/auth');
 
 function connectRoutes(router) {
     router.post('/drinkware/create', auth.sessionAuthenticationRequired, upload.single('drinkwareImage'), drinkwareController.create);

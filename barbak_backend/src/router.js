@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('./auth/index');
-const schemaValidator = require('./validator');
+const auth = require('./middleware/auth');
+const schemaValidator = require('./middleware/validator');
 
 // Check users session
 router.use('/', auth.getUser);

@@ -1,6 +1,6 @@
 const passport = require('passport');
-const User = require('../models/user-model');
-const Developer = require('../models/developer-model');
+const User = require('../../models/user-model');
+const Developer = require('../../models/developer-model');
 
 // Login Strategies:
 const localLogin = require('./local-login-strategy');
