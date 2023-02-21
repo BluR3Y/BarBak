@@ -6,8 +6,8 @@ module.exports.create = async (req, res) => {
     try {
         const { name, description, type, material } = req.body;
 
-        if(await PrivateTool.findOne({ user_id: req.user._id, name }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool you created with that name already exists' });
+        if(await PrivateTool.exists({ user_id: req.user._id, name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
         
         const createdTool = new PrivateTool({
             name,
@@ -22,6 +22,47 @@ module.exports.create = async (req, res) => {
         const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/private/images/', req.file) : null;
         createdTool.image = uploadInfo ? uploadInfo.filepath : null;
         await createdTool.save();
+        res.status(204).send();
+    } catch(err) {
+        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+            var errors = [];
+
+            Object.keys(err.errors).forEach(error => {
+                const errorParts = error.split('.');
+                const errorPart = errorParts[0];
+                const indexPart = errorParts[1] || '0';
+                
+                errors.push({ 
+                    path: errorPart, 
+                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
+                    index: indexPart 
+                });
+            })
+            return res.status(400).send(errors);
+        }
+        res.status(500).send(err);
+    }
+}
+
+module.exports.update = async (req, res) => {
+    try {
+        const { tool_id, name, description, type, material } = req.body;
+
+        if (await PrivateTool.exists({ user_id: req.user._id, name, _id: { $ne:tool_id } }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
+
+        const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
+        if (!toolDocument)
+            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
+        
+        toolDocument.name = name;
+        toolDocument.description = description;
+        toolDocument.type = type;
+        toolDocument.material = material;
+        await toolDocument.validate();
+        await toolDocument.customValidate();
+        await toolDocument.save();
+
         res.status(204).send();
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {

@@ -1,23 +1,28 @@
-const Ingredient = require('../models/ingredient-model');
+const { PublicIngredient, PrivateIngredient } = require('../models/ingredient-model');
 const FileOperations = require('../utils/file-operations');
 
 module.exports.create = async (req, res) => {
     try {
         const { name, description, type, category } = req.body;
 
-        const createdIngredient = new Ingredient({
+        if (await PrivateIngredient.exists({ user_id: req.user._id, name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
+
+        const createdIngredient = new PrivateIngredient({
             name,
             description,
             type,
             category,
-            user: req.user
+            user_id: req.user._id
         });
         await createdIngredient.validate();
         await createdIngredient.customValidate();
         
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/images/', req.file) : null;
-        createdIngredient.image = uploadInfo ? uploadInfo.filename : null;
-        createdIngredient.save();
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/private/images/', req.file) : null;
+        console.log(uploadInfo)
+        createdIngredient.image = uploadInfo ? uploadInfo.filepath : null;
+        await createdIngredient.save();
+        res.status(204).send();
     } catch (err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
@@ -35,7 +40,7 @@ module.exports.create = async (req, res) => {
             })
             return res.status(400).send(errors);
         }
+        console.log(err)
         return res.status(500).send(err);
     }
-    res.status(204).send();
 }

@@ -10,6 +10,7 @@ function connectRoutes(router) {
     router.post('/tools/create', auth.sessionAuthenticationRequired, upload.single('toolImage'), toolController.create);
     router.post('/tools/submit-publication', auth.sessionAuthenticationRequired, experienceControl.experiencedRequired, toolController.submitPublication);
     router.post('/tools/validate-publication', auth.sessionAuthenticationRequired, experienceControl.expertRequired, toolController.validatePublication);
+    router.post('/tools/update', auth.sessionAuthenticationRequired, toolController.update);
 
     // router.get('/tools/search', toolController.search);
     router.get('/tools/private', auth.sessionAuthenticationRequired, toolController.getPrivateTools);
