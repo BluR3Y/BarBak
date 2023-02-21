@@ -7,7 +7,8 @@ const auth = require('../middleware/auth');
 const experienceControl = require('../middleware/experience-control');
 
 function connectRoutes(router) {
-    router.post('/tools/create', auth.sessionAuthenticationRequired, upload.single('toolImage'), toolController.create);
+    router.post('/tools/create', auth.sessionAuthenticationRequired, toolController.create);
+    router.post('/tools/image-upload', auth.sessionAuthenticationRequired, upload.single('tool_image'), toolController.uploadToolImage);
     router.post('/tools/submit-publication', auth.sessionAuthenticationRequired, experienceControl.experiencedRequired, toolController.submitPublication);
     router.post('/tools/validate-publication', auth.sessionAuthenticationRequired, experienceControl.expertRequired, toolController.validatePublication);
     router.post('/tools/update', auth.sessionAuthenticationRequired, toolController.update);

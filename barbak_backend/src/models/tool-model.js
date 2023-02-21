@@ -21,6 +21,7 @@ const Tool = mongoose.model("Tool", new mongoose.Schema({
     },
     image: {
         type: String,
+        default: null,
     } 
 }, { collection: 'tools', discriminatorKey: 'model' }));
 

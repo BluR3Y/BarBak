@@ -18,10 +18,8 @@ module.exports.create = async (req, res) => {
         });
         await createdTool.validate();
         await createdTool.customValidate();
-        
-        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/private/images/', req.file) : null;
-        createdTool.image = uploadInfo ? uploadInfo.filepath : null;
         await createdTool.save();
+        
         res.status(204).send();
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
@@ -40,6 +38,29 @@ module.exports.create = async (req, res) => {
             })
             return res.status(400).send(errors);
         }
+        res.status(500).send(err);
+    }
+}
+
+module.exports.uploadToolImage = async (req, res) => {
+    try {
+        const { tool_id } = req.body;
+        const toolImage = req.file || null;
+
+        if (!toolImage)
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
+
+        const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
+        if (!toolDocument)
+            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
+
+        const uploadInfo = await FileOperations.uploadSingle('assets/private/images/', toolImage);
+        if (toolDocument.image)
+            await FileOperations.deleteSingle(toolDocument.image);
+        toolDocument.image = uploadInfo.filepath;
+        toolDocument.save();
+        res.status(204).send();
+    } catch(err) {
         res.status(500).send(err);
     }
 }
@@ -87,13 +108,13 @@ module.exports.update = async (req, res) => {
 
 module.exports.submitPublication = async (req, res) => {
     try {
-        const { toolId } = req.body;
-        const toolInfo = await PrivateTool.findOne({ _id: toolId, user_id: req.user._id });
+        const { tool_id } = req.body;
+        const toolInfo = await PrivateTool.findOne({ _id: tool_id, user_id: req.user._id });
 
         if (!toolInfo)
-            return res.status(400).send({ path: 'toolId', type: 'exist', message: 'Tool does not exist' });
+            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: toolInfo._id, referenced_model: 'Private Tool', user_id: req.user._id }))
-            return res.status(400).send({ path: 'toolId', type: 'process', message: 'Tool is currently being reviewed' });
+            return res.status(400).send({ path: 'tool_id', type: 'process', message: 'Tool is currently being reviewed' });
         else if (await PublicTool.exists({ name: toolInfo.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A public tool with this name currently exists' });
             
