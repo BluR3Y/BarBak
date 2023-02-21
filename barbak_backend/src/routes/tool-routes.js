@@ -11,7 +11,7 @@ function connectRoutes(router) {
     router.post('/tools/submit-publication', auth.sessionAuthenticationRequired, experienceControl.experiencedRequired, toolController.submitPublication);
     router.post('/tools/validate-publication', auth.sessionAuthenticationRequired, experienceControl.expertRequired, toolController.validatePublication);
 
-    router.get('/tools/search', toolController.search);
+    // router.get('/tools/search', toolController.search);
     router.get('/tools/private', auth.sessionAuthenticationRequired, toolController.getPrivateTools);
     router.get('/tools/types', toolController.getToolTypes);
     router.get('/tools/materials', toolController.getToolMaterials);

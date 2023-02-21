@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const { PublicTool } = require('./tool-model');
+const { PublicDrinkware } = require('./drinkware-model');
+const { PublicIngredient } = require('./ingredient-model');
+const { PublicDrink } = require('./drink-model');
 
 const publicationRequestSchema = new mongoose.Schema({
     referenced_document: {
@@ -24,6 +28,10 @@ const publicationRequestSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
         default: true,
+    },
+    model: {
+        type: String,
+        select: true
     },
     date_requested: {
         type: Date,
@@ -60,8 +68,35 @@ const publicationValidationSchema = new mongoose.Schema({
 
 publicationValidationSchema.post('save', async function(doc) {
     const requestValidations = await PublicationValidation.find({ referenced_request: doc.referenced_request });
-    if (requestValidations.length >= 3)
-        await PublicationRequest.findOneAndUpdate({ _id: doc.referenced_request }, { activeRequest: false });
+    if (requestValidations.length >= 3) {
+        // await PublicationRequest.findOneAndUpdate({ _id: doc.referenced_request }, { activeRequest: false });
+        const createdRequest = await PublicationRequest.findOne({ _id: doc.referenced_request });
+        // const requestModel = mongoose.model(createdRequest.referenced_model);
+        let publicModel;
+        switch (createdRequest.referenced_model) {
+            case 'Private Tool':
+                console.log('called')
+                publicModel = mongoose.model('Public Tool');
+                break;
+            case 'Private Drinkware':
+                publicModel = mongoose.model('Public Drinkware');
+                break;
+            case 'Private Ingredient':
+                publicModel = mongoose.model('Public Ingredient');
+                break;
+            case 'Private Drink':
+                publicModel = mongoose.model('Public Drink');
+                break;
+            default:
+                break;
+        }
+        const publicDocument = new publicModel({
+            ...createdRequest.snapshot
+        });
+        await publicDocument.save();
+        createdRequest['activeRequest'] = false;
+        // await createdRequest.save();
+    }
 })
 
 const PublicationRequest = mongoose.model("Publication Request", publicationRequestSchema);
