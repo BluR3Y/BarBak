@@ -73,7 +73,8 @@ const privateToolSchema = new mongoose.Schema({
         default: () => Date.now(),
     }
 });
-
+// Function "validate" should validate data types
+// Function "customValidate" should validate data values, coencides with model structure
 privateToolSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";
