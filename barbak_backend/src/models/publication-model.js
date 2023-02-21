@@ -1,8 +1,4 @@
 const mongoose = require('mongoose');
-const { PublicTool } = require('./tool-model');
-const { PublicDrinkware } = require('./drinkware-model');
-const { PublicIngredient } = require('./ingredient-model');
-const { PublicDrink } = require('./drink-model');
 
 const publicationRequestSchema = new mongoose.Schema({
     referenced_document: {
@@ -75,7 +71,6 @@ publicationValidationSchema.post('save', async function(doc) {
         let publicModel;
         switch (createdRequest.referenced_model) {
             case 'Private Tool':
-                console.log('called')
                 publicModel = mongoose.model('Public Tool');
                 break;
             case 'Private Drinkware':
@@ -95,7 +90,7 @@ publicationValidationSchema.post('save', async function(doc) {
         });
         await publicDocument.save();
         createdRequest['activeRequest'] = false;
-        // await createdRequest.save();
+        await createdRequest.save();
     }
 })
 

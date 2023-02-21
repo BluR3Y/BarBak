@@ -2,57 +2,46 @@ const FileOperations = require('../utils/file-operations');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
 const { PublicationRequest, PublicationValidation } = require('../models/publication-model');
 
-// module.exports.create = async (req, res) => {
-//     try {
-//         const { name, description, type, material } = req.body;
-
-//         if (await PrivateTool.findOne({ user_id: req.user._id, name }))
-//             return res.status(400).send({ path: 'name', type: 'exist', message: 'Each private tool is required to have a unique name' });
-
-//         const createdTool = new PrivateTool({
-//             name,
-//             description,
-//             type,
-//             material,
-//             user_id: req.user._id
-//         });
-//         await createdTool.validate();
-//         await createdTool.customValidate();
-
-//         const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/private/images/', req.file) : null;
-//         createdTool.image = uploadInfo ? uploadInfo.filepath : null;
-//         await createdTool.save();
-//     } catch (err) {
-//         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
-//             var errors = [];
-
-//             Object.keys(err.errors).forEach(error => {
-//                 const errorParts = error.split('.');
-//                 const errorPart = errorParts[0];
-//                 const indexPart = errorParts[1] || '0';
-                
-//                 errors.push({ 
-//                     path: errorPart, 
-//                     type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
-//                     index: indexPart 
-//                 });
-//             })
-//             return res.status(400).send(errors);
-//         }
-//         return res.status(500).send(err);
-//     }
-//     res.status(204).send();
-// }
-
 module.exports.create = async (req, res) => {
     try {
         const { name, description, type, material } = req.body;
 
+        if(await PrivateTool.findOne({ user_id: req.user._id, name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool you created with that name already exists' });
         
+        const createdTool = new PrivateTool({
+            name,
+            description,
+            type,
+            material,
+            user_id: req.user._id
+        });
+        await createdTool.validate();
+        await createdTool.customValidate();
+        
+        const uploadInfo = req.file ? await FileOperations.uploadSingle('assets/private/images/', req.file) : null;
+        createdTool.image = uploadInfo ? uploadInfo.filepath : null;
+        await createdTool.save();
+        res.status(204).send();
     } catch(err) {
+        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+            var errors = [];
 
+            Object.keys(err.errors).forEach(error => {
+                const errorParts = error.split('.');
+                const errorPart = errorParts[0];
+                const indexPart = errorParts[1] || '0';
+                
+                errors.push({ 
+                    path: errorPart, 
+                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
+                    index: indexPart 
+                });
+            })
+            return res.status(400).send(errors);
+        }
+        res.status(500).send(err);
     }
-    res.send('lol')
 }
 
 module.exports.submitPublication = async (req, res) => {
@@ -64,7 +53,7 @@ module.exports.submitPublication = async (req, res) => {
             return res.status(400).send({ path: 'toolId', type: 'exist', message: 'Tool does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: toolInfo._id, referenced_model: 'Private Tool', user_id: req.user._id }))
             return res.status(400).send({ path: 'toolId', type: 'process', message: 'Tool is currently being reviewed' });
-        else if (await PublicTool.exists({ type: 'Public Tool', name: toolInfo.name }))
+        else if (await PublicTool.exists({ name: toolInfo.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A public tool with this name currently exists' });
             
         const {name, description, type, material, image } = toolInfo;
@@ -104,7 +93,7 @@ module.exports.getPendingPublications = async (req, res) => {
         else if (page_size < 1 || page_size > 10)
             return res.status(400).send({ path: 'page_size', type: 'valid', message: 'page_size must be greater than 0 and less than 11' });
 
-        const pendingTools = await PublicationRequest.find()
+        const pendingTools = await PublicationRequest.find({ activeRequest: true, user_id: { $ne: req.user._id } })
             .skip((page - 1) * page_size)
             .limit(page_size)
             .select('snapshot');
@@ -127,8 +116,8 @@ module.exports.validatePublication = async (req, res) => {
             return res.status(401).send({ path: 'request', type: 'valid', message: 'Request is inactive' });
         else if (requestedPublication.user_id.equals(req.user._id))
             return res.status(401).send({ path: 'user', type: 'valid', message: 'You are not allowed to validate your own publication requests' });
-        // else if (await PublicationValidation.exists({ referenced_request, validator: req.user._id }))
-        //     return res.status(400).send({ path: 'user', type: 'exist', message: 'You already submitted a validation for this request' });
+        else if (await PublicationValidation.exists({ referenced_request, validator: req.user._id }))
+            return res.status(400).send({ path: 'user', type: 'exist', message: 'You already submitted a validation for this request' });
         
         const createdValidation = new PublicationValidation({
             referenced_request,
@@ -208,7 +197,7 @@ module.exports.getPrivateTools = async (req, res) => {
 
 module.exports.getToolTypes = async (req, res) => {
     try {
-        const toolTypes = await PublicTool.getTypes();
+        const toolTypes = await PrivateTool.getTypes();
         res.status(200).send(toolTypes);
     } catch(err) {
         res.status(500).send(err);
@@ -217,7 +206,7 @@ module.exports.getToolTypes = async (req, res) => {
 
 module.exports.getToolMaterials = async (req, res) => {
     try {
-        const toolMaterials = await PublicTool.getMaterials();
+        const toolMaterials = await PrivateTool.getMaterials();
         res.status(200).send(toolMaterials);
     } catch(err) {
         res.status(500).send(err);
