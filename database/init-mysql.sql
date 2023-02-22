@@ -21,7 +21,8 @@ INSERT INTO tool_types (`name`) VALUES
     ('garnishing'),
     ('cutting'),
     ('chilling'),
-    ('cleaning')
+    ('cleaning'),
+    ('other')
 ;
 
 
@@ -41,7 +42,8 @@ INSERT INTO tool_materials (`name`) VALUES
     ('glass'),
     ('ceramic'),
     ('titanium'),
-    ('graphite')
+    ('graphite'),
+    ('other')
 ;
 
 
@@ -69,7 +71,8 @@ INSERT INTO ingredient_types (`name`) VALUES
     ('wine'),
     ('mixer'),
     ('enhancer'),
-    ('fruit')
+    ('fruit'),
+    ('other')
 ;
 
 INSERT INTO ingredient_categories (`type_id`, `name`, `measure_state`) VALUES 
@@ -118,8 +121,10 @@ INSERT INTO ingredient_categories (`type_id`, `name`, `measure_state`) VALUES
     ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'melon', 'volume'),
     ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'tropical', 'volume'),
     ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'stone', 'volume'),
-    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'pome', 'volume');
+    ((SELECT type_id FROM ingredient_types WHERE name = 'fruit'), 'pome', 'volume')
 
+    -- *** Insert for other ***
+;
 -- Drinkware
 
 CREATE TABLE drinkware_materials (
@@ -139,7 +144,8 @@ INSERT INTO drinkware_materials (`name`) VALUES
     ('silicone'),
     ('acrylic'),
     ('paper'),
-    ('plastic')
+    ('plastic'),
+    ('other')
 ;
 
 -- Drink
@@ -164,7 +170,8 @@ INSERT INTO drink_preparation_methods (`name`) VALUES
     ('smoke'),
     ('spherify'),
     ('swizzle'),
-    ('roll')
+    ('roll'),
+    ('other')
 ;
 
 
@@ -179,7 +186,8 @@ INSERT INTO drink_serving_styles (`name`) VALUES
     ('straight-up'),
     ('on the rocks'),
     ('straight'),
-    ('chilled')
+    ('chilled'),
+    ('other')
 ;
 
 
