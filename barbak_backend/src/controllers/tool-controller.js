@@ -1,12 +1,11 @@
 const FileOperations = require('../utils/file-operations');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
-// const { PublicationRequest, PublicationValidation } = require('../models/publication-model_old');
 
 module.exports.create = async (req, res) => {
     try {
         const { name, description, type, material } = req.body;
 
-        if(await PrivateTool.exists({ user_id: req.user._id, name }))
+        if (await PrivateTool.exists({ user_id: req.user._id, name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
         
         const createdTool = new PrivateTool({
@@ -58,7 +57,7 @@ module.exports.uploadToolImage = async (req, res) => {
         if (toolDocument.image)
             await FileOperations.deleteSingle(toolDocument.image);
         toolDocument.image = uploadInfo.filepath;
-        toolDocument.save();
+        await toolDocument.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
@@ -105,31 +104,6 @@ module.exports.update = async (req, res) => {
         res.status(500).send(err);
     }
 }
-
-
-
-// module.exports.getPendingPublications = async (req, res) => {
-//     try {
-//         const { 
-//             page = 1,
-//             page_size = 10
-//         } = req.query;
-
-//         if (page < 1)
-//             return res.status(400).send({ path: 'page', type: 'valid', message: 'page must be greater or equal to 1' });
-//         else if (page_size < 1 || page_size > 10)
-//             return res.status(400).send({ path: 'page_size', type: 'valid', message: 'page_size must be greater than 0 and less than 11' });
-
-//         const pendingTools = await PublicationRequest.find({ activeRequest: true, user_id: { $ne: req.user._id } })
-//             .skip((page - 1) * page_size)
-//             .limit(page_size)
-//             .select('snapshot');
-
-//         res.status(200).send(pendingTools);
-//     } catch(err) {
-//         res.status(500).send(err);
-//     }
-// }
 
 // Needs Improving
 // module.exports.search = async (req, res) => {

@@ -36,4 +36,50 @@ const publicationRequestSchema = new mongoose.Schema({
     }
 }, { collection: 'publication-requests' });
 
+publicationRequestSchema.query.filterByType = function(types) {
+    if (!types)
+        return this;
+    var typeConvertions = [];
+    for (const type in types) {
+        switch (types[type]) {
+            case 'tool':
+                typeConvertions.push('Private Tool');
+                break;
+            case 'drinkware':
+                typeConvertions.push('Private Drinkware');
+                break;
+            case 'ingredient':
+                typeConvertions.push('Private Ingredient');
+                break;
+            case 'drink':
+                typeConvertions.push('Private Drink');
+                break;
+            default:
+                break;
+        }
+    }
+    return this.where('referenced_model').in(typeConvertions)
+}
+
+publicationRequestSchema.virtual('requestType').get(function() {
+    var requestType;
+    switch (this.referenced_model) {
+        case 'Private Tool':
+            requestType = 'tool';
+            break;
+        case 'Private Drinkware':
+            requestType = 'drinkware';
+            break;
+        case 'Private Ingredient':
+            requestType = 'ingredient';
+            break;
+        case 'Private Drink':
+            requestType = 'drink';
+            break;
+        default:
+            break;
+    }
+    return requestType;
+})
+
 module.exports = mongoose.model("Publication Request", publicationRequestSchema);

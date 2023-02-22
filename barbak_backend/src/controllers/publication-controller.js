@@ -76,9 +76,20 @@ module.exports.pending = async (req, res) => {
         const page_size = req.query.page_size || 10;
         const types = req.query.types ? JSON.parse(req.query.types) : null;
 
-        const pendingDocs = await PublicationRequest.find({ activeRequest: true, user_id: { $ne: req.user._id } })
-            // Stopped Here **************
-    } catch(err) {
+        var pendingDocuments = await PublicationRequest.find({ activeRequest: true, user_id: { $ne: req.user._id } })
+            .filterByType(types)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .select('snapshot referenced_model');
 
+        pendingDocuments = pendingDocuments.map(doc => {
+            var modifiedDoc = doc.toObject({ virtuals: ['requestType'] });
+            delete modifiedDoc.referenced_model;
+            return modifiedDoc;
+        });
+
+        res.status(200).send(pendingDocuments);
+    } catch(err) {
+        res.status(500).send(err);
     }
 }
