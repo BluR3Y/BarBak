@@ -11,6 +11,7 @@ function connectRoutes(router) {
     router.post('/drinkware/update', auth.sessionAuthenticationRequired, drinkwareController.update);
     // router.post('/drinkware/search', auth.sessionAuthenticationRequired, drinkwareController.search_drinkware);
     router.get('/drinkware/materials', drinkwareController.getMaterials);
+    router.get('/drinkware/private', auth.sessionAuthenticationRequired, drinkwareController.getPrivate);
 }
 
 module.exports.connect = connectRoutes;

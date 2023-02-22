@@ -52,6 +52,10 @@ const privateDrinkwareSchema = new mongoose.Schema({
     }
 });
 
+privateDrinkwareSchema.query.userExposure = function() {
+    return this.select('name description material image date_created -model');
+}
+
 privateDrinkwareSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";

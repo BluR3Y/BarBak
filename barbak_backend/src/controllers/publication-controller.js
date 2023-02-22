@@ -2,6 +2,7 @@ const FileOperations = require('../utils/file-operations');
 const PublicationRequest = require('../models/publication-request-model');
 const PublicationValidation = require('../models/publication-validation-model');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
+const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
 
 module.exports.publishTool = async (req, res) => {
     try {
@@ -16,7 +17,6 @@ module.exports.publishTool = async (req, res) => {
             return res.status(400).send({ path: 'name', type: 'exist', message: `A public tool named '${toolDocument.name}' currently exists` });
 
         const { _id, name, description, type, material, image } = toolDocument;
-
         const createdRequest = new PublicationRequest({
             referenced_document: _id,
             referenced_model: 'Private Tool',
@@ -30,6 +30,41 @@ module.exports.publishTool = async (req, res) => {
         });
         await createdRequest.validate();
         
+        const snapshot_image = image ? await FileOperations.copySingle(image, 'assets/private/images/') : null;
+        createdRequest.snapshot.image = snapshot_image;
+        await createdRequest.save();
+
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.publishDrinkware = async (req, res) => {
+    try {
+        const { drinkware_id } = req.body;
+        const drinkwareDocument = await PrivateDrinkware.findOne({ _id: drinkware_id, user_id: req.user._id });
+
+        if (!drinkwareDocument)
+            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drink does not exist' });
+        else if (await PublicationRequest.exists({ referenced_document: drinkwareDocument._id, referenced_model: 'Private Drinkware', user_id: req.user._id, activeRequest: true }))
+            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Drinkware is currently being review' });
+        else if (await PublicDrinkware.exists({ name: drinkwareDocument.name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: `A public drinkware named '${toolDocument.name}' currently exists` });
+        
+        const { _id, name, description, material, image } = drinkwareDocument;
+        const createdRequest = new PublicationRequest({
+            referenced_document: _id,
+            referenced_model: 'Private Drinkware',
+            user_id: req.user._id,
+            snapshot: {
+                name,
+                description,
+                material
+            }
+        });
+        await createdRequest.validate();
+
         const snapshot_image = image ? await FileOperations.copySingle(image, 'assets/private/images/') : null;
         createdRequest.snapshot.image = snapshot_image;
         await createdRequest.save();

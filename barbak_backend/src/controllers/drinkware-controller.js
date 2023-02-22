@@ -110,9 +110,15 @@ module.exports.getPrivate = async (req, res) => {
         const page = req.body.page || 1;
         const page_size = req.body.page || 10;
 
-        const  = await PrivateDrinkware
-    } catch(err) {
+        const privateDocuments = await PrivateDrinkware
+            .find({ user_id: req.user._id })
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .userExposure();
 
+        res.status(200).send(privateDocuments);
+    } catch(err) {
+        res.status(500).send(err);
     }
 }
 
