@@ -1,40 +1,5 @@
 const mongoose = require('mongoose');
-
-const publicationRequestSchema = new mongoose.Schema({
-    referenced_document: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        refPath: 'referenced_model'
-    },
-    referenced_model: {
-        type: String,
-        required: true,
-        enum: [ 'Private Tool', 'Private Ingredient', 'Private Drinkware', 'Private Drink' ]
-    },
-    snapshot: {
-        type: Object,
-        required: true,
-    },
-    user_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User',
-    },
-    activeRequest: {
-        type: Boolean,
-        required: true,
-        default: true,
-    },
-    model: {
-        type: String,
-        select: true
-    },
-    date_requested: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-}, { collection: 'publication-requests' });
+const PublicationRequest = require('./publication-request-model');
 
 const publicationValidationSchema = new mongoose.Schema({
     referenced_request: {
@@ -63,11 +28,9 @@ const publicationValidationSchema = new mongoose.Schema({
 },{ collection: 'publication-validations' });
 
 publicationValidationSchema.post('save', async function(doc) {
-    const requestValidations = await PublicationValidation.find({ referenced_request: doc.referenced_request });
+    const requestValidations = await this.model('Publication Validation').find({ referenced_request: doc.referenced_request });
     if (requestValidations.length >= 3) {
-        // await PublicationRequest.findOneAndUpdate({ _id: doc.referenced_request }, { activeRequest: false });
         const createdRequest = await PublicationRequest.findOne({ _id: doc.referenced_request });
-        // const requestModel = mongoose.model(createdRequest.referenced_model);
         let publicModel;
         switch (createdRequest.referenced_model) {
             case 'Private Tool':
@@ -94,6 +57,4 @@ publicationValidationSchema.post('save', async function(doc) {
     }
 })
 
-const PublicationRequest = mongoose.model("Publication Request", publicationRequestSchema);
-const PublicationValidation = mongoose.model("Publication Validation", publicationValidationSchema);
-module.exports = { PublicationRequest, PublicationValidation };
+module.exports = mongoose.model("Publication Validation", publicationValidationSchema);
