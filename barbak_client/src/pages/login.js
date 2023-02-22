@@ -5,7 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 
 import { connect } from 'react-redux';
-import { setUserInfo } from '@/redux/actions';
+import { setUserInfo, setUserProfileImage } from '@/redux/actions';
 
 import { StyledLogin, AssistLink } from '@/styles/pages/login';
 import { AuthenticationForm } from '@/styles/components/shared/authForm';
@@ -74,6 +74,8 @@ class Login extends React.Component {
                 }
             });
             updateUserInfo(data);
+            if (data.profile_image)
+                await this.fetchProfileImage(barbak_backend_uri + data.profile_image);
 
             // To prevent users from returning to login page, replace login page path with home page path in browser's history
             window.history.replaceState({}, '', '/');
@@ -109,6 +111,21 @@ class Login extends React.Component {
                     }
                 }
             }
+        }
+    }
+
+    fetchProfileImage = async (url) => {
+        try {
+            const { updateUserProfileImage } = this.props;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                updateUserProfileImage(reader.result);
+            };
+
+            const { data } = await axios.get(url, { withCredentials: true, responseType: 'blob' });
+            reader.readAsDataURL(data);
+        } catch(err) {
+            console.log('error fetching profile image');
         }
     }
 
@@ -170,7 +187,8 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo))
+        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo)),
+        updateUserProfileImage: (profileImage) => dispatch(setUserProfileImage(profileImage))
     }
 }
 

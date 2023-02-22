@@ -30,17 +30,21 @@
 // export default userReducer;
 
 import {
-    SET_USER_INFO
+    SET_USER_INFO,
+    SET_USER_PROFILE_IMAGE
 } from './actions';
 
 const initialState = {
-    userInfo: null
+    userInfo: null,
+    userProfileImage: null,
 };
 
 function userReducer(state = initialState, action) {
     switch(action.type) {
         case SET_USER_INFO:
             return {...state, userInfo: action.payload};
+        case SET_USER_PROFILE_IMAGE:
+            return {...state, userProfileImage: action.payload};
         default:
             return state;
     }

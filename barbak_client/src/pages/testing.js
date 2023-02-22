@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import axios from "axios";
 
+import { setUserProfileImage } from "@/redux/actions";
+
 const StyledTesting = styled.div`
     height: 100vh;
     display: flex;
@@ -129,9 +131,6 @@ const TestRedux = styled.div`
 class Testing extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            profile_image: null
-        };
     }
 
     static getInitialProps = async (ctx) => {
@@ -140,35 +139,48 @@ class Testing extends React.Component {
     }
 
     componentDidMount() {
-        if (this.props.user !== null)
-            this.getProfileImage();
+        // if (this.props.user !== null && this.props.userInfo.profile_image)
+        //     this.getProfileImage();
+        // console.log(this.props.userProfileImage)
     }
 
     getProfileImage = async () => {
         try {
-            const { userInfo, barbak_backend_uri } = this.props;
-            const res = await axios.get( barbak_backend_uri + '/assets/' + userInfo.profile_image, {
+            // const { userInfo, barbak_backend_uri } = this.props;
+            // const res = await axios.get( barbak_backend_uri + '/assets/' + userInfo.profile_image, {
+            //     withCredentials: true,
+            //     responseType: 'blob'
+            // });
+            // const blob = new Blob([res.data], { type: 'image/jpeg' });
+            // const url = URL.createObjectURL(blob);
+            // this.setState({ profile_image: url });
+            const { barbak_backend_uri, userInfo, updateUserProfileImage } = this.props;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                console.log('lol')
+                updateUserProfileImage(reader.result);
+            }
+
+            const {data} = await axios.get(barbak_backend_uri + userInfo.profile_image, {
                 withCredentials: true,
                 responseType: 'blob'
             });
-            const blob = new Blob([res.data], { type: 'image/jpeg' });
-            const url = URL.createObjectURL(blob);
-            this.setState({ profile_image: url });
+            console.log(data)
+            reader.readAsDataURL(data);
         } catch(err) {
             console.log(err)
         }
     }
 
     render() {
-        const { userInfo } = this.props;
-        const { profile_image } = this.state;
+        const { userInfo, userProfileImage } = this.props;
         return <StyledTesting>
             <TestThemes/>
             <TestFonts/>
             <TestRedux>
                 {userInfo && Object.keys(userInfo).map((item,index) => <h1 key={index}>{`${item} : ${userInfo[item]}`}</h1>)}
             </TestRedux>
-            { profile_image && <TestImageDownload src={profile_image} /> }
+            { userProfileImage && <TestImageDownload src={userProfileImage} /> }
             <TestImageDownload src='/images/cocktail-1.jpg' />
         </StyledTesting>;
     }
@@ -176,8 +188,16 @@ class Testing extends React.Component {
 
 const mapStateToProps = (state) => {
     return {
-        userInfo: state.userReducer.userInfo
+        userInfo: state.userReducer.userInfo,
+        userProfileImage: state.userReducer.userProfileImage
     }
 }
 
-export default connect(mapStateToProps, null)(Testing);
+const mapDispatchToProps = (dispatch) => {
+    return {
+        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo)),
+        updateUserProfileImage: (profileImage) => dispatch(setUserProfileImage(profileImage))
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Testing);

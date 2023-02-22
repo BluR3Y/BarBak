@@ -21,18 +21,28 @@ module.exports.create = async (req, res) => {
         
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+        if (err.name === "ValidationError") {
             var errors = [];
-
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || '0';
+                const indexPart = errorParts[1] || 0;
                 
-                errors.push({ 
-                    path: errorPart, 
-                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
-                    index: indexPart 
+                errors.push({
+                    path: errorPart,
+                    type: err.errors[error].properties.type,
+                    message: err.errors[error].properties.message,
+                    index: indexPart
+                });
+            })
+            return res.status(400).send(errors);
+        } else if (err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const { type, message, index } = err.errors[error];
+                errors.push({
+                    path: error, type, message, index
                 });
             })
             return res.status(400).send(errors);
@@ -41,7 +51,7 @@ module.exports.create = async (req, res) => {
     }
 }
 
-module.exports.uploadToolImage = async (req, res) => {
+module.exports.uploadImage = async (req, res) => {
     try {
         const { tool_id } = req.body;
         const toolImage = req.file || null;
@@ -105,6 +115,24 @@ module.exports.update = async (req, res) => {
     }
 }
 
+module.exports.delete = async (req, res) => {
+    try {
+        const { tool_id } = req.body;
+
+        const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
+        if (!toolDocument)
+            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
+
+        if (toolDocument.image)
+            await FileOperations.deleteSingle(toolDocument.image);
+
+        await toolDocument.remove();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
 // Needs Improving
 // module.exports.search = async (req, res) => {
 //     try {
@@ -148,7 +176,7 @@ module.exports.update = async (req, res) => {
 //     }
 // }
 
-module.exports.getPrivateTools = async (req, res) => {
+module.exports.getPrivate = async (req, res) => {
     try {
         const {
             page = 1,
@@ -166,7 +194,7 @@ module.exports.getPrivateTools = async (req, res) => {
     }
 }
 
-module.exports.getToolTypes = async (req, res) => {
+module.exports.getTypes = async (req, res) => {
     try {
         const toolTypes = await PrivateTool.getTypes();
         res.status(200).send(toolTypes);
@@ -175,7 +203,7 @@ module.exports.getToolTypes = async (req, res) => {
     }
 }
 
-module.exports.getToolMaterials = async (req, res) => {
+module.exports.getMaterials = async (req, res) => {
     try {
         const toolMaterials = await PrivateTool.getMaterials();
         res.status(200).send(toolMaterials);

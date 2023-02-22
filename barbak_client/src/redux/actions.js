@@ -23,10 +23,18 @@
 // };
 
 export const SET_USER_INFO = 'SET_USER';
+export const SET_USER_PROFILE_IMAGE = 'SET_USER_PROFILE_IMAGE';
 
 export const setUserInfo = userInfo => dispatch => {
     dispatch({
         type: SET_USER_INFO,
         payload: userInfo
+    });
+};
+
+export const setUserProfileImage = userProfileImage => dispatch => {
+    dispatch({
+        type: SET_USER_PROFILE_IMAGE,
+        payload: userProfileImage
     });
 };

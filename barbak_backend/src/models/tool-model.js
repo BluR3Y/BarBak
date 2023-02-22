@@ -4,20 +4,21 @@ const { executeSqlQuery } = require('../config/database-config');
 const Tool = mongoose.model("Tool", new mongoose.Schema({
     name: {
         type: String,
-        minLength: 3,
-        maxLength: 30,
-        required: true,
+        minLength: [3, 'Name must be at least 3 characters long'],
+        maxLength: [30, 'Name length must not exceed 30 characters'],
+        required: [true , 'Tool name is required'],
     },
     description: {
         type: String,
-        maxLength: 500,
+        maxLength: [600, 'Description must not exceed 600 characters'],
     },
     type: {
         type: String,
-        required: true
+        required: [true, 'Tool type is required']
     },
     material: {
         type: String,
+        required: [true, 'Tool material is required']
     },
     image: {
         type: String,
@@ -76,25 +77,24 @@ const privateToolSchema = new mongoose.Schema({
 // Function "validate" should validate data types
 // Function "customValidate" should validate data values, coencides with model structure
 privateToolSchema.methods.customValidate = async function() {
+    const {type, material} = this;
     const error = new Error();
     error.name = "CustomValidationError";
-    error.errors = [];
+    error.errors = {};
 
-    if (this.type !== "other") {
-        const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${this.type}';`)
-            .then(res => res.length ? res[0] : res);
-        if (!type_id)
-            error.errors[`type`] = "valid";
-    }
-    if (this.material !== "other") {
-        const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${this.material}';`)
-            .then(res => res.length? res[0] : res);
-        if (!material_id)
-            error.errors[`material`] = "valid";
-    }
+    const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}';`)
+        .then(res => res[0]);
+    if (!typeCount)
+        error.errors['type'] = { type: 'valid', message: 'Invalid Tool Type' };
+    
+    const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}';`)
+        .then(res => res[0]);
+    if (!materialCount)
+        error.errors['material'] = { type: 'valid', message: 'Invalid Tool Material' }
+
     if (Object.keys(error.errors).length)
         throw error;
-};
+}
 
 module.exports = {
     PublicTool: Tool.discriminator('Public Tool', publicToolSchema),
