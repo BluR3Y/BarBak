@@ -20,19 +20,28 @@ module.exports.create = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+        if (err.name === "ValidationError") {
             var errors = [];
-
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || '0';
+                const indexPart = errorParts[1] || 0;
                 
-                errors.push({ 
-                    path: errorPart, 
-                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error].type,
-                    message: (err.name === "ValidationError") ? null : err.errors[error].message,
-                    index: indexPart 
+                errors.push({
+                    path: errorPart,
+                    type: err.errors[error].properties.type,
+                    message: err.errors[error].properties.message,
+                    index: indexPart
+                });
+            })
+            return res.status(400).send(errors);
+        } else if (err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const { type, message, index } = err.errors[error];
+                errors.push({
+                    path: error, type, message, index
                 });
             })
             return res.status(400).send(errors);
@@ -61,19 +70,28 @@ module.exports.update = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+        if (err.name === "ValidationError") {
             var errors = [];
-
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || '0';
+                const indexPart = errorParts[1] || 0;
                 
-                errors.push({ 
-                    path: errorPart, 
-                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error].type,
-                    message: (err.name === "ValidationError") ? null : err.errors[error].message,
-                    index: indexPart 
+                errors.push({
+                    path: errorPart,
+                    type: err.errors[error].properties.type,
+                    message: err.errors[error].properties.message,
+                    index: indexPart
+                });
+            })
+            return res.status(400).send(errors);
+        } else if (err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const { type, message, index } = err.errors[error];
+                errors.push({
+                    path: error, type, message, index
                 });
             })
             return res.status(400).send(errors);

@@ -8,5 +8,6 @@ function connectRoutes(router) {
     router.post('/publication/validate', auth.sessionAuthenticationRequired, experienceControl.expertRequired, publicationController.validate);
     
     router.get('/publication/pending', auth.sessionAuthenticationRequired, experienceControl.expertRequired, publicationController.pending);
+    router.get('/publication/test', auth.sessionAuthenticationRequired, publicationController.tester);
 }
 module.exports.connect = connectRoutes;

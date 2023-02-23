@@ -31,27 +31,8 @@ publicationValidationSchema.post('save', async function(doc) {
     const requestValidations = await this.model('Publication Validation').find({ referenced_request: doc.referenced_request });
     if (requestValidations.length >= 3) {
         const createdRequest = await PublicationRequest.findOne({ _id: doc.referenced_request });
-        let publicModel;
-        switch (createdRequest.referenced_model) {
-            case 'Private Tool':
-                publicModel = mongoose.model('Public Tool');
-                break;
-            case 'Private Drinkware':
-                publicModel = mongoose.model('Public Drinkware');
-                break;
-            case 'Private Ingredient':
-                publicModel = mongoose.model('Public Ingredient');
-                break;
-            case 'Private Drink':
-                publicModel = mongoose.model('Public Drink');
-                break;
-            default:
-                break;
-        }
-        const publicDocument = new publicModel({
-            ...createdRequest.snapshot
-        });
-        await publicDocument.save();
+        const documentModel = mongoose.model(createdRequest.referenced_model);
+        await documentModel.makePublic(createdRequest.snapshot);
         createdRequest['activeRequest'] = false;
         await createdRequest.save();
     }

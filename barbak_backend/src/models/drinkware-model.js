@@ -1,21 +1,22 @@
 const mongoose = require('mongoose');
 const {executeSqlQuery} = require('../config/database-config');
+const FileOperations = require('../utils/file-operations');
 
 const Drinkware = mongoose.model("Drinkware", new mongoose.Schema({
     name: {
         type: String,
-        minLength: 3,
-        maxLength: 30,
+        minLength: [3, 'Name must be at least 3 characters long'],
+        maxLength: [30, 'Name length must not exceed 30 characters'],
         lowercase: true,
-        required: true
+        required: [true, 'Drinkware name is required']
     },
     description: {
         type: String,
-        maxLength: 600,
+        maxLength: [600, 'Description must not exceed 600 characters'],
     },
     material: {
         type: String,
-        required: true,
+        required: [true, 'Tool material is required'],
     },
     image: {
         type: String,
@@ -61,13 +62,25 @@ privateDrinkwareSchema.methods.customValidate = async function() {
     error.name = "CustomValidationError";
     error.errors = {};
 
-    const { materialCount } = await executeSqlQuery(`SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = '${this.material}'`)
+    const { materialCount } = await executeSqlQuery(`SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = '${this.material}' LIMIT 1;`)
         .then(res => res[0]);
     if (!materialCount)
         error.errors['material'] = { type: 'valid', message: 'Invalid material' };
 
     if (Object.keys(error.errors).length)
         throw error;
+}
+
+privateDrinkwareSchema.statics.makePublic = async function(snapshot) {
+    const { name, description, material, image } = snapshot;
+    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
+    const createdDocument = this.model('Public Drinkware')({
+        name,
+        description,
+        material,
+        image: copiedImage
+    });
+    await createdDocument.save();
 }
 
 module.exports = {

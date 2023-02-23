@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
+const FileOperations = require('../utils/file-operations');
 
 const Tool = mongoose.model("Tool", new mongoose.Schema({
     name: {
@@ -40,14 +41,14 @@ Tool.schema.statics = {
         return (await materials.map(item => item.name));
     },
     validateType: async function(type) {
-        const {type_id} = await executeSqlQuery(`SELECT type_id FROM tool_types WHERE name = '${type}';`)
-            .then(res => res.length ? res[0] : res);
-        return (type_id !== undefined);
+        const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}' LIMIT 1;`)
+            .then(res => res[0]);
+        return Boolean(typeCount);
     },
     validateMaterial: async function(material) {
-        const {material_id} = await executeSqlQuery(`SELECT material_id FROM tool_materials WHERE name = '${material}';`)
-            .then(res => res.length ? res[0] : res);
-        return (material_id !== undefined);
+        const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}' LIMIT 1;`)
+            .then(res => res[0]);
+        return Boolean(materialCount);
     }
 }
 
@@ -69,31 +70,46 @@ const privateToolSchema = new mongoose.Schema({
     },
     date_created: {
         type: Date,
-        required: true,
         immutable: true,
         default: () => Date.now(),
     }
 });
-// Function "validate" should validate data types
-// Function "customValidate" should validate data values, coencides with model structure
+
+privateToolSchema.query.userExposure = function() {
+    return this.select('name description type material image date_created -model');
+}
+
 privateToolSchema.methods.customValidate = async function() {
     const {type, material} = this;
     const error = new Error();
     error.name = "CustomValidationError";
     error.errors = {};
 
-    const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}';`)
+    const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}' LIMIT 1;`)
         .then(res => res[0]);
     if (!typeCount)
         error.errors['type'] = { type: 'valid', message: 'Invalid Tool Type' };
     
-    const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}';`)
+    const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}' LIMIT 1;`)
         .then(res => res[0]);
     if (!materialCount)
         error.errors['material'] = { type: 'valid', message: 'Invalid Tool Material' }
 
     if (Object.keys(error.errors).length)
         throw error;
+}
+
+privateToolSchema.statics.makePublic = async function(snapshot) {
+    const { name, description, type, material, image } = snapshot;
+    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
+    const createdDocument = this.model('Public Tool')({
+        name,
+        description,
+        type,
+        material,
+        image: copiedImage
+    });
+    await createdDocument.save();
 }
 
 module.exports = {

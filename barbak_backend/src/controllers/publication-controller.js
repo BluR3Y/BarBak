@@ -4,6 +4,21 @@ const PublicationValidation = require('../models/publication-validation-model');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
 const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
 
+module.exports.tester = async (req, res) => {
+    try {
+        const createdValidation = new PublicationValidation({
+            referenced_request: '63f6a29395029ede70370097',
+            validator: req.user._id,
+            validation: true,
+            reasoning: 'blah blah blah'
+        });
+        await createdValidation.save();
+    } catch(err) {
+
+    }
+    res.send('lol')
+}
+
 module.exports.publishTool = async (req, res) => {
     try {
         const { tool_id } = req.body;
@@ -44,9 +59,9 @@ module.exports.publishDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
         const drinkwareDocument = await PrivateDrinkware.findOne({ _id: drinkware_id, user_id: req.user._id });
-
+        console.log(drinkware_id)
         if (!drinkwareDocument)
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drink does not exist' });
+            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: drinkwareDocument._id, referenced_model: 'Private Drinkware', user_id: req.user._id, activeRequest: true }))
             return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Drinkware is currently being review' });
         else if (await PublicDrinkware.exists({ name: drinkwareDocument.name }))

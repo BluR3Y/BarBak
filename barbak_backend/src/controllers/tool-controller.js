@@ -95,18 +95,28 @@ module.exports.update = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
+        if (err.name === "ValidationError") {
             var errors = [];
-
             Object.keys(err.errors).forEach(error => {
                 const errorParts = error.split('.');
                 const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || '0';
+                const indexPart = errorParts[1] || 0;
                 
-                errors.push({ 
-                    path: errorPart, 
-                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
-                    index: indexPart 
+                errors.push({
+                    path: errorPart,
+                    type: err.errors[error].properties.type,
+                    message: err.errors[error].properties.message,
+                    index: indexPart
+                });
+            })
+            return res.status(400).send(errors);
+        } else if (err.name === "CustomValidationError") {
+            var errors = [];
+            
+            Object.keys(err.errors).forEach(error => {
+                const { type, message, index } = err.errors[error];
+                errors.push({
+                    path: error, type, message, index
                 });
             })
             return res.status(400).send(errors);
@@ -133,60 +143,36 @@ module.exports.delete = async (req, res) => {
     }
 }
 
-// Needs Improving
-// module.exports.search = async (req, res) => {
-//     try {
-//         const page = parseInt(req.query.page) || 1;
-//         const page_size = parseInt(req.query.page_size) || 5;
-//         const query = req.query.query || "";
-//         var types = req.query.types ? JSON.parse(req.query.types) : null;
-//         var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
-
-//         if (page <= 0)
-//             return res.status(400).send({ path: 'page', type: 'valid' });
-//         else if (page_size > 20 || page_size < 1)
-//             return res.status(400).send({ path: 'page_size', type: 'valid' });
-        
-//         if (types !== null) {
-//             for(const index in types) {
-//                 if (!await privateTool.validateType(types[index]))
-//                     return res.status(400).send({ path: 'types', type: 'valid', index });
-//             }
-//         } else 
-//             types = await publicTool.getTypes();
-
-//         if (materials !== null) {
-//             for(const index in materials) {
-//                 if (!await privateTool.validateMaterial(materials[index]))
-//                     return res.status(400).send({ path: 'materials', type: 'valid', index });
-//             }
-//         } else
-//             materials = await publicTool.getMaterials();
-
-//         const result = await publicTool.find({ name: { $regex: query } })
-//             .where("type").in(types)
-//             .where("material").in(materials)
-//             .skip((page - 1) * page_size)
-//             .limit(page_size)
-//             .select("name type material -model");
-        
-//         res.status(200).send(result);
-//     } catch (err) {
-//         res.status(500).send(err);
-//     }
-// }
-
 module.exports.getPrivate = async (req, res) => {
     try {
-        const {
-            page = 1,
-            page_size = 10
-        } = req.query;
+        const page = req.query.page || 1;
+        const page_size = req.query.page_size || 10;
+        var types = req.query.types ? JSON.parse(req.query.types) : null;
+        var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
+
+        if (types) {
+            for (const type in types) {
+                if (!await PrivateTool.validateType(types[type]))
+                    return res.status(400).send({ path: 'types', type: 'valid', index: type, message: 'Invalid Tool Type' });
+            }
+        }else
+            types = await PrivateTool.getTypes();
+
+        if (materials) {
+            for (const material in materials) {
+                if (!await PrivateTool.validateMaterial(materials[material]))
+                    return res.status(400).send({ path: 'materials', type: 'valid', index: material, message: 'Invalid Tool Material' });
+            }
+        }else
+            types = await PrivateTool.getMaterials();
 
         const userTools = await PrivateTool
             .find({ user_id: req.user._id })
+            .where('type').in(types)
+            .where('material').in(materials)
             .skip((page - 1) * page_size)
             .limit(page_size)
+            .userExposure();
 
         res.status(200).send(userTools);
     } catch(err) {
