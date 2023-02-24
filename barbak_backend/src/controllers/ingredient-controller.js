@@ -144,9 +144,35 @@ module.exports.getPrivate = async (req, res) => {
     try {
         const page = req.query.page || 1;
         const page_size = req.query.page_size || 10;
-        var types = req.query.types ? JSON.parse(req.query.types) : null;
-        var categories = req.query.categories ? JSON.parse(req.query.categories) : null;
+        const ingredient_filters = req.query.ingredient_filters ? JSON.parse(req.query.ingredient_filters) : [];
+        const filterErrors = {};
+        const args = [];
 
+        for (const typeIndex in Object.keys(ingredient_filters)) {
+            const filterErr = {};
+            const type = Object.keys(ingredient_filters)[typeIndex];
+            for (const categoryIndex in Object.values(ingredient_filters)[typeIndex]) {
+                const category = Object.values(ingredient_filters)[typeIndex][categoryIndex];
+                const errors = await PrivateIngredient.validateTypeCategory(type, category);
+
+                if (Object.keys(errors).length)
+                    filterErr[categoryIndex] = errors;
+                else args.push({ type, category });
+            }
+            if (Object.keys(filterErr).length)
+                filterErrors[typeIndex] = filterErr;
+        }
+        if (Object.keys(filterErrors).length)
+            return res.status(400).send(filterErrors);
+
+        const privateIngredients = await PrivateIngredient.find({ user_id: req.user._id })
+            .typeCategoryFilter(args)
+            // .sort('-name')
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .userExposure();
+
+        res.status(200).send(privateIngredients);
     } catch(err) {
         res.status(500).send(err);
     }

@@ -40,7 +40,27 @@ Ingredient.schema.statics = {
             return;
         const categories = await executeSqlQuery(`SELECT name FROM ingredient_categories WHERE type_id = ${type_id};`);
         return (await categories.map(item => item.name));
+    },
+    validateTypeCategory: async function(type, category) {
+        const errors = {};
+        const { type_id } = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
+            .then(res => res.length ? res[0] : res); 
+        
+        if (type_id) {
+            const { categoryCount } = await executeSqlQuery(`SELECT count(*) AS categoryCount FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${category}' LIMIT 1;`)
+                .then(res => res[0]);
+            if (!categoryCount)
+                errors['category'] = { type: 'valid', message: 'Invalid ingredient category' };
+        } else errors['type'] = { type: 'valid', message: 'Invalid ingredient type' };
+
+        return errors;
     }
+}
+
+Ingredient.schema.query.typeCategoryFilter = function(args) {
+    if (args.length) {
+        return this.or(args);
+    } else return this;
 }
 
 const publicIngredientSchema = new mongoose.Schema({
@@ -64,6 +84,10 @@ const privateIngredientSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+privateIngredientSchema.query.userExposure = function() {
+    return this.select('name description type category image date_created -model');
+}
 
 privateIngredientSchema.statics.makePublic = async function(snapshot) {
     const { name, description, type, category, image } = snapshot;
