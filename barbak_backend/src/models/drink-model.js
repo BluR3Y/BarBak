@@ -163,6 +163,16 @@ drinkSchema.statics = {
     getServingStyles: async function() {
         const servingStyles = await executeSqlQuery(`SELECT name FROM drink_serving_styles`);
         return (await servingStyles.map(item => item.name));
+    },
+    validatePreparationMethod: async function(method) {
+        const { methodCount } = await executeSqlQuery(`SELECT count(*) AS methodCount FROM drink_preparation_methods WHERE name = '${method}' LIMIT 1;`)
+            .then(res => res[0]);
+        return Boolean(methodCount);
+    },
+    validateServingStyle: async function(style) {
+        const { styleCount } = await executeSqlQuery(`SELECT count(*) AS styleCount FROM drink_serving_styles WHERE name = '${style}' LIMIT 1;`)
+            .then(res => res[0]);
+        return Boolean(styleCount);
     }
 }
 
@@ -188,6 +198,10 @@ const privateDrinkSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+privateDrinkSchema.query.userExposure = function() {
+    return this.select('name description preparation_method serving_style images date_created -model')
+}
 
 privateDrinkSchema.statics.makePublic = async function(snapshot) {
     const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags, images } = snapshot;

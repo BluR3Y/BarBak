@@ -144,30 +144,50 @@ module.exports.getPrivate = async (req, res) => {
     try {
         const page = req.query.page || 1;
         const page_size = req.query.page_size || 10;
-        const ingredient_filters = req.query.ingredient_filters ? JSON.parse(req.query.ingredient_filters) : [];
-        const filterErrors = {};
-        const args = [];
-
-        for (const typeIndex in Object.keys(ingredient_filters)) {
-            const filterErr = {};
-            const type = Object.keys(ingredient_filters)[typeIndex];
-            for (const categoryIndex in Object.values(ingredient_filters)[typeIndex]) {
-                const category = Object.values(ingredient_filters)[typeIndex][categoryIndex];
-                const errors = await PrivateIngredient.validateTypeCategory(type, category);
-
-                if (Object.keys(errors).length)
-                    filterErr[categoryIndex] = errors;
-                else args.push({ type, category });
+        const ingredient_filters = req.query.ingredient_filters ? JSON.parse(req.query.ingredient_filters) : null;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : null;
+        const errors = {};
+        const filters = [];
+        
+        if (ingredient_filters) {
+            const filterErrors = {};
+            for (const typeIndex in Object.keys(ingredient_filters)) {
+                const filterErr = {};
+                const type = Object.keys(ingredient_filters)[typeIndex];
+                for (const categoryIndex in Object.values(ingredient_filters)[typeIndex]) {
+                    const category = Object.values(ingredient_filters)[typeIndex][categoryIndex];
+                    const pairErr = await PrivateIngredient.validateTypeCategory(type, category);
+                    if (Object.keys(pairErr).length) {
+                        const errKey = Object.keys(pairErr)[0];
+                        filterErr[`${errKey}.${categoryIndex}`] =  pairErr[errKey];
+                        if (errKey === 'type')
+                            break;
+                    } else filters.push({ type, category });
+                }
+                if (Object.keys(filterErr).length)
+                    filterErrors[`filter.${typeIndex}`] = filterErr;
             }
-            if (Object.keys(filterErr).length)
-                filterErrors[typeIndex] = filterErr;
+            if (Object.keys(filterErrors).length)
+                errors['ingredient_filters'] = filterErrors;
         }
-        if (Object.keys(filterErrors).length)
-            return res.status(400).send(filterErrors);
+        
+        if (ordering) {
+            const orderingErrors = {};
+            for (const orderingIndex in Object.keys(ordering)) {
+                const orderingKey = Object.keys(ordering)[orderingIndex];
+                if (!PrivateIngredient.schema.paths[orderingKey]) 
+                    orderingErrors[`order.${orderingIndex}`] = { type: 'exist', message: 'Invalid sorting type' };
+            }
+            if (Object.keys(orderingErrors).length)
+                errors['ordering'] = orderingErrors;
+        }
+        if (Object.keys(errors).length)
+            return res.status(400).send(errors);
 
-        const privateIngredients = await PrivateIngredient.find({ user_id: req.user._id })
-            .typeCategoryFilter(args)
-            // .sort('-name')
+        const privateIngredients = await PrivateIngredient
+            .find({ user_id: req.user._id })
+            .typeCategoryFilter(filters)
+            .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
             .userExposure();

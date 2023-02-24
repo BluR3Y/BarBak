@@ -27,10 +27,6 @@ const Tool = mongoose.model("Tool", new mongoose.Schema({
     } 
 }, { collection: 'tools', discriminatorKey: 'model' }));
 
-Tool.schema.query.publicInfo = function() {
-    return this.select('name description type material image -model');
-}
-
 Tool.schema.statics = {
     getTypes: async function() {
         const types = await executeSqlQuery(`SELECT name FROM tool_types`);

@@ -125,11 +125,39 @@ module.exports.uploadImage = async (req, res) => {
 
 module.exports.getPrivate = async (req, res) => {
     try {
-        const page = req.body.page || 1;
-        const page_size = req.body.page || 10;
+        const page = req.query.page || 1;
+        const page_size = req.query.page_size || 10;
+        var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : null;
+        const errors = {};
+        
+        if (materials) {
+            const materialErrors = {};
+            for (const materialIndex in materials) {
+                if (!await PrivateDrinkware.validateMaterial(materials[materialIndex]))
+                    materialErrors[`material.${materialIndex}`] = { type: 'valid', message: 'Invalid ingredient material' };
+            }
+            if (Object.keys(materialErrors).length)
+                errors['materials'] = materialErrors;
+        } else materials = await PrivateDrinkware.getMaterials();
+
+        if (ordering) {
+            const orderingErrors = {};
+            for (const orderingIndex in Object.keys(ordering)) {
+                const orderingKey = Object.keys(ordering)[orderingIndex];
+                if (!PrivateDrinkware.schema.paths[orderingKey])
+                    orderingErrors[`order.${orderingIndex}`] = { type: 'exist', message: 'Invalid sorting type' };
+            }
+            if (Object.keys(orderingErrors).length)
+                errors['ordering'] = orderingErrors;
+        }
+        if (Object.keys(errors).length)
+            return res.status(400).send(errors);
 
         const privateDocuments = await PrivateDrinkware
             .find({ user_id: req.user._id })
+            .where('material').in(materials)
+            .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
             .userExposure();

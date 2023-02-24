@@ -28,6 +28,11 @@ Drinkware.schema.statics = {
     getMaterials: async function() {
         const materials = await executeSqlQuery(`SELECT name FROM drinkware_materials`);
         return (await materials.map(item => item.name));
+    },
+    validateMaterial: async function(material) {
+        const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM drinkware_materials WHERE name = '${material}' LIMIT 1;`)
+            .then(res => res[0]);
+        return Boolean(materialCount);
     }
 }
 

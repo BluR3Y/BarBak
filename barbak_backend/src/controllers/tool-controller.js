@@ -148,29 +148,50 @@ module.exports.getPrivate = async (req, res) => {
     try {
         const page = req.query.page || 1;
         const page_size = req.query.page_size || 10;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
         var types = req.query.types ? JSON.parse(req.query.types) : null;
         var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
+        const errors = {};
 
         if (types) {
-            for (const type in types) {
-                if (!await PrivateTool.validateType(types[type]))
-                    return res.status(400).send({ path: 'types', type: 'valid', index: type, message: 'Invalid Tool Type' });
+            const typeErrors = {};
+            for (const typeIndex in types) {
+                if (!await PrivateTool.validateType(types[typeIndex]))
+                    typeErrors[`type.${typeIndex}`] = { type: 'valid', message: 'Invalid tool type' };
             }
-        }else
-            types = await PrivateTool.getTypes();
+            if (Object.keys(typeErrors).length)
+                errors['types'] = typeErrors;
+        } else types = await PrivateTool.getTypes();
 
         if (materials) {
-            for (const material in materials) {
-                if (!await PrivateTool.validateMaterial(materials[material]))
-                    return res.status(400).send({ path: 'materials', type: 'valid', index: material, message: 'Invalid Tool Material' });
+            const materialErrors = {};
+            for (const materialIndex in materials) {
+                if (!await PrivateTool.validateMaterial(materials))
+                    materialErrors[`material.${materialIndex}`] = { type: 'valid', message: 'Invalid tool material' };
             }
-        }else
-            types = await PrivateTool.getMaterials();
+            if (Object.keys(materialErrors).length)
+                errors['materials'] = materialErrors;
+        } else materials = await PrivateTool.getMaterials();
+        
+        if (ordering) {
+            const orderingErrors = {};
+            for (const orderingIndex in Object.keys(ordering)) {
+                const orderingKey = Object.keys(ordering)[orderingIndex];
+                if (!PrivateTool.schema.paths[orderingKey]) 
+                    orderingErrors[`order.${orderingIndex}`] = { type: 'exist', message: 'Invalid sorting type' };
+            }
+            if (Object.keys(orderingErrors).length)
+                errors['ordering'] = orderingErrors;
+        }
+
+        if (Object.keys(errors).length)
+            return res.status(400).send(errors);
 
         const userTools = await PrivateTool
             .find({ user_id: req.user._id })
             .where('type').in(types)
             .where('material').in(materials)
+            .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
             .userExposure();

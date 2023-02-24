@@ -13,6 +13,7 @@ function connectRoutes(router) {
 
     router.get('/drinks/preparation-methods', drinkController.getPreparationMethods);
     router.get('/drinks/serving-styles', drinkController.getServingStyles);
+    router.get('/drinks/private', auth.sessionAuthenticationRequired, drinkController.getPrivate);
 };
 
 module.exports.connect = connectRoutes;

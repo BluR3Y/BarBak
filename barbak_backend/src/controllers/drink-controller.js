@@ -142,7 +142,58 @@ module.exports.delete = async (req, res) => {
 }
 
 module.exports.getPrivate = async (req, res) => {
-    // Finish This
+    try {
+        const page = req.query.page || 1;
+        const page_size = req.query.page_size || 10;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : null;
+        var preparation_methods = req.query.preparation_methods ? JSON.parse(req.query.preparation_methods) : null;
+        var serving_styles = req.query.serving_styles ? JSON.parse(req.query.serving_styles) : null;
+        const errors = {};
+
+        if (preparation_methods) {
+            const methodErrors = {};
+            for (const methodIndex in preparation_methods) {
+                if (!await PrivateDrink.validatePreparationMethod(preparation_methods[methodIndex]))
+                    methodErrors[`method.${methodIndex}`] = { type: 'valid', message: 'Invalid preparation method' };
+            }
+            if (Object.keys(methodErrors).length)
+                errors['preparation_methods'] = methodErrors;
+        } else preparation_methods = await PrivateDrink.getPreparationMethods();
+
+        if (serving_styles) {
+            const styleErrors = {};
+            for (const styleIndex in serving_styles) {
+                if (!await PrivateDrink.validateServingStyle(serving_styles[styleIndex]))
+                    styleErrors[`style.${styleIndex}`] = { type: 'valid', message: 'Invalid serving style' };
+            }
+            if (Object.keys(styleErrors).length)
+                errors['serving_styles'] = styleErrors;
+        } else serving_styles = await PrivateDrink.getServingStyles();
+
+        if (ordering) {
+            const orderingErrors = {};
+            for (const orderingIndex in Object.keys(ordering)) {
+                const orderingKey = Object.keys(ordering)[orderingIndex];
+                if (!PrivateDrink.schema.paths[orderingKey]) 
+                    orderingErrors[`order.${orderingIndex}`] = { type: 'exist', message: 'Invalid sorting type' };
+            }
+            if (Object.keys(orderingErrors).length)
+                errors['ordering'] = orderingErrors;
+        }
+
+        if (Object.keys(errors).length)
+            return res.status(400).send(errors);
+        
+        const userDrinks = await PrivateDrink
+            .find({ user_id: req.user._id })
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .userExposure();
+
+        res.status(200).send(userDrinks);
+    } catch(err) {
+        res.status(500).send(err);
+    }
 }
 
 module.exports.getPreparationMethods = async (req, res) => {
