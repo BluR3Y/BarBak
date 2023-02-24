@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
+const { BaseTool } = require('../models/tool-model');
+const { BaseIngredient } = require('../models/ingredient-model');
+const { BaseDrinkware } = require('../models/drinkware-model');
+const FileOperations = require('../utils/file-operations');
 
 const ingredientSchema = {
     type: [{
@@ -144,10 +148,23 @@ const drinkSchema = new mongoose.Schema({
         validate: {
             validator: function(items) {
                 return items && items.length <= 10;
-            }
-        }
+            },
+            message: 'Maximum of 10 images can be attached to a drink'
+        },
+        default: null
     }
 },{ collection: 'drinks', discriminatorKey: 'model' });
+
+drinkSchema.statics = {
+    getPreparationMethods: async function() {
+        const preparationMethods = await executeSqlQuery(`SELECT name FROM drink_preparation_methods`);
+        return (await preparationMethods.map(item => item.name));
+    },
+    getServingStyles: async function() {
+        const servingStyles = await executeSqlQuery(`SELECT name FROM drink_serving_styles`);
+        return (await servingStyles.map(item => item.name));
+    }
+}
 
 const Drink = mongoose.model("Drink", drinkSchema);
 
@@ -172,7 +189,107 @@ const privateDrinkSchema = new mongoose.Schema({
     }
 });
 
+privateDrinkSchema.statics.makePublic = async function(snapshot) {
+    const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags, images } = snapshot;
+    const copiedImages = images ? await FileOperations.copyMultiple(images, 'assets/public/images/') : null;
+    const createdDocument = this.model('Public Drink')({
+        name,
+        description,
+        preparation_method,
+        serving_style,
+        drinkware,
+        preparation,
+        ingredients,
+        tools,
+        tags,
+        images: copiedImages
+    });
+    await createdDocument.save();
+}
+
+privateDrinkSchema.methods.customValidate = async function() {
+    const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags } = this;
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = {};
+    
+    const { methodCount } = await executeSqlQuery(`SELECT count(*) AS methodCount FROM drink_preparation_methods WHERE name = '${preparation_method}' LIMIT 1;`)
+        .then(res => res[0]);
+    if (!methodCount)
+        error.errors['preparation_method'] = { type: 'valid', message: 'Invalid Preparation Method' };
+    
+    const { styleCount } = await executeSqlQuery(`SELECT count(*) AS styleCount FROM drink_serving_styles WHERE name = '${serving_style}' LIMIT 1;`)
+        .then(res => res[0]);
+    if (!styleCount)
+        error.errors['serving_style'] = { type: 'valid', message: 'Invalid Serving Style' };
+
+    const drinkwareDocument = await BaseDrinkware.findOne({ _id: drinkware, $or: [ { model: 'Public Drinkware' }, { model: 'Private Drinkware', user_id: this.user_id } ] });
+    if (!drinkwareDocument)
+        error.errors['drinkware'] = { type: 'valid', message: 'Invalid Drinkware' };
+
+    const toolErrors = {};
+    for (const toolIndex in tools) {
+        const toolErr = {};
+        if (! await BaseTool.exists({ _id: tools[toolIndex], $or: [ { model: 'Public Tool' }, { model: 'Private Tool', user_id: this.user_id } ] }))
+            toolErrors[toolIndex] = { type: 'exist', message: 'Tool does not exist' };
+        if (Object.keys(toolErr).length)
+            toolErrors[toolIndex] = toolErr;
+    }
+    if (Object.keys(toolErrors).length)
+        error.errors['tools'] = toolErrors;
+
+    const ingredientErrors = {};
+    for (const ingredientIndex in ingredients) {
+        let ingredientErr = {};
+        const { ingredient_id, measure, substitutes } = ingredients[ingredientIndex];
+        const ingredientDocument = await BaseIngredient.findOne({ _id: ingredient_id, $or: [{ model: 'Public Ingredient' },{ model: 'Private Ingredient', user_id: this.user_id }] });
+        if (ingredientDocument) {
+            let { name, description, type, category } = ingredientDocument;
+            const { ingredientTypeId } = await executeSqlQuery(`SELECT type_id AS ingredientTypeId FROM ingredient_types WHERE name = '${type}';`)
+                .then(res => res[0]);
+            const { ingredientMeasureState } = await executeSqlQuery(`SELECT measure_state AS ingredientMeasureState FROM ingredient_categories WHERE type_id = ${ingredientTypeId} AND name = '${category}';`)
+                .then(res => res[0]);
+            const { measureCount } = await executeSqlQuery(`SELECT count(*) AS measureCount FROM measure WHERE measure_use = '${ingredientMeasureState}' AND name = '${measure.unit}' LIMIT 1;`)
+                .then(res => res[0]);
+            if (measureCount) {
+                const substituteErrors = {};
+                for (const substituteIndex in substitutes) {
+                    const substituteErr = {};
+                    const substituteDocument = await BaseIngredient.findOne({ _id: substitutes[substituteIndex].ingredient_id, $or: [{ model: 'Public Ingredient' },{ model: 'Private Ingredient', user_id: this.user_id }] });
+                    if (substituteDocument) {
+                        const { substituteTypeId } = await executeSqlQuery(`SELECT type_id AS substituteTypeId FROM ingredient_types WHERE name = '${substituteDocument.type}';`)
+                        .then(res => res[0]);
+                        const { substituteMeasureState } = await executeSqlQuery(`SELECT measure_state AS substituteMeasureState FROM ingredient_categories WHERE type_id = ${substituteTypeId} AND name = '${substituteDocument.category}';`)
+                        .then(res => res[0]);
+                        const { substituteMeasureCount } = await executeSqlQuery(`SELECT count(*) AS substituteMeasureCount FROM measure WHERE measure_use = '${substituteMeasureState}' AND name = '${substitutes[substituteIndex].measure.unit}' LIMIT 1;`)
+                        .then(res => res[0]);
+                        if (!substituteMeasureCount)
+                            substituteErr['measure'] = { type: 'valid', message: 'Invalid ingredient measure Unit' };
+                    }else
+                        substituteErr['ingredient_id'] = { type: 'exist', message: 'Substitute ingredient does not exist' };
+                    
+                    if (Object.keys(substituteErr).length)
+                        substituteErrors[substituteIndex] = substituteErr;
+                }
+                if (Object.keys(substituteErrors).length)
+                    ingredientErr['substitutes'] = substituteErrors;
+            }else
+                ingredientErr['measure'] = { type: 'valid', message: 'Invalid ingredient measure unit' };
+        } else
+            ingredientErr['ingredient_id'] = { type: 'exist', message: 'Ingredient does not exist' };
+
+        if (Object.keys(ingredientErr).length)
+            ingredientErrors[ingredientIndex] = ingredientErr;
+    }
+    if (Object.keys(ingredientErrors).length)
+        error.errors['ingredients'] = ingredientErrors;
+
+    if (Object.keys(error.errors).length)
+        throw error;
+}
+
 module.exports = {
     PublicDrink: Drink.discriminator("Public Drink", publicDrinkSchema),
-    PrivateDrink: Drink.discriminator("Private Drink", privateDrinkSchema)
+    PrivateDrink: Drink.discriminator("Private Drink", privateDrinkSchema),
+    BaseDrink: Drink
 };

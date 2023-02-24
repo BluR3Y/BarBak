@@ -44,6 +44,10 @@ module.exports.copySingle = function(readPath, writePath) {
     });
 };
 
+module.exports.copyMultiple = function(readPaths, writePath) {
+    return Promise.all(readPaths.map(async file => this.copySingle(file, writePath)));
+}
+
 module.exports.readSingle = function(filepath, file) {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(filepath + file))
@@ -66,3 +70,7 @@ module.exports.deleteSingle = function(filepath) {
         });
     });
 };
+
+module.exports.deleteMultiple = function(filepaths) {
+    return Promise.all(filepaths.map(async file => this.deleteSingle(file)));
+}

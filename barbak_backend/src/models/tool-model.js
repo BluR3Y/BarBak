@@ -114,5 +114,6 @@ privateToolSchema.statics.makePublic = async function(snapshot) {
 
 module.exports = {
     PublicTool: Tool.discriminator('Public Tool', publicToolSchema),
-    PrivateTool: Tool.discriminator('Private Tool', privateToolSchema)
+    PrivateTool: Tool.discriminator('Private Tool', privateToolSchema),
+    BaseTool: Tool
 };

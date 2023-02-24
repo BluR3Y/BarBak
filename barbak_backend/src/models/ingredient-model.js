@@ -65,6 +65,19 @@ const privateIngredientSchema = new mongoose.Schema({
     }
 });
 
+privateIngredientSchema.statics.makePublic = async function(snapshot) {
+    const { name, description, type, category, image } = snapshot;
+    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
+    const createdDocument = this.model('Public Ingredient')({
+        name,
+        description,
+        type,
+        category,
+        image: copiedImage
+    });
+    await createdDocument.save();
+}
+
 privateIngredientSchema.methods.customValidate = async function() {
     const { type, category } = this;
     const error = new Error();
@@ -85,21 +98,9 @@ privateIngredientSchema.methods.customValidate = async function() {
         throw error;
 }
 
-privateIngredientSchema.methods.makePublic = async function(snapshot) {
-    const { name, description, type, category, image } = req.body;
-    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
-    const createdDocument = this.model('Public Ingredient')({
-        name,
-        description,
-        type,
-        category,
-        image: copiedImage
-    });
-    await createdDocument.save();
-}
-
 module.exports = {
     PublicIngredient: Ingredient.discriminator("Public Ingredient", publicIngredientSchema),
-    PrivateIngredient: Ingredient.discriminator("Private Ingredient", privateIngredientSchema)
+    PrivateIngredient: Ingredient.discriminator("Private Ingredient", privateIngredientSchema),
+    BaseIngredient: Ingredient
 };
 

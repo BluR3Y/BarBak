@@ -85,5 +85,6 @@ privateDrinkwareSchema.statics.makePublic = async function(snapshot) {
 
 module.exports = {
     PublicDrinkware: Drinkware.discriminator("Public Drinkware", publicDrinkwareSchema),
-    PrivateDrinkware: Drinkware.discriminator("Private Drinkware", privateDrinkwareSchema)
+    PrivateDrinkware: Drinkware.discriminator("Private Drinkware", privateDrinkwareSchema),
+    BaseDrinkware: Drinkware
 };

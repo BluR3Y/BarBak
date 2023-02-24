@@ -89,6 +89,7 @@ module.exports.update = async (req, res) => {
         toolDocument.description = description;
         toolDocument.type = type;
         toolDocument.material = material;
+        
         await toolDocument.validate();
         await toolDocument.customValidate();
         await toolDocument.save();

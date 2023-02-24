@@ -3,6 +3,8 @@ const PublicationRequest = require('../models/publication-request-model');
 const PublicationValidation = require('../models/publication-validation-model');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
 const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
+const { PublicIngredient, PrivateIngredient } = require('../models/ingredient-model');
+const { PublicDrink, PrivateDrink } = require('../models/drink-model');
 
 module.exports.tester = async (req, res) => {
     try {
@@ -27,7 +29,7 @@ module.exports.publishTool = async (req, res) => {
         if (!toolDocument)
             return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: toolDocument._id, referenced_model: 'Private Tool', user_id: req.user._id, activeRequest: true }))
-            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Tool is currently being review' });
+            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Tool is currently being reviewed' });
         else if (await PublicTool.exists({ name: toolDocument.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: `A public tool named '${toolDocument.name}' currently exists` });
 
@@ -59,11 +61,11 @@ module.exports.publishDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
         const drinkwareDocument = await PrivateDrinkware.findOne({ _id: drinkware_id, user_id: req.user._id });
-        console.log(drinkware_id)
+
         if (!drinkwareDocument)
             return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: drinkwareDocument._id, referenced_model: 'Private Drinkware', user_id: req.user._id, activeRequest: true }))
-            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Drinkware is currently being review' });
+            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Drinkware is currently being reviewed' });
         else if (await PublicDrinkware.exists({ name: drinkwareDocument.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: `A public drinkware named '${toolDocument.name}' currently exists` });
         
@@ -84,6 +86,82 @@ module.exports.publishDrinkware = async (req, res) => {
         createdRequest.snapshot.image = snapshot_image;
         await createdRequest.save();
 
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.publishIngredient = async (req, res) => {
+    try {
+        const { ingredient_id } = req.body;
+        const ingredientDocument = await PrivateIngredient.findOne({ _id: ingredient_id, user_id: req.user._id });
+
+        if (!ingredientDocument)
+            return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+        else if (await PublicationRequest.exists({ referenced_document: ingredientDocument._id, referenced_model: 'Private Ingredient', user_id: req.user._id, activeRequest: true }))
+            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Ingredient is currently being reviewed' });
+        else if (await PublicIngredient.exists({ name: ingredientDocument.name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: `A public ingredient named '${ingredientDocument.name}' currently exists` });
+
+        const { _id, name, description, type, category, image } = ingredientDocument;
+        const createdRequest = new PublicationRequest({
+            referenced_document: _id,
+            referenced_model: 'Private Ingredient',
+            user_id: req.user._id,
+            snapshot: {
+                name,
+                description,
+                type,
+                category
+            }
+        });
+        await createdRequest.validate();
+
+        const snapshot_image = image ? await FileOperations.copySingle(image, 'assets/private/images/') : null;
+        createdRequest.snapshot.image = snapshot_image;
+        await createdRequest.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+// For drink, publishing must require that every tool, ingredient, etc. is public
+module.exports.publishDrink = async (req, res) => {
+    try {
+        const { drink_id } = req.body;
+        const drinkDocument = await PrivateDrink.findOne({ _id: drink_id, user_id: req.user._id });
+
+        if (!drinkDocument)
+            return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (await PublicationRequest.exists({ referenced_document: drinkDocument._id, referenced_model: 'Private Drink', user_id: req.user._id, activeRequest: true }))
+            return res.status(400).send({ path: 'referenced_document', type: 'exist', message: 'Drink is currently being reviewed' });
+        else if (await PublicDrink.exists({ name: drinkDocument.name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: `A public drink named '${drinkDocument.name}' currently exists` });
+
+        const { _id, name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags, images } = drinkDocument;
+        const createdRequest = new PublicationRequest({
+            referenced_document: _id,
+            referenced_model: 'Private Drink',
+            user_id: req.user._id,
+            snapshot: {
+                name,
+                description,
+                preparation_method,
+                serving_style,
+                drinkware,
+                preparation,
+                ingredients,
+                tools,
+                tags
+            }
+        });
+        await createdRequest.validate();
+
+        const snapshot_images = images ? await FileOperations.copyMultiple(images, 'assets/private/images/') : null;
+        createdRequest.snapshot.images = snapshot_images;
+        await createdRequest.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
