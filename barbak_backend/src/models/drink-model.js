@@ -165,13 +165,13 @@ drinkSchema.statics = {
         return (await servingStyles.map(item => item.name));
     },
     validatePreparationMethod: async function(method) {
-        const { methodCount } = await executeSqlQuery(`SELECT count(*) AS methodCount FROM drink_preparation_methods WHERE name = '${method}' LIMIT 1;`)
-            .then(res => res[0]);
+        const methodQuery = 'SELECT COUNT(*) AS methodCount FROM drink_preparation_methods WHERE name = ? LIMIT 1;';
+        const { methodCount } = await executeSqlQuery(methodQuery, [method]).then(res => res[0]);
         return Boolean(methodCount);
     },
     validateServingStyle: async function(style) {
-        const { styleCount } = await executeSqlQuery(`SELECT count(*) AS styleCount FROM drink_serving_styles WHERE name = '${style}' LIMIT 1;`)
-            .then(res => res[0]);
+        const styleQuery = 'SELECT COUNT(*) AS styleCount FROM drink_serving_styles WHERE name = ? LIMIT 1;';
+        const { styleCount } = await executeSqlQuery(styleQuery, [style]).then(res => res[0]);
         return Boolean(styleCount);
     }
 }

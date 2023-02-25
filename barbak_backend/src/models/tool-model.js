@@ -37,13 +37,13 @@ Tool.schema.statics = {
         return (await materials.map(item => item.name));
     },
     validateType: async function(type) {
-        const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}' LIMIT 1;`)
-            .then(res => res[0]);
+        const query = 'SELECT COUNT(*) AS typeCount FROM tool_types WHERE name = ? LIMIT 1;';
+        const { typeCount } = await executeSqlQuery(query, [type]).then(res => res[0]);
         return Boolean(typeCount);
     },
     validateMaterial: async function(material) {
-        const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}' LIMIT 1;`)
-            .then(res => res[0]);
+        const query = 'SELECT COUNT(*) AS materialCount FROM tool_materials WHERE name = ? LIMIT 1;';
+        const { materialCount } = await executeSqlQuery(query, [material]).then(res => res[0]);
         return Boolean(materialCount);
     }
 }
@@ -80,17 +80,13 @@ privateToolSchema.methods.customValidate = async function() {
     const error = new Error();
     error.name = "CustomValidationError";
     error.errors = {};
-
-    const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM tool_types WHERE name = '${type}' LIMIT 1;`)
-        .then(res => res[0]);
-    if (!typeCount)
+ 
+    if (!await this.constructor.validateType(type))
         error.errors['type'] = { type: 'valid', message: 'Invalid Tool Type' };
-    
-    const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM tool_materials WHERE name = '${material}' LIMIT 1;`)
-        .then(res => res[0]);
-    if (!materialCount)
-        error.errors['material'] = { type: 'valid', message: 'Invalid Tool Material' }
 
+    if (!await this.constructor.validateMaterial(material))
+        error.errors['material'] = { type: 'valid', message: 'Invalid Tool Material' };
+        
     if (Object.keys(error.errors).length)
         throw error;
 }

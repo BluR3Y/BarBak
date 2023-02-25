@@ -172,7 +172,7 @@ module.exports.getPrivate = async (req, res) => {
         if (materials) {
             const materialErrors = {};
             for (const materialIndex in materials) {
-                if (!await PrivateTool.validateMaterial(materials))
+                if (!await PrivateTool.validateMaterial(materials[materialIndex]))
                     materialErrors[`material.${materialIndex}`] = { type: 'valid', message: 'Invalid tool material' };
             }
             if (Object.keys(materialErrors).length)
