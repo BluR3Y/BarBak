@@ -112,10 +112,16 @@ module.exports.uploadImage = async (req, res) => {
         if (!drinkwareDocument)
             return res.status(400).send({ path: 'drnkware_id', type: 'exist', message: 'Drinkware does not exist' });
         
-        const uploadInfo = await FileOperations.uploadSingle('assets/private/images/', drinkwareImage);
-        if (drinkwareDocument.image)
-            await FileOperations.deleteSingle(drinkwareDocument.image);
-        drinkwareDocument.image = uploadInfo.filepath;
+        const filepath = '/' + drinkwareImage.destination + drinkwareImage.filename;
+        if (drinkwareDocument.image) {
+            try {
+                await FileOperations.deleteSingle(drinkwareDocument.image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+
+        drinkwareDocument.image = filepath;
         await drinkwareDocument.save();
         res.status(204).send();
     } catch(err) {

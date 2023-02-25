@@ -1,6 +1,4 @@
 const FileOperations = require('../utils/file-operations');
-const NodeMailerOperations = require('../utils/nodemailer-operations');
-
 const User = require('../models/user-model');
 const auth = require('../middleware/auth');
 
@@ -158,18 +156,22 @@ module.exports.usernameSelection = async (req, res) => {
 module.exports.uploadProfileImage = async (req, res) => {
     try {
         const upload = req.file || null;
-
         if (!upload)
             return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
 
         const userInfo = await User.findOne({ _id: req.user._id });
-        const uploadInfo = await FileOperations.uploadSingle('assets/public/images/', upload);
+        const filepath = '/' + upload.destination + upload.filename;
 
-        if (userInfo.profile_image)
-            await FileOperations.deleteSingle(userInfo.profile_image);
-
-        userInfo.profile_image = uploadInfo.filepath;
-        userInfo.save();
+        if (userInfo.profile_image) {
+            try {
+                await FileOperations.deleteSingle(userInfo.profile_image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+            
+        userInfo.profile_image = filepath;
+        await userInfo.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);

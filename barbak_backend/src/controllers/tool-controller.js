@@ -63,10 +63,16 @@ module.exports.uploadImage = async (req, res) => {
         if (!toolDocument)
             return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
 
-        const uploadInfo = await FileOperations.uploadSingle('assets/private/images/', toolImage);
-        if (toolDocument.image)
-            await FileOperations.deleteSingle(toolDocument.image);
-        toolDocument.image = uploadInfo.filepath;
+        const filepath = '/' + toolImage.destination + toolImage.filename;
+        if (toolDocument.image) {
+            try {
+                await FileOperations.deleteSingle(toolDocument.image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+
+        toolDocument.image = filepath;
         await toolDocument.save();
         res.status(204).send();
     } catch(err) {

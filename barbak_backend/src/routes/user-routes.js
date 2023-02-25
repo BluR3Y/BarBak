@@ -1,10 +1,10 @@
-const multer = require('multer');
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// const multer = require('multer');
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage });
 
 const userController = require('../controllers/user-controller');
 const auth = require('../middleware/auth');
-
+const multerConfig = require('../config/multer-config');
 
 function connectRoutes(router) {
     // router.post('/test', userController.test);
@@ -23,7 +23,7 @@ function connectRoutes(router) {
     router.post('/users/login', userController.login);
     router.get('/users/check-session', userController.checkSession);
     router.get('/users/logout', auth.sessionAuthenticationRequired, userController.logout);
-    router.post('/users/upload-profile-image', upload.single('profileImage'), auth.sessionAuthenticationRequired, userController.uploadProfileImage);
+    router.post('/users/upload-profile-image', auth.sessionAuthenticationRequired, multerConfig.PublicUpload.single('profile_image'), userController.uploadProfileImage);
 };
 
 module.exports.connect = connectRoutes;

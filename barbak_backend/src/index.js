@@ -10,6 +10,7 @@ const app = express();
 const auth = require('./middleware/auth');
 const connectDB = require('./config/database-config');
 const assetControl = require('./middleware/asset-control');
+const errorHandler = require('./middleware/error-handler');
 
 connectDB.ready.then(_ => {
     const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;
@@ -52,6 +53,8 @@ connectDB.ready.then(_ => {
     assetControl.configureMiddleware(app);
     // Set the router entry point
     app.use('/', router);
+    // Setup Error Handler
+    app.use(errorHandler);
     // Start the web server
     app.listen(PORT, () => console.log(`Server is listening on http://localhost:${PORT}`));
 })

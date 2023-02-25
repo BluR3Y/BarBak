@@ -62,10 +62,15 @@ module.exports.uploadImage = async (req, res) => {
         if (!ingredientDocument)
             return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
         
-        const uploadInfo = await FileOperations.uploadSingle('assets/private/images/', ingredientImage);
-        if (ingredientDocument.image)
-            await FileOperations.deleteSingle(ingredientDocument.image);
-        ingredientDocument.image = uploadInfo.filepath;
+        const filepath = '/' + ingredientImage.destination + ingredientImage.filename;
+        if (ingredientDocument.image) {
+            try {
+                await FileOperations.deleteSingle(ingredientDocument.image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+        ingredientDocument.image = filepath;
         await ingredientDocument.save();
         res.status(204).send();
     } catch(err) {

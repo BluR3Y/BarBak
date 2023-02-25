@@ -1,13 +1,14 @@
-const multer = require('multer');
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// const multer = require('multer');
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage });
 
 const toolController = require('../controllers/tool-controller');
 const auth = require('../middleware/auth');
+const multerConfig = require('../config/multer-config');
 
 function connectRoutes(router) {
     router.post('/tools/create', auth.sessionAuthenticationRequired, toolController.create);
-    router.post('/tools/image-upload', auth.sessionAuthenticationRequired, upload.single('tool_image'), toolController.uploadImage);
+    router.post('/tools/image-upload', auth.sessionAuthenticationRequired, multerConfig.PrivateUpload.single('tool_image'), toolController.uploadImage);
     router.post('/tools/update', auth.sessionAuthenticationRequired, toolController.update);
     router.post('/tools/delete', auth.sessionAuthenticationRequired, toolController.delete);
 

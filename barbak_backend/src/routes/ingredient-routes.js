@@ -1,13 +1,14 @@
-const multer = require('multer');
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// const multer = require('multer');
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage });
 
 const ingredientController = require('../controllers/ingredient-controller');
 const auth = require('../middleware/auth');
+const multerConfig = require('../config/multer-config');
 
 function connectRoutes(router) {
     router.post('/ingredients/create', auth.sessionAuthenticationRequired, ingredientController.create);
-    router.post('/ingredients/image-upload', auth.sessionAuthenticationRequired, upload.single('ingredient_image'), ingredientController.uploadImage);
+    router.post('/ingredients/image-upload', auth.sessionAuthenticationRequired, multerConfig.PrivateUpload.single('ingredient_image'), ingredientController.uploadImage);
     router.post('/ingredients/update', auth.sessionAuthenticationRequired, ingredientController.update);
     router.post('/ingredients/delete', auth.sessionAuthenticationRequired, ingredientController.delete);
 
