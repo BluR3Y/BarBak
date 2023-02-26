@@ -1,5 +1,6 @@
 const { PublicDrink, PrivateDrink } = require('../models/drink-model');
 const FileOperations = require('../utils/file-operations');
+const mongoose = require('mongoose');
 
 module.exports.create = async (req, res) => {
     try {
@@ -52,22 +53,26 @@ module.exports.uploadImage = async (req, res) => {
     try {
         const { drink_id } = req.body;
         const drinkImages = req.files;
-        
-        if (!drinkImages.length)
-            return res.status(400).send({ path: 'images', type: 'exist', message: 'No images were uploaded' });
-        else if (drinkImages.length > 10)
-            return res.status(400).send({ path: 'images', type: 'valid', message: 'Maximum of 10 images per drink' });
+
+        if (!drinkImages.length) {
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
+        }
+        const filepaths = drinkImages.map(img => '/' + img.destination + img.filename);
+        if (!mongoose.Types.ObjectId.isValid(drink_id)) {
+            await FileOperations.deleteMultiple(filepaths);
+            return res.status(400).send({ path: 'drink_id', type: 'valid', message: 'Invalid drink Id' });
+        }
 
         const drinkDocument = await PrivateDrink.findOne({ user_id: req.user._id, _id: drink_id });
-        if (!drinkDocument)
+        if (!drinkDocument) {
+            await FileOperations.deleteMultiple(filepaths);
             return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
-        
-        const uploadInfo = await FileOperations.uploadMultiple('assets/private/images/', drinkImages);
-        const imagePaths = uploadInfo.map(image => image.filepath);
+        }
 
-        if (drinkDocument.images.length) 
+        if (drinkDocument.images.length) {
             await FileOperations.deleteMultiple(drinkDocument.images);
-        drinkDocument.images = imagePaths;
+        }
+        drinkDocument.images = filepaths;
         await drinkDocument.save();
         res.status(204).send();
     } catch(err) {

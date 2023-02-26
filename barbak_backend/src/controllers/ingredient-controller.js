@@ -1,5 +1,6 @@
 const { PublicIngredient, PrivateIngredient } = require('../models/ingredient-model');
 const FileOperations = require('../utils/file-operations');
+const mongoose = require('mongoose');
 
 module.exports.create = async (req, res) => {
     try {
@@ -55,20 +56,22 @@ module.exports.uploadImage = async (req, res) => {
         const { ingredient_id } = req.body;
         const ingredientImage = req.file || null;
 
-        if (!ingredientImage)
+        if (!ingredientImage) {
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        
-        const ingredientDocument = await PrivateIngredient.findOne({ user_id: req.user._id, _id: ingredient_id });
-        if (!ingredientDocument)
-            return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
-        
+        }
         const filepath = '/' + ingredientImage.destination + ingredientImage.filename;
+        if (!mongoose.Types.ObjectId.isValid(ingredient_id)) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'ingredient_id', type: 'valid', message: 'Invalid ingredient Id' });
+        }
+
+        const ingredientDocument = await PrivateIngredient.findOne({ user_id: req.user._id, _id: ingredient_id });
+        if (!ingredientDocument) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+        }
         if (ingredientDocument.image) {
-            try {
-                await FileOperations.deleteSingle(ingredientDocument.image);
-            } catch(err) {
-                console.log(err);
-            }
+            await FileOperations.deleteSingle(ingredientDocument.image);
         }
         ingredientDocument.image = filepath;
         await ingredientDocument.save();

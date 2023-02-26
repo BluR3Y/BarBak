@@ -1,5 +1,6 @@
 const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
 const FileOperations = require('../utils/file-operations');
+const mongoose = require('mongoose');
 
 module.exports.create = async (req, res) => {
     try {
@@ -104,23 +105,25 @@ module.exports.uploadImage = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
         const drinkwareImage = req.file || null;
-        
-        if (!drinkwareImage)
+
+        if (!drinkwareImage) {
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        
-        const drinkwareDocument = await PrivateDrinkware.findOne({ user_id: req.user._id, _id: drinkware_id });
-        if (!drinkwareDocument)
-            return res.status(400).send({ path: 'drnkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        
+        }
         const filepath = '/' + drinkwareImage.destination + drinkwareImage.filename;
-        if (drinkwareDocument.image) {
-            try {
-                await FileOperations.deleteSingle(drinkwareDocument.image);
-            } catch(err) {
-                console.log(err);
-            }
+        if (!mongoose.Types.ObjectId.isValid(drinkware_id)) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid Drinkware Id' });
         }
 
+        const drinkwareDocument = await PrivateDrinkware.findOne({ user_id: req.user._id, _id: drinkware_id });
+        if (!drinkwareDocument) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        }
+
+        if (drinkwareDocument.image) {
+            await FileOperations.deleteSingle(drinkwareDocument.image);
+        }
         drinkwareDocument.image = filepath;
         await drinkwareDocument.save();
         res.status(204).send();
