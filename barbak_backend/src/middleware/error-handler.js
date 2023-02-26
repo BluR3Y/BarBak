@@ -6,5 +6,5 @@ module.exports = (err, req, res, next) => {
         return res.status(400).send(err);
     }
     console.log(err)
-    return res.status(400).send('other err');
+    return res.status(500).send(err);
 };

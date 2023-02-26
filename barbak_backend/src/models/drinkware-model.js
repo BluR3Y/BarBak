@@ -30,8 +30,7 @@ Drinkware.schema.statics = {
         return (await materials.map(item => item.name));
     },
     validateMaterial: async function(material) {
-        const { materialCount } = await executeSqlQuery(`SELECT count(*) AS materialCount FROM drinkware_materials WHERE name = '${material}' LIMIT 1;`)
-            .then(res => res[0]);
+        const { materialCount } = await executeSqlQuery('SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = ? LIMIT 1;', [material]).then(res => res[0]);
         return Boolean(materialCount);
     }
 }
@@ -67,9 +66,7 @@ privateDrinkwareSchema.methods.customValidate = async function() {
     error.name = "CustomValidationError";
     error.errors = {};
 
-    const { materialCount } = await executeSqlQuery(`SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = '${this.material}' LIMIT 1;`)
-        .then(res => res[0]);
-    if (!materialCount)
+    if (!await this.constructor.validateMaterial(this.material))
         error.errors['material'] = { type: 'valid', message: 'Invalid material' };
 
     if (Object.keys(error.errors).length)

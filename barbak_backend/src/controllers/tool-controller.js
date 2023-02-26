@@ -1,5 +1,6 @@
 const FileOperations = require('../utils/file-operations');
 const { PublicTool, PrivateTool } = require('../models/tool-model');
+const mongoose = require('mongoose');
 
 module.exports.create = async (req, res) => {
     try {
@@ -56,22 +57,24 @@ module.exports.uploadImage = async (req, res) => {
         const { tool_id } = req.body;
         const toolImage = req.file || null;
 
-        if (!toolImage)
+        if (!toolImage) {
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-
-        const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
-        if (!toolDocument)
-            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
-
+        }
         const filepath = '/' + toolImage.destination + toolImage.filename;
-        if (toolDocument.image) {
-            try {
-                await FileOperations.deleteSingle(toolDocument.image);
-            } catch(err) {
-                console.log(err);
-            }
+        if (!mongoose.Types.ObjectId.isValid(tool_id)) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'tool_id', type: 'valid', message: 'Invalid tool Id' });
         }
 
+        const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
+        if (!toolDocument) {
+            await FileOperations.deleteSingle(filepath);
+            return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
+        }
+
+        if (toolDocument.image) {
+            await FileOperations.deleteSingle(toolDocument.image);
+        }
         toolDocument.image = filepath;
         await toolDocument.save();
         res.status(204).send();
@@ -172,7 +175,7 @@ module.exports.getPrivate = async (req, res) => {
         if (materials) {
             const materialErrors = {};
             for (const materialIndex in materials) {
-                if (!await PrivateTool.validateMaterial(materials))
+                if (!await PrivateTool.validateMaterial(materials[materialIndex]))
                     materialErrors[`material.${materialIndex}`] = { type: 'valid', message: 'Invalid tool material' };
             }
             if (Object.keys(materialErrors).length)

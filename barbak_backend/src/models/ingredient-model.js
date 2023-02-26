@@ -33,21 +33,21 @@ Ingredient.schema.statics = {
         return (await types.map(item => item.name));
     },
     getCategories: async function(type) {
-        const { type_id } = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
+        const { type_id } = await executeSqlQuery('SELECT type_id FROM ingredient_types WHERE name = ? LIMIT 1;', [type])
             .then(res => res.length ? res[0] : res);
-        
-        if (!type_id)
-            return;
-        const categories = await executeSqlQuery(`SELECT name FROM ingredient_categories WHERE type_id = ${type_id};`);
-        return (await categories.map(item => item.name));
+
+        if (type_id) {
+            const categories = await executeSqlQuery('SELECT name FROM ingredient_categories WHERE type_id = ?;', [type_id]);
+            return (await categories.map(item => item.name));
+        } else throw new Error('Invalid ingredient type');
     },
     validateTypeCategory: async function(type, category) {
         const errors = {};
-        const { type_id } = await executeSqlQuery(`SELECT type_id FROM ingredient_types WHERE name = '${type}';`)
-            .then(res => res.length ? res[0] : res); 
+        const { type_id } = await executeSqlQuery('SELECT type_id FROM ingredient_types WHERE name = ? LIMIT 1;', [type])
+            .then(res => res.length ? res[0] : res);
         
         if (type_id) {
-            const { categoryCount } = await executeSqlQuery(`SELECT count(*) AS categoryCount FROM ingredient_categories WHERE type_id = ${type_id} AND name = '${category}' LIMIT 1;`)
+            const { categoryCount } = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM ingredient_categories WHERE type_id = ? AND name = ? LIMIT 1;', [type_id, category])
                 .then(res => res[0]);
             if (!categoryCount)
                 errors['category'] = { type: 'valid', message: 'Invalid ingredient category' };
@@ -108,15 +108,10 @@ privateIngredientSchema.methods.customValidate = async function() {
     error.name = "CustomValidationError";
     error.errors = {};
 
-    const { typeCount } = await executeSqlQuery(`SELECT count(*) AS typeCount FROM ingredient_types WHERE name = '${type}' LIMIT 1;`)
-        .then(res => res[0]);
-    if (typeCount) {
-        const { categoryCount } = await executeSqlQuery(`SELECT count(*) AS categoryCount FROM ingredient_categories WHERE name = '${category}' LIMIT 1;`)
-            .then(res => res[0]);
-        if (!categoryCount)
-            error.errors['category'] = { type: 'valid', message: 'Invalid ingredient category' };
-    }else
-        error.errors['type'] = { type: 'valid', message: 'Invalid ingredient type' };
+    const typeCategoryErrors = await this.constructor.validateTypeCategory(type, category);
+    for (const err in typeCategoryErrors) {
+        error.errors[err] = typeCategoryErrors[err];
+    }
     
     if (Object.keys(error.errors).length)
         throw error;
