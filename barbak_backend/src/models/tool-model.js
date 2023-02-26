@@ -37,13 +37,11 @@ Tool.schema.statics = {
         return (await materials.map(item => item.name));
     },
     validateType: async function(type) {
-        const query = 'SELECT COUNT(*) AS typeCount FROM tool_types WHERE name = ? LIMIT 1;';
-        const { typeCount } = await executeSqlQuery(query, [type]).then(res => res[0]);
+        const { typeCount } = await executeSqlQuery('SELECT COUNT(*) AS typeCount FROM tool_types WHERE name = ? LIMIT 1;', [type]).then(res => res[0]);
         return Boolean(typeCount);
     },
     validateMaterial: async function(material) {
-        const query = 'SELECT COUNT(*) AS materialCount FROM tool_materials WHERE name = ? LIMIT 1;';
-        const { materialCount } = await executeSqlQuery(query, [material]).then(res => res[0]);
+        const { materialCount } = await executeSqlQuery('SELECT COUNT(*) AS materialCount FROM tool_materials WHERE name = ? LIMIT 1;', [material]).then(res => res[0]);
         return Boolean(materialCount);
     }
 }

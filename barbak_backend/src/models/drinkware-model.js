@@ -30,8 +30,7 @@ Drinkware.schema.statics = {
         return (await materials.map(item => item.name));
     },
     validateMaterial: async function(material) {
-        const materialQuery = 'SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = ? LIMIT 1;';
-        const { materialCount } = await executeSqlQuery(materialQuery, [material]).then(res => res[0]);
+        const { materialCount } = await executeSqlQuery('SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = ? LIMIT 1;', [material]).then(res => res[0]);
         return Boolean(materialCount);
     }
 }

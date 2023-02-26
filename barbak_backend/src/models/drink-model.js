@@ -165,13 +165,11 @@ drinkSchema.statics = {
         return (await servingStyles.map(item => item.name));
     },
     validatePreparationMethod: async function(method) {
-        const methodQuery = 'SELECT COUNT(*) AS methodCount FROM drink_preparation_methods WHERE name = ? LIMIT 1;';
-        const { methodCount } = await executeSqlQuery(methodQuery, [method]).then(res => res[0]);
+        const { methodCount } = await executeSqlQuery('SELECT COUNT(*) AS methodCount FROM drink_preparation_methods WHERE name = ? LIMIT 1;', [method]).then(res => res[0]);
         return Boolean(methodCount);
     },
     validateServingStyle: async function(style) {
-        const styleQuery = 'SELECT COUNT(*) AS styleCount FROM drink_serving_styles WHERE name = ? LIMIT 1;';
-        const { styleCount } = await executeSqlQuery(styleQuery, [style]).then(res => res[0]);
+        const { styleCount } = await executeSqlQuery('SELECT COUNT(*) AS styleCount FROM drink_serving_styles WHERE name = ? LIMIT 1;', [style]).then(res => res[0]);
         return Boolean(styleCount);
     }
 }
@@ -221,6 +219,7 @@ privateDrinkSchema.statics.makePublic = async function(snapshot) {
     await createdDocument.save();
 }
 
+// Needs major improving
 privateDrinkSchema.methods.customValidate = async function() {
     const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags } = this;
     const error = new Error();
