@@ -85,6 +85,9 @@ module.exports.update = async (req, res) => {
     try {
         const { ingredient_id, name, description, type, category } = req.body;
 
+        if (!mongoose.Types.ObjectId.isValid(ingredient_id))
+            return res.status(400).send({ path: 'ingredient_id', type: 'valid', message: 'Invalid ingredient id' });
+
         if (await PrivateIngredient.exists({ user_id: req.user._id, name, _id: { $ne: ingredient_id } }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
 
@@ -135,6 +138,10 @@ module.exports.update = async (req, res) => {
 module.exports.delete = async (req, res) => {
     try {
         const { ingredient_id } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(ingredient_id))
+            return res.status(400).send({ path: 'ingredient_id', type: 'valid', message: 'Invalid ingredient id' });
+
         const ingredientDocument = await PrivateIngredient.findOne({ user_id: req.user._id, _id: ingredient_id });
         if (!ingredientDocument)
             return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });

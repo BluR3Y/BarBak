@@ -5,6 +5,7 @@ const { PublicTool, PrivateTool } = require('../models/tool-model');
 const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
 const { PublicIngredient, PrivateIngredient } = require('../models/ingredient-model');
 const { PublicDrink, PrivateDrink } = require('../models/drink-model');
+const mongoose = require('mongoose');
 
 module.exports.tester = async (req, res) => {
     try {
@@ -24,8 +25,11 @@ module.exports.tester = async (req, res) => {
 module.exports.publishTool = async (req, res) => {
     try {
         const { tool_id } = req.body;
-        const toolDocument = await PrivateTool.findOne({ _id: tool_id, user_id: req.user._id });
 
+        if (!mongoose.Types.ObjectId.isValid(tool_id))
+            return res.status(400).send({ path: 'too_id', type: 'valid', message: 'Invalid tool id' });
+
+        const toolDocument = await PrivateTool.findOne({ _id: tool_id, user_id: req.user._id });
         if (!toolDocument)
             return res.status(400).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: toolDocument._id, referenced_model: 'Private Tool', user_id: req.user._id, activeRequest: true }))
@@ -60,8 +64,11 @@ module.exports.publishTool = async (req, res) => {
 module.exports.publishDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
-        const drinkwareDocument = await PrivateDrinkware.findOne({ _id: drinkware_id, user_id: req.user._id });
 
+        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
+            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
+
+        const drinkwareDocument = await PrivateDrinkware.findOne({ _id: drinkware_id, user_id: req.user._id });
         if (!drinkwareDocument)
             return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: drinkwareDocument._id, referenced_model: 'Private Drinkware', user_id: req.user._id, activeRequest: true }))
@@ -95,8 +102,11 @@ module.exports.publishDrinkware = async (req, res) => {
 module.exports.publishIngredient = async (req, res) => {
     try {
         const { ingredient_id } = req.body;
-        const ingredientDocument = await PrivateIngredient.findOne({ _id: ingredient_id, user_id: req.user._id });
 
+        if (!mongoose.Types.ObjectId.isValid(ingredient_id))
+            return res.status(400).send({ path: 'ingredient_id', type: 'valid', message: 'Invalid ingredient id' });
+
+        const ingredientDocument = await PrivateIngredient.findOne({ _id: ingredient_id, user_id: req.user._id });
         if (!ingredientDocument)
             return res.status(400).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: ingredientDocument._id, referenced_model: 'Private Ingredient', user_id: req.user._id, activeRequest: true }))
@@ -131,8 +141,11 @@ module.exports.publishIngredient = async (req, res) => {
 module.exports.publishDrink = async (req, res) => {
     try {
         const { drink_id } = req.body;
-        const drinkDocument = await PrivateDrink.findOne({ _id: drink_id, user_id: req.user._id });
 
+        if (!mongoose.Types.ObjectId.isValid(drink_id))
+            return res.status(400).send({ path: 'drink_id', type: 'valid', message: 'Invalid drink id' });
+
+        const drinkDocument = await PrivateDrink.findOne({ _id: drink_id, user_id: req.user._id });
         if (!drinkDocument)
             return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
         else if (await PublicationRequest.exists({ referenced_document: drinkDocument._id, referenced_model: 'Private Drink', user_id: req.user._id, activeRequest: true }))
@@ -171,9 +184,11 @@ module.exports.publishDrink = async (req, res) => {
 module.exports.validate = async (req, res) => {
     try {
         const { referenced_request, validation, reasoning } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(referenced_request))
+            return res.status(400).send({ path: 'referenced_request', type: 'valid', message: 'Invalid referenced_request id' });
         
         const requestedPublication = await PublicationRequest.findOne({ _id: referenced_request });
-
         if (!requestedPublication)
             return res.status(400).send({ path: 'request', type: 'exist', message: 'Publication request does not exist' });
         else if (!requestedPublication.activeRequest)
