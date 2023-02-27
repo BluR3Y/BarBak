@@ -12,7 +12,7 @@ import { AuthenticationForm } from '@/styles/components/shared/authForm';
 import { StyledSubmitBtn } from '@/styles/components/register/submitBtn';
 import { RedirectContainer } from '@/styles/components/shared/authRedirect';
 
-import Logo from '@/components/shared/logo';
+import { StyledLogo } from '@/styles/components/shared/logo';
 import SlideShow from '@/components/shared/slideshow';
 import AuthInput from '@/components/shared/authInput';
 import { withOutAuth } from '@/components/hocs/authWrapper';
@@ -151,7 +151,7 @@ class Login extends React.Component {
                 />
                 <div className='authentication'>
                     <AuthenticationForm onSubmit={handleSubmit}>
-                        <Logo/>
+                        <StyledLogo/>
                         { otherError && <h1 className='otherError'>{otherError}</h1> }
                         <AuthInput
                             labelText={'Email or Username'}

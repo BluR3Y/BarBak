@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
-import Logo from "../shared/logo";
+import { StyledLogo } from "@/styles/components/shared/logo";
 import AuthInput from "../shared/authInput";
 import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import axios from "axios";
@@ -47,7 +47,7 @@ function RegistrationThree(props) {
     }
 
     return <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
-        <Logo/>
+        <StyledLogo/>
         <AuthInput
             labelText={'Username'}
             errorText={usernameError}

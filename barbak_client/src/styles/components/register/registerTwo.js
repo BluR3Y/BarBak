@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { hexToRgba } from "@/utils/style_methods";
+import { hexToRgba } from "@/utils/style/color_conversion";
 
 
 export const FormHeaders = styled.div`

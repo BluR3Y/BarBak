@@ -1,7 +1,3 @@
-// const multer = require('multer');
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage });
-
 const drinkwareController = require('../controllers/drinkware-controller');
 const auth = require('../middleware/auth');
 const multerConfig = require('../config/multer-config');

@@ -1,5 +1,5 @@
 import styled, { css } from "styled-components";
-import { hexToRgba } from "../utils/color_conversion";
+import { hexToRgba } from "@/utils/style/color_conversion";
 
 
 export const StyledLogin = styled.div`

@@ -7,7 +7,7 @@ import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import { RedirectContainer } from "@/styles/components/shared/authRedirect";
 
-import Logo from "../shared/logo";
+import { StyledLogo } from "@/styles/components/shared/logo";
 import AuthInput from "../shared/authInput";
 
 function RegistrationOne(props) {
@@ -80,7 +80,7 @@ function RegistrationOne(props) {
 
     return <>
         <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
-            <Logo/>
+            <StyledLogo/>
             { otherError && <h1 className='otherError'>{otherError}</h1> }
             <AuthInput
                 labelText={'Full Name'}
