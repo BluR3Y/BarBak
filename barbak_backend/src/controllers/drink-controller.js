@@ -1,6 +1,7 @@
-const { PublicDrink, PrivateDrink } = require('../models/drink-model');
 const FileOperations = require('../utils/file-operations');
 const mongoose = require('mongoose');
+const { PublicDrink, PrivateDrink } = require('../models/drink-model');
+const DrinkRating = require('../models/drink_rating-model');
 
 module.exports.create = async (req, res) => {
     try {
@@ -54,9 +55,9 @@ module.exports.uploadImage = async (req, res) => {
         const { drink_id } = req.body;
         const drinkImages = req.files;
 
-        if (!drinkImages.length) {
+        if (!drinkImages.length)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        }
+
         const filepaths = drinkImages.map(img => '/' + img.destination + img.filename);
         if (!mongoose.Types.ObjectId.isValid(drink_id)) {
             await FileOperations.deleteMultiple(filepaths);
@@ -69,9 +70,9 @@ module.exports.uploadImage = async (req, res) => {
             return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
         }
 
-        if (drinkDocument.images.length) {
+        if (drinkDocument.images.length)
             await FileOperations.deleteMultiple(drinkDocument.images);
-        }
+
         drinkDocument.images = filepaths;
         await drinkDocument.save();
         res.status(204).send();
@@ -83,6 +84,9 @@ module.exports.uploadImage = async (req, res) => {
 module.exports.update = async (req, res) => {
     try {
         const { drink_id, name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(drink_id))
+            return res.status(400).send({ path: 'drink_id', type: 'valid', message: 'Invalid drink id' });
 
         if (await PrivateDrink.exists({ user_id: req.user._id, name, _id: { $ne: drink_id } }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drink with that name currently exists' });
@@ -133,13 +137,41 @@ module.exports.delete = async (req, res) => {
     try {
         const { drink_id } = req.body;
 
+        if (!mongoose.Types.ObjectId.isValid(drink_id))
+            return res.status(400).send({ path: 'drink_id', type: 'valid', message: 'Invalid drink id' });
+
         const drinkDocument = await PrivateDrink.findOne({ user_id: req.user._id, _id: drink_id });
         if (!drinkDocument)
             return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
         
         if (drinkDocument.images)
             await FileOperations.deleteMultiple(drinkDocument.images);
+
         await drinkDocument.remove();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.rate = async (req, res) => {
+    try {
+        const { drink_id, score, comment } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(drink_id))
+            return res.status(400).send({ path: 'drink_id', type: 'valid', message: 'Invalid drink id' });
+
+        const drinkDocument = await PublicDrink.findOne({ _id: drink_id });
+        if (!drinkDocument)
+            return res.status(400).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+
+        const createdRating = new DrinkRating({
+            referenced_drink: drink_id,
+            score,
+            comment
+        });
+        await createdRating.validate();
+        await createdRating.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);

@@ -87,6 +87,9 @@ module.exports.update = async (req, res) => {
     try {
         const { tool_id, name, description, type, material } = req.body;
 
+        if (!mongoose.Types.ObjectId.isValid(tool_id))
+            return res.status(400).send({ path: 'too_id', type: 'valid', message: 'Invalid tool id' });
+
         if (await PrivateTool.exists({ user_id: req.user._id, name, _id: { $ne:tool_id } }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
 
@@ -138,6 +141,9 @@ module.exports.update = async (req, res) => {
 module.exports.delete = async (req, res) => {
     try {
         const { tool_id } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(tool_id))
+            return res.status(400).send({ path: 'too_id', type: 'valid', message: 'Invalid tool id' });
 
         const toolDocument = await PrivateTool.findOne({ user_id: req.user._id, _id: tool_id });
         if (!toolDocument)

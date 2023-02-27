@@ -55,6 +55,9 @@ module.exports.update = async (req, res) => {
     try {
         const { drinkware_id, name, description, material } = req.body;
 
+        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
+            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
+
         if (await PrivateDrinkware.exists({ user_id: req.user._id, name, _id: { $ne: drinkware_id } }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
 
@@ -106,9 +109,9 @@ module.exports.uploadImage = async (req, res) => {
         const { drinkware_id } = req.body;
         const drinkwareImage = req.file || null;
 
-        if (!drinkwareImage) {
+        if (!drinkwareImage)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        }
+
         const filepath = '/' + drinkwareImage.destination + drinkwareImage.filename;
         if (!mongoose.Types.ObjectId.isValid(drinkware_id)) {
             await FileOperations.deleteSingle(filepath);
@@ -121,9 +124,9 @@ module.exports.uploadImage = async (req, res) => {
             return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         }
 
-        if (drinkwareDocument.image) {
+        if (drinkwareDocument.image)
             await FileOperations.deleteSingle(drinkwareDocument.image);
-        }
+
         drinkwareDocument.image = filepath;
         await drinkwareDocument.save();
         res.status(204).send();
