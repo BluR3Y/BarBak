@@ -1,6 +1,6 @@
 const passport = require('passport');
 const User = require('../../models/user-model');
-const Developer = require('../../models/developer-model');
+// const Developer = require('../../models/developer-model');
 
 // Login Strategies:
 const localLogin = require('./local-login-strategy');
@@ -44,7 +44,7 @@ function authenticationStrategyCallback(req, res, next) {
         req.logIn(user, function(err) {
             if (err)
                 return res.status(500).send('An error occured while processing your request');
-            const publicInfo = user.getPublicInfo();
+            const publicInfo = user.getBasicUserInfo();
             res.status(200).send(publicInfo);
         })
     }

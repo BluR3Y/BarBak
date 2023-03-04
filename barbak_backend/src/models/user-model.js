@@ -6,41 +6,181 @@ const transporter = require('../config/nodemailer-config');
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true,
-        minLength: 6,
-        maxLength: 30
+        minlength: [6, 'Username must contain at least 6 characters'],
+        maxlength: [30, 'Username length must not exceed 30 characters'],
+        required: [true, 'Username is required'],
+        lowercase: true
+    },
+    fullname: {
+        type: String,
+        maxlength: [30, 'Name must not exceed 30 characters'],
+        lowercase: true
     },
     email: {
         type: String,
         required: true,
-        lowercase: true,
-    },
-    fullname: {
-        type: String,
-        lowercase: true,
-        default: null,
+        lowercase: true
     },
     password: {
         type: String,
         required: true,
-        minLength: 6,
+    },
+    about_me: {
+        type: String,
+        maxlength: [600, 'About me must not exceed 600 characters']
     },
     profile_image: {
         type: String,
         default: null
     },
     experience: {
-        type: String,
-        lowercase: true,
-        default: 'novice',
-        enum: [ "novice", "experienced", "expert" ]
+        type: [{
+            position: {
+                type: String,
+                required: [true, 'Job position is required'],
+                maxlength: [30, 'Job position must not exceed 30 characters']
+            },
+            workplace: {
+                type: String,
+                required: [true, 'Workplace field is required'],
+                minlength: [6, 'Workplace must contain at least 6 characters'],
+                maxlength: [40, 'Workplace must not exceed 40 characters']
+            },
+            bar_type: {
+                type: String,
+            },
+            location: {
+                type: String,
+                required: [true, 'Location field is required'],
+                maxlength: [30, 'Location exceeds character limit']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required']
+                    },
+                    end: {
+                        type: Date,
+                        default: null,
+                    }
+                },
+                required: [true, 'Position duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of work experience items has been exceeded'
+        }
     },
-    registration_date: {
+    achievements: {
+        type: [{
+            description: {
+                type: String,
+                minlength: [50, 'Description must contain at least 50 characters'],
+                maxlength: [600, 'Description has exceeded character limit'],
+                required: [true, 'Description is required']
+            },
+            location: {
+                type: String,
+                maxlength: [30, 'Location exceeds character limit'],
+                required: [true, 'Location is required']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required'],
+                    },
+                    end: {
+                        type: Date,
+                        default: null
+                    }
+                },
+                required: [true, 'Milestone duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of achievements has been exceeded'
+        }
+    },
+    education: {
+        type: [{
+            name: {
+                type: String,
+                maxlength: [30, 'Certificate name exceeds character limit'],
+                required: [true, 'Certificate name is required']
+            },
+            institute: {
+                type: String,
+                maxlength: [30, 'Institute name exceeds character limit'],
+                required: [true, 'Institute name is required']
+            },
+            location: {
+                type: String,
+                maxlength: [30, 'Location exceeds character limit'],
+                required: [true, 'Location is required']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required'],
+                    },
+                    end: {
+                        type: Date,
+                        default: null
+                    }
+                },
+                required: [true, 'Certification duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of certificates has been exceeded'
+        },
+    },
+    skills: {
+        type: [String],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of skills has been exceeded'
+        }
+    },
+    interests: {
+        type: [String],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 5;
+            },
+            message: 'Number of interests has been exceeded'
+        }
+    },
+    visibility: {
+        type: String,
+        default: 'private',
+        enum: ['private', 'public']
+    },
+    expertise: {
+        type: String,
+        default: 'novice',
+        enum: ['novice', 'intermediate', 'expert']
+    },
+    date_registered: {
         type: Date,
         immutable: true,
-        default: () => Date.now(),
+        default: () => Date.now()
     }
-}, { collection: 'users' });
+},{ collection: 'users' });
 
 userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
@@ -133,16 +273,20 @@ userSchema.methods.validatePassword = async function(attempt) {
     return match;
 }
 
-userSchema.methods.getPublicInfo = function() {
-    const { _id, username, fullname, email, profile_image, experience } = this;
+userSchema.methods.getBasicUserInfo = function() {
+    const { _id, username, fullname, profile_image, expertise } = this;
     return {
         _id,
         username,
         fullname,
-        email,
         profile_image,
-        experience
+        expertise
     };
 }
 
-module.exports = mongoose.model("User", userSchema);
+userSchema.methods.getPersonalUserInfo = function() {
+    const { email, interests, date_registered } = this;
+    return { email, interests, date_registered };
+}
+
+module.exports = mongoose.model('User', userSchema);

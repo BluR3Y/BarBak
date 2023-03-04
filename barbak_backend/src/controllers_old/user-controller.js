@@ -2,6 +2,37 @@ const FileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const auth = require('../middleware/auth');
 
+// module.exports.test = async (req, res) => {
+//     console.log(req.session)
+//     console.log(req.user)
+
+//     res.send('TEST');
+// }
+
+// module.exports.testUploads = async (req,res) => {
+//     console.log(req.file)
+//     res.send('Test')
+// }
+
+// module.exports.testDownloads = async (req, res) => {
+//     try {
+//         const { filename } = req.body;
+
+//         const image = await FileOperations.readSingle('assets/images/', filename)
+//         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+//         res.end(image, 'binary');
+//     } catch (err) {
+//         res.status(500).send(err);
+//     }
+// }
+
+// module.exports.testNodeMailer = async (req, res) => {
+//     const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
+//     console.log(mailerRes);
+
+//     res.status(200).send('hello')
+// }
+
 module.exports.register = async (req, res) => {
     try {
         const { fullname, email, password } = req.body;
@@ -100,7 +131,7 @@ module.exports.usernameSelection = async (req, res) => {
                 resolve();
             })
         });
-        res.status(200).send(createdUser.getBasicUserInfo());
+        res.status(200).send(createdUser.getPublicInfo());
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
@@ -123,28 +154,28 @@ module.exports.usernameSelection = async (req, res) => {
 }
 
 module.exports.uploadProfileImage = async (req, res) => {
-    // try {
-    //     const upload = req.file || null;
-    //     if (!upload)
-    //         return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
+    try {
+        const upload = req.file || null;
+        if (!upload)
+            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
 
-    //     const userInfo = await User.findOne({ _id: req.user._id });
-    //     const filepath = '/' + upload.destination + upload.filename;
+        const userInfo = await User.findOne({ _id: req.user._id });
+        const filepath = '/' + upload.destination + upload.filename;
 
-    //     if (userInfo.profile_image) {
-    //         try {
-    //             await FileOperations.deleteSingle(userInfo.profile_image);
-    //         } catch(err) {
-    //             console.log(err);
-    //         }
-    //     }
+        if (userInfo.profile_image) {
+            try {
+                await FileOperations.deleteSingle(userInfo.profile_image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
             
-    //     userInfo.profile_image = filepath;
-    //     await userInfo.save();
-    //     res.status(204).send();
-    // } catch(err) {
-    //     res.status(500).send(err);
-    // }
+        userInfo.profile_image = filepath;
+        await userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
 }
 
 // Authenticate the user via email and password input fields
@@ -153,8 +184,16 @@ module.exports.login = auth.authenticate.localLogin;
 module.exports.checkSession = (req, res) => {
     if (!req.isAuthenticated())
         return res.status(401).send({ path: 'user', type: 'authenticated' });
-
-    res.status(200).send(req.user.getBasicUserInfo());
+        
+    const { _id, username, email, profile_image, experience } = req.user;
+    const userInfo = {
+        userId: _id,
+        username,
+        email,
+        profile_image,
+        experience
+    };
+    res.status(200).send(userInfo);
 }
 
 module.exports.logout = (req, res) => {
