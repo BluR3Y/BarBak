@@ -9,6 +9,7 @@ function connectRoutes(router) {
     // router.post('/get-image', userController.testDownloads);
     // router.get('/test-nodemailer', userController.testNodeMailer);
     // router.post('/users/register', upload.single('profileImage'), userController.register);
+    router.get('/test-acl', userController.testACL);
 
     
     router.post('/users/register', userController.register);

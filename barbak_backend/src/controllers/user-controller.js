@@ -1,6 +1,19 @@
 const FileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const auth = require('../middleware/auth');
+const ACL = require('../models/file-access-control');
+
+module.exports.testACL = async (req, res) => {
+    const created = new ACL({
+        file_name: 'tester.jpg',
+        mime_type: 'image/jpg',
+        file_path: '/assets/private/images/',
+        file_size: '100',
+        user_id: req.user._id,
+    })
+    await created.save();
+    res.send(created)
+}
 
 module.exports.register = async (req, res) => {
     try {
@@ -123,28 +136,28 @@ module.exports.usernameSelection = async (req, res) => {
 }
 
 module.exports.uploadProfileImage = async (req, res) => {
-    // try {
-    //     const upload = req.file || null;
-    //     if (!upload)
-    //         return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
+    try {
+        const upload = req.file || null;
+        if (!upload)
+            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
 
-    //     const userInfo = await User.findOne({ _id: req.user._id });
-    //     const filepath = '/' + upload.destination + upload.filename;
+        const userInfo = await User.findOne({ _id: req.user._id });
+        const filepath = '/' + upload.destination + upload.filename;
 
-    //     if (userInfo.profile_image) {
-    //         try {
-    //             await FileOperations.deleteSingle(userInfo.profile_image);
-    //         } catch(err) {
-    //             console.log(err);
-    //         }
-    //     }
-            
-    //     userInfo.profile_image = filepath;
-    //     await userInfo.save();
-    //     res.status(204).send();
-    // } catch(err) {
-    //     res.status(500).send(err);
-    // }
+        if (userInfo.profile_image) {
+            try {
+                await FileOperations.deleteSingle(userInfo.profile_image);
+            } catch(err) {
+                console.log(err);
+            }
+        }
+        
+        userInfo.profile_image = filepath;
+        await userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
 }
 
 // Authenticate the user via email and password input fields
