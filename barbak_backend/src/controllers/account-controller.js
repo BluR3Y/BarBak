@@ -1,53 +1,31 @@
-const FileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
-const auth = require('../middleware/auth');
+const auth = require('../auth');
+const fileOperations = require('../utils/file-operations');
+const encryptionOperations = require('../utils/encryption-operations');
 
-// module.exports.test = async (req, res) => {
-//     console.log(req.session)
-//     console.log(req.user)
+module.exports.login = auth.authenticate.localLogin;
 
-//     res.send('TEST');
-// }
-
-// module.exports.testUploads = async (req,res) => {
-//     console.log(req.file)
-//     res.send('Test')
-// }
-
-// module.exports.testDownloads = async (req, res) => {
-//     try {
-//         const { filename } = req.body;
-
-//         const image = await FileOperations.readSingle('assets/images/', filename)
-//         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-//         res.end(image, 'binary');
-//     } catch (err) {
-//         res.status(500).send(err);
-//     }
-// }
-
-// module.exports.testNodeMailer = async (req, res) => {
-//     const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
-//     console.log(mailerRes);
-
-//     res.status(200).send('hello')
-// }
+module.exports.logout = async (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.status(500).send(err);
+        res.status(204).send();
+    });
+}
 
 module.exports.register = async (req, res) => {
     try {
         const { fullname, email, password } = req.body;
 
-        if (await User.findOne({ email }))
+        if (await User.exists({ email }))
             return res.status(400).send({ path: 'email', type: 'exist', message: 'Email is already associated with another account' });
-
-        const { encryptionKey, iv, encryptedData } = User.encryptData(JSON.stringify({ fullname, email, password }));
+        
+        const { encryptionKey, iv, encryptedData } = encryptionOperations.encrypt(JSON.stringify({ fullname, email, password }));
         req.session.verifiedAccount = false;
         req.session.encryptedRegistrationInfo = encryptedData;
         req.session.registrationInfoEncryptionKey = encryptionKey;
         req.session.registrationInfoIV = iv;
 
         await User.sendRegistrationCode(req.sessionID, email);
-
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
@@ -63,11 +41,10 @@ module.exports.resendRegistrationCode = async (req, res) => {
             return res.status(401).send({ path: 'registration', type: 'valid', message: 'Registration code has already been provided' });
 
         const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
-        const decryptedData = User.decryptData(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
+        const decryptedData = encryptionOperations.decrypt(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
         const registrationInfo = JSON.parse(decryptedData);
 
         await User.sendRegistrationCode(req.sessionID, registrationInfo.email);
-
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
@@ -106,10 +83,10 @@ module.exports.usernameSelection = async (req, res) => {
             return res.status(400).send({ path: 'username', type: 'exist', message: 'Username is already associated with another account' });
         
         const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
-        const decryptedData = User.decryptData(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
+        const decryptedData = encryptionOperations.decrypt(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
         const { fullname, email, password } = JSON.parse(decryptedData);
         const hashedPassword = await User.hashPassword(password);
-
+        
         const createdUser = new User({
             username,
             email,
@@ -152,54 +129,3 @@ module.exports.usernameSelection = async (req, res) => {
         res.status(500).send(err);
     }
 }
-
-module.exports.uploadProfileImage = async (req, res) => {
-    try {
-        const upload = req.file || null;
-        if (!upload)
-            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
-
-        const userInfo = await User.findOne({ _id: req.user._id });
-        const filepath = '/' + upload.destination + upload.filename;
-
-        if (userInfo.profile_image) {
-            try {
-                await FileOperations.deleteSingle(userInfo.profile_image);
-            } catch(err) {
-                console.log(err);
-            }
-        }
-            
-        userInfo.profile_image = filepath;
-        await userInfo.save();
-        res.status(204).send();
-    } catch(err) {
-        res.status(500).send(err);
-    }
-}
-
-// Authenticate the user via email and password input fields
-module.exports.login = auth.authenticate.localLogin;
-
-module.exports.checkSession = (req, res) => {
-    if (!req.isAuthenticated())
-        return res.status(401).send({ path: 'user', type: 'authenticated' });
-        
-    const { _id, username, email, profile_image, experience } = req.user;
-    const userInfo = {
-        userId: _id,
-        username,
-        email,
-        profile_image,
-        experience
-    };
-    res.status(200).send(userInfo);
-}
-
-module.exports.logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) 
-            return res.status(500).send(err);
-        res.status(204).send();
-    })
-};

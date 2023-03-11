@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('./middleware/auth');
-const schemaValidator = require('./middleware/validator');
+const authorize = require('./middlewares/authorize');
+// const fieldValidator = require('./middleware/validator');
 
-// Check users session
-router.use('/', auth.getUser);
 // Validate Request Data
-// router.use('/', schemaValidator);
+// router.use('/', fieldValidator);
+router.use(authorize);
 
+require('./routes/account-routes').connect(router);
 require('./routes/user-routes').connect(router);
 // require('./routes/drink-routes').connect(router);
 // require('./routes/drinkware-routes').connect(router);

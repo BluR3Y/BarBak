@@ -7,10 +7,10 @@ const cookieParser = require('cookie-parser');
 const MongoStore = require('connect-mongo');
 const app = express();
 
-const auth = require('./middleware/auth');
+const auth = require('./auth');
 const connectDB = require('./config/database-config');
-const assetControl = require('./middleware/asset-control');
-const errorHandler = require('./middleware/error-handler');
+// const assetControl = require('./middleware/asset-control');
+const errorHandler = require('./middlewares/error-handler');
 
 connectDB.ready.then(_ => {
     const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;
@@ -50,7 +50,7 @@ connectDB.ready.then(_ => {
     // Setup Authentication
     auth.configureMiddleware(app);
     // Setup Asset Middleware
-    assetControl.configureMiddleware(app);
+    // assetControl.configureMiddleware(app);
     // Set the router entry point
     app.use('/', router);
     // Setup Error Handler

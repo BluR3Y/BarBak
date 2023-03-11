@@ -11,6 +11,7 @@
   "author": "Rey Flores",
   "license": "ISC",
   "dependencies": {
+    "@casl/ability": "^6.3.3",
     "bcrypt": "^5.1.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.20.1",
