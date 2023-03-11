@@ -5,4 +5,5 @@ module.exports.connect = function(router) {
     router.get('/users/:user_id', userController.getUser);
 
     router.put('/users/upload-profile-image',multerConfig.PublicUpload.single('profile_image'), userController.uploadProfileImage);
+    router.put('/users/change-username', userController.changeUsername);
 }

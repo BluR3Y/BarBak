@@ -23,6 +23,7 @@ function defineUserAbilities(user = {}) {
         can('manage', 'all');
     } else if (user.role === 'user') {
         can('delete', 'account');
+        can('update', 'account');
         can('read', 'users', { _id: user._id });
         can('update', 'users', { _id: user._id });
     } else {

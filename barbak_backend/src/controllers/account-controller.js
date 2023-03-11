@@ -129,3 +129,12 @@ module.exports.usernameSelection = async (req, res) => {
         res.status(500).send(err);
     }
 }
+
+module.exports.togglePrivacy = async (req, res) => {
+    try {
+        await User.findOneAndUpdate({ _id: req.user._id },{ privacy: req.user.privacy === 'private' ? 'public' : 'private' });
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}

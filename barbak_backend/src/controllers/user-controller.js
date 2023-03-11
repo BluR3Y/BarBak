@@ -12,7 +12,7 @@ module.exports.getUser = async (req, res) => {
         const userInfo = await User.findOne({ _id: user_id });
         if (!userInfo)
             return res.status(401).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });
-        console.log(userInfo)
+
         if (!req.ability.can('read', subject('users', userInfo)))
             return res.status(401).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
@@ -41,6 +41,19 @@ module.exports.uploadProfileImage = async (req, res) => {
             
         userInfo.profile_image = filepath;
         await userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.changeUsername = async (req, res) => {
+    try {
+        const { username } = req.body;
+        if (await User.exists({ username }))
+            return res.status(400).send({ path: 'username', type: 'exist', message: 'Username is already associated with another account' });
+        
+        await User.findOneAndUpdate({ _id: req.user._id },{ username });
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
