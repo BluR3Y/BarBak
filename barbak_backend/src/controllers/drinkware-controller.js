@@ -101,7 +101,19 @@ module.exports.delete = async (req, res) => {
 module.exports.updatePrivacy = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-        console.log(drinkware_id)
+    
+        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
+            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
+
+        const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
+            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+
+        drinkwareInfo.public = !drinkwareInfo.public;
+        await drinkwareInfo.save();
+        res.status(200).send(drinkwareInfo);
     } catch(err) {
         res.status(500).send(err);
     }
@@ -173,11 +185,30 @@ module.exports.search = async (req, res) => {
             .select('_id name description cover date_verified date_created user');
         
         if (req.user) 
-            searchConditions = searchConditions.where({ $or: [{ model: 'Verified Drinkware' },{ user: req.user._id },{ privacy: 'public' }] });
+            searchConditions = searchConditions.where({ $or: [{ model: 'Verified Drinkware' },{ user: req.user._id },{ public: true }] });
         else
-            searchConditions = searchConditions.where({ model: 'Verified Drinkware' },{ privacy: 'public' });
+            searchConditions = searchConditions.where({ model: 'Verified Drinkware' },{ public: true });
             
         res.status(200).send(await searchConditions);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.clientDrinkware = async (req, res) => {
+    try {
+        const page = req.query.page || 1;
+        const page_size = req.query.page_size || 10;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
+
+        const userDocs = await UserDrinkware
+            .find({ user: req.user._id })
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .authorInfo();
+            
+        res.status(200).send(userDocs);
     } catch(err) {
         res.status(500).send(err);
     }

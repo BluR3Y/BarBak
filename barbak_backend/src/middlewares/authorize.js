@@ -26,9 +26,9 @@ function defineUserAbilities(user = {}) {
         can('create', 'account');
     }
     // Rules applied to any role
-    can('read', 'users', { privacy: 'public' });
-    can('read', 'drinkware', { privacy: 'public' });
-    can('read', 'tools', { privacy: 'public' });
+    can('read', 'users', { public: true });
+    can('read', 'drinkware', { public: true });
+    can('read', 'tools', { public: true });
 
     const aliasResolver = createAliasResolver({
         create: 'post',

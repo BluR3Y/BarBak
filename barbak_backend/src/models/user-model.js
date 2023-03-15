@@ -165,10 +165,9 @@ const userSchema = new mongoose.Schema({
             message: 'Number of interests has been exceeded'
         }
     },
-    privacy: {
-        type: String,
-        default: 'private',
-        enum: ['private', 'public']
+    public: {
+        type: Boolean,
+        default: true
     },
     expertise: {
         type: String,

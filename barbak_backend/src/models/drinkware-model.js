@@ -37,11 +37,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         immutable: true
     },
-    privacy: {
-        type: String,
-        enum: ['private', 'public'],
+    public: {
+        type: Boolean,
         required: true,
-        default: 'private'
+        default: false,
     },
     date_created: {
         type: Date,
@@ -49,6 +48,12 @@ const userSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+userSchema.query.authorInfo = function() {
+    return this.select('_id name description cover date_created -model');
+}
+
+// Make Public Function
 
 module.exports = {
     Drinkware,

@@ -7,6 +7,7 @@ module.exports.connect = function(router) {
     router.post('/content/verified-drinkware', drinkwareController.createVerified);
     
     router.get('/drinkware/search', drinkwareController.search);
+    router.get('/drinkware/@me', auth.sessionAuthenticationRequired, drinkwareController.clientDrinkware);
     router.get('/drinkware/:drinkware_id', drinkwareController.getDrinkware);
 
     router.put('/drinkware/update/cover', multerConfig.PrivateUpload.single('drinkware_cover'), drinkwareController.uploadCover);
