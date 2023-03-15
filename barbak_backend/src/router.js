@@ -9,6 +9,8 @@ router.use(authorize);
 
 require('./routes/account-routes').connect(router);
 require('./routes/user-routes').connect(router);
+require('./routes/drinkware-routes').connect(router);
+require('./routes/tool-routes').connect(router);
 // require('./routes/drink-routes').connect(router);
 // require('./routes/drinkware-routes').connect(router);
 // require('./routes/ingredient-routes').connect(router);

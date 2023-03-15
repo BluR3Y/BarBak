@@ -246,18 +246,12 @@ userSchema.methods.customValidate = async function() {
 
 userSchema.methods.getBasicUserInfo = function() {
     const { _id, username, fullname, profile_image, expertise } = this;
-    return {
-        _id,
-        username,
-        fullname,
-        profile_image,
-        expertise
-    };
+    return { _id, username, fullname, profile_image, expertise };
 }
 
 userSchema.methods.getPersonalUserInfo = function() {
-    const { email, interests, date_registered } = this;
-    return { email, interests, date_registered };
+    const { _id, username, fullname, email, profile_image, expertise, date_registered } = this;
+    return { _id, username, fullname, email, profile_image, expertise, date_registered };
 }
 
 module.exports = mongoose.model('User', userSchema);

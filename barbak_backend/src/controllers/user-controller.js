@@ -3,6 +3,15 @@ const User = require('../models/user-model');
 const mongoose = require('mongoose');
 const { subject } = require('@casl/ability');
 
+module.exports.clientInfo = async (req, res) => {
+    try {
+        const userInfo = await User.findOne({ _id: req.user._id });
+        res.status(200).send(userInfo.getPersonalUserInfo());
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
 module.exports.getUser = async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -12,8 +21,7 @@ module.exports.getUser = async (req, res) => {
         const userInfo = await User.findOne({ _id: user_id });
         if (!userInfo)
             return res.status(401).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });
-
-        if (!req.ability.can('read', subject('users', userInfo)))
+        else if (!req.ability.can('read', subject('users', userInfo)))
             return res.status(401).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
         res.status(200).send(userInfo.getBasicUserInfo());
