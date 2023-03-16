@@ -40,14 +40,14 @@ INSERT INTO barware_material_categories (`name`) VALUES
     ('metalware'),
     ('plasticware'),
     ('woodenware'),
-    ('other');
+    ('other')
 ;
 
 CREATE TABLE barware_materials (
     `id` INT(6) NOT NULL AUTO_INCREMENT,
     `category_id` INT(6) NOT NULL,
     `name` VARCHAR(50) NOT NULL,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
     FOREIGN KEY (`category_id`) REFERENCES barware_material_categories (`id`)
 );
 
@@ -73,12 +73,15 @@ INSERT INTO barware_materials (`category_id`, `name`) VALUES
     ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'pewter'),
     ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'silver'),
     ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'gold'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'cast iron'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'enamelware'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'plastic'), 'plastic'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plastic'), 'Polycarbonate'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plastic'), 'acrylic'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plastic'), 'tritan'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plastic'), 'polypropylene'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'plastic'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'Polycarbonate'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'acrylic'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'tritan'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'polypropylene'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'melamine'),
 
     ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'wood'),
     ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'oak'),
@@ -93,6 +96,7 @@ INSERT INTO barware_materials (`category_id`, `name`) VALUES
     ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'silicone'),
     ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'bamboo'),
     ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'paper'),
+    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'rubber')
 ;
 
 -- Ingredients
@@ -214,6 +218,18 @@ INSERT INTO drink_serving_styles (`name`) VALUES
     ('chilled'),
     ('other')
 ;
+
+-- Measure
+
+CREATE TABLE measure (
+    `measure_id` INT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(50) NOT NULL,
+    `abbriviation` VARCHAR(10),
+    `is_standarized` BOOLEAN NOT NULL,
+    `measure_use` VARCHAR(50) NOT NULL,
+    `ounce_equivalence` FLOAT,
+    PRIMARY KEY(`measure_id`)
+);
 
 INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `ounce_equivalence`) VALUES 
     ('ounce', 'oz', true, 'mass', 1),
