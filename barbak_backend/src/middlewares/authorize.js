@@ -6,6 +6,20 @@ function defineUserAbilities(user = {}) {
 
     if (user.role === 'admin') {
         can('manage', 'all');
+    } else if (user.role === 'editor') {
+        // Create Content
+        can('create', 'content');
+
+        // Modify Verified Content
+        can('update', 'drinkware', { model: 'Verified Drinkware' });
+        can('delete', 'drinkware', { model: 'Verified Drinkware' });
+
+        can('update', 'tools', { model: 'Verified Tool' });
+        can('delete', 'tools', { model: 'Verified Tool' });
+
+        // Modify Public User Content
+        can('update', 'drinkware', { model: 'User Drinkware', public: true });
+        can('delete', 'drinkware', { model: 'User Drinkware', public: true });
     } else if (user.role === 'user') {
         can('delete', 'account');
         can('update', 'account');
@@ -14,22 +28,25 @@ function defineUserAbilities(user = {}) {
         can('update', 'users', { _id: user._id });
 
         can('create', 'drinkware');
-        can('read', 'drinkware', { user: user._id });
-        can('update', 'drinkware', { user: user._id });
-        can('delete', 'drinkware', { user: user._id });
+        can('read', 'drinkware', { model: 'User Drinkware', user: user._id });
+        can('update', 'drinkware', { model: 'User Drinkware', user: user._id });
+        can('delete', 'drinkware', { model: 'User Drinkware', user: user._id });
 
         can('create', 'tools');
-        can('read', 'tools', { user: user._id });
-        can('update', 'tools', { user: user._id });
-        can('delete', 'tools', { user: user._id });
+        can('read', 'tools', { model: 'User Tool', user: user._id });
+        can('update', 'tools', { model: 'User Tool', user: user._id });
+        can('delete', 'tools', { model: 'User Tool', user: user._id });
     } else {
         can('create', 'account');
     }
     // Rules applied to any role
     can('read', 'users', { public: true });
-    can('read', 'drinkware', { public: true });
-    can('read', 'tools', { public: true });
+    can('read', 'drinkware', { model: 'User Drinkware', public: true });
+    can('read', 'tools', { model: 'User Tool', public: true });
 
+    can('read', 'drinkware', { model: 'Verified Drinkware' });
+    can('read', 'tools', { model: 'Verified Drinkware' });
+    
     const aliasResolver = createAliasResolver({
         create: 'post',
         read: 'get',
