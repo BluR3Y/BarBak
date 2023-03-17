@@ -35,7 +35,15 @@ Tool.schema.statics = {
 }
 
 Tool.schema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = {};
+
+    if (!await this.constructor.validateCategory(this.category))
+        error.errors['category'] = { type: 'valid', message: 'Invalid tool type' };
     
+    if (Object.keys(error.errors).length)
+        throw error;
 }
 
 const verifiedSchema = new mongoose.Schema({

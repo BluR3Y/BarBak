@@ -7,6 +7,12 @@ function defineUserAbilities(user = {}) {
     if (user.role === 'admin') {
         can('manage', 'all');
     } else if (user.role === 'editor') {
+        can('delete', 'account');
+        can('update', 'account');
+
+        can('read', 'users', { _id: user._id });
+        can('update', 'users', { _id: user._id });
+
         // Create Content
         can('create', 'content');
 
@@ -20,13 +26,11 @@ function defineUserAbilities(user = {}) {
         // Modify Public User Content
         can('update', 'drinkware', { model: 'User Drinkware', public: true });
         can('delete', 'drinkware', { model: 'User Drinkware', public: true });
-    } else if (user.role === 'user') {
-        can('delete', 'account');
-        can('update', 'account');
-
-        can('read', 'users', { _id: user._id });
-        can('update', 'users', { _id: user._id });
-
+        
+        can('update', 'tools', { model: 'User Tool', public: true});
+        can('delete', 'tools', { model: 'User Tool', public: true});
+        
+        // Can Modify Private Created Content
         can('create', 'drinkware');
         can('read', 'drinkware', { model: 'User Drinkware', user: user._id });
         can('update', 'drinkware', { model: 'User Drinkware', user: user._id });
@@ -36,10 +40,28 @@ function defineUserAbilities(user = {}) {
         can('read', 'tools', { model: 'User Tool', user: user._id });
         can('update', 'tools', { model: 'User Tool', user: user._id });
         can('delete', 'tools', { model: 'User Tool', user: user._id });
+    } else if (user.role === 'user') {
+        can('delete', 'account');
+        can('update', 'account');
+
+        can('read', 'users', { _id: user._id });
+        can('update', 'users', { _id: user._id });
+
+        // Can Modify Private Created Content
+        can('create', 'drinkware', { verified: false });
+        can('read', 'drinkware', { model: 'User Drinkware', user: user._id });
+        can('update', 'drinkware', { model: 'User Drinkware', user: user._id });
+        can('delete', 'drinkware', { model: 'User Drinkware', user: user._id });
+
+        can('create', 'tools', { verified: false });
+        can('read', 'tools', { model: 'User Tool', user: user._id });
+        can('update', 'tools', { model: 'User Tool', user: user._id });
+        can('delete', 'tools', { model: 'User Tool', user: user._id });
     } else {
         can('create', 'account');
     }
     // Rules applied to any role
+    can('read', 'assets');
     can('read', 'users', { public: true });
     can('read', 'drinkware', { model: 'User Drinkware', public: true });
     can('read', 'tools', { model: 'User Tool', public: true });

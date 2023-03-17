@@ -7,6 +7,7 @@ const authorize = require('./middlewares/authorize');
 // router.use('/', fieldValidator);
 router.use(authorize);
 
+require('./routes/asset-routes').connect(router);
 require('./routes/account-routes').connect(router);
 require('./routes/user-routes').connect(router);
 require('./routes/drinkware-routes').connect(router);

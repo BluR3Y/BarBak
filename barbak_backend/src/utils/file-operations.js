@@ -2,32 +2,34 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-module.exports.uploadSingle = function(uploadPath, file) {
-    return new Promise((resolve, reject) => {
-        var filename;
-        do {
-            filename = crypto.randomUUID() + path.extname(file.originalname);
-        } while(fs.existsSync(filename));
-        fs.open(uploadPath + filename, 'wx', function(err, fd) {
-            if (err) return reject(err);
-            fs.write(fd, file.buffer, function(err, bytes) {
-                if (err) return reject(err);
-                fs.close(fd, function(err) {
-                    if(err) return reject(err);
-                    resolve({ filepath: '/' + uploadPath + filename, bytes });
-                });
-            });
-        });
-    });
-};
+// module.exports.uploadSingle = function(uploadPath, file) {
+//     return new Promise((resolve, reject) => {
+//         var filename;
+//         do {
+//             filename = crypto.randomUUID() + path.extname(file.originalname);
+//         } while(fs.existsSync(filename));
+//         fs.open(uploadPath + filename, 'wx', function(err, fd) {
+//             if (err) return reject(err);
+//             fs.write(fd, file.buffer, function(err, bytes) {
+//                 if (err) return reject(err);
+//                 fs.close(fd, function(err) {
+//                     if(err) return reject(err);
+//                     resolve({ filepath: '/' + uploadPath + filename, bytes });
+//                 });
+//             });
+//         });
+//     });
+// };
 
-module.exports.uploadMultiple = function(uploadPath, files) {
-    return Promise.all(files.map(async file => this.uploadSingle(uploadPath, file)));
-};
+// module.exports.uploadMultiple = function(uploadPath, files) {
+//     return Promise.all(files.map(async file => this.uploadSingle(uploadPath, file)));
+// };
 
-module.exports.copySingle = function(readPath, writePath) {
+module.exports.copySingle = function(readPath, writePath = path.dirname(readPath)) {
     return new Promise((resolve, reject) => {
         const absReadPath = path.join(__dirname, '../..', readPath);
+        const absWritePath = path.join(__dirname, '../..', writePath ? writePath : path.dirname(readPath));
+
         if (!fs.existsSync(absReadPath))
             return reject('File does not exist');
 
@@ -35,11 +37,11 @@ module.exports.copySingle = function(readPath, writePath) {
         var newFileName;
         do {
             newFileName = crypto.randomUUID() + path.extname(filename);
-        } while(fs.existsSync(newFileName));
-
-        fs.copyFile(absReadPath, writePath + newFileName, function(err) {
+        } while(fs.existsSync(path.join(absWritePath, newFileName)));
+        
+        fs.copyFile(absReadPath, path.join(absWritePath, newFileName), function(err) {
             if (err) return reject(err);
-            resolve( '/' + writePath + newFileName);
+            resolve(path.posix.join(writePath, newFileName));
         });
     });
 };
@@ -48,11 +50,12 @@ module.exports.copyMultiple = function(readPaths, writePath) {
     return Promise.all(readPaths.map(async file => this.copySingle(file, writePath)));
 }
 
-module.exports.readSingle = function(filepath, file) {
+module.exports.readSingle = function(filepath) {
     return new Promise((resolve, reject) => {
-        if (!fs.existsSync(filepath + file))
+        const absPath = path.join(__dirname, '../..', filepath);
+        if (!fs.existsSync(absPath))
             reject("File does not exist");
-        fs.readFile(filepath + file, function(err , data) {
+        fs.readFile(absPath, function(err , data) {
             if (err) return reject(err);
             resolve(data);
         });

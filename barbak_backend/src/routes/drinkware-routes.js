@@ -4,8 +4,8 @@ const auth = require('../auth');
 
 module.exports.connect = function(router) {
     router.post('/drinkware/create', drinkwareController.create);
-    router.post('/content/create/verified/drinkware', drinkwareController.createVerified);
-    
+    router.post('/drinkware/copy/:drinkware_id', drinkwareController.copy);
+
     router.get('/drinkware/search', drinkwareController.search);
     router.get('/drinkware/@me', auth.sessionAuthenticationRequired, drinkwareController.clientDrinkware);
     router.get('/drinkware/:drinkware_id', drinkwareController.getDrinkware);
