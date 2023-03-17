@@ -53,7 +53,7 @@ appLevelSchema.statics.createInstance = function(file, user, referenced_document
         file_name: file.filename,
         file_size: file.size,
         mime_type: file.mimetype,
-        file_path: '/' + file.path.replace(/\\/g, '/'),
+        file_path: file.path,
         user,
         referenced_document,
         referenced_model: 'Drinkware'
@@ -64,7 +64,7 @@ appLevelSchema.methods.updateInstance = function(file) {
     this.file_name = file.filename;
     this.mime_type = file.mimetype;
     this.file_size = file.size;
-    this.file_path = '/' + file.path.replace(/\\/g, '/');
+    this.file_path = file.path;
 }
 
 // Authorize may change to variants if multiple models are used
