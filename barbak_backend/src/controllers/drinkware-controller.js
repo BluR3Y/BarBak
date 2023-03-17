@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const fileOperations = require('../utils/file-operations');
 const { subject } = require('@casl/ability');
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
-const { AppAccessControl } = require('../models/access-control-model');
+const { AppAccessControl, AccessControl } = require('../models/access-control-model');
 
 module.exports.create = async (req, res) => {
     try {
@@ -162,6 +162,7 @@ module.exports.copy = async (req, res) => {
     }
 }
 
+// *** Issue: Verifed Drinkware cover gets stored in /assets/private
 module.exports.uploadCover = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
@@ -184,26 +185,11 @@ module.exports.uploadCover = async (req, res) => {
             await fileOperations.deleteSingle(filepath);
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         }
-        
-        if (drinkwareInfo.model === 'Verified Drinkware') {
-            if(drinkwareInfo.cover) {
-                try {
-                    await fileOperations.deleteSingle(drinkwareInfo.cover);
-                } catch(err) {
-                    // Implement Error Logging
-                    console.log(err);
-                }
-            }
-            drinkwareInfo.cover = filepath;
-        } else {
+
+        if (drinkwareInfo.model === 'User Drinkware') {
             if (drinkwareInfo.cover) {
                 const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
-                try {
-                    await fileOperations.deleteSingle(aclDocument.file_path);
-                } catch(err) {
-                    // Implement Error Logging
-                    console.log(err);
-                }
+                await fileOperations.deleteSingle(aclDocument.file_path);
                 aclDocument.updateInstance(drinkwareCover);
                 await aclDocument.save();
                 drinkwareInfo.cover = '/assets/private/' + aclDocument._id;
@@ -212,8 +198,42 @@ module.exports.uploadCover = async (req, res) => {
                 await createdACL.save();
                 drinkwareInfo.cover = '/assets/private/' + createdACL._id;
             }
+        } else {
+            if (drinkwareInfo.cover)
+                await fileOperations.deleteSingle(drinkwareInfo.cover);
+            drinkwareInfo.cover = filepath;
         }
         
+        await drinkwareInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.deleteCover = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
+            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
+        
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (!drinkwareInfo.cover)
+            return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
+
+        if (drinkwareInfo.model === 'User Drinkware') {
+            const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
+            await fileOperations.deleteSingle(aclDocument.file_path);
+            await aclDocument.remove();
+        } else {
+            await fileOperations.deleteSingle(drinkwareInfo.cover);
+        }
+
+        drinkwareInfo.cover = null;
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {

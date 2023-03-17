@@ -10,9 +10,10 @@ module.exports.connect = function(router) {
     router.get('/drinkware/@me', auth.sessionAuthenticationRequired, drinkwareController.clientDrinkware);
     router.get('/drinkware/:drinkware_id', drinkwareController.getDrinkware);
 
-    router.put('/drinkware/update/cover', multerConfig.PrivateUpload.single('drinkware_cover'), drinkwareController.uploadCover);
-    router.put('/drinkware/update/info', drinkwareController.update);
-    router.put('/drinkware/update/privacy/:drinkware_id', drinkwareController.updatePrivacy);
+    router.patch('/drinkware/update/cover/upload', multerConfig.PrivateUpload.single('drinkware_cover'), drinkwareController.uploadCover);
+    router.patch('/drinkware/update/cover/remove/:drinkware_id', drinkwareController.deleteCover);
+    router.patch('/drinkware/update/info', drinkwareController.update);
+    router.patch('/drinkware/update/privacy/:drinkware_id', drinkwareController.updatePrivacy);
 
     router.delete('/drinkware/delete/:drinkware_id', drinkwareController.delete);
 }
