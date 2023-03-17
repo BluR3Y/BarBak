@@ -20,9 +20,9 @@ module.exports.getUser = async (req, res) => {
     
         const userInfo = await User.findOne({ _id: user_id });
         if (!userInfo)
-            return res.status(401).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });
+            return res.status(404).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });
         else if (!req.ability.can('read', subject('users', userInfo)))
-            return res.status(401).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
+            return res.status(403).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
         res.status(200).send(userInfo.getBasicUserInfo());
     } catch(err) {

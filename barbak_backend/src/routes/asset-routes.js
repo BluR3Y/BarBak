@@ -14,9 +14,9 @@ module.exports.connect = function(router) {
 
             const fileInfo = await AppAccessControl.findOne({ _id: file_id });
             if (!fileInfo)
-                return res.status(400).send({ path: 'file_id', type: 'exist', message: 'File does not exist' });
+                return res.status(404).send({ path: 'file_id', type: 'exist', message: 'File does not exist' });
             else if (!await fileInfo.authorize(req.user._id))
-                return res.status(401).send({ path: 'file_id', type: 'valid', message: 'Unauthorized to view file' });
+                return res.status(403).send({ path: 'file_id', type: 'valid', message: 'Unauthorized to view file' });
     
             const fileData = await fileOperations.readSingle(fileInfo.file_path);
             res.setHeader('Content-Type', fileInfo.mime_type);

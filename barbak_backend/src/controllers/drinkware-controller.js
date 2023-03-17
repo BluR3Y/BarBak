@@ -9,7 +9,7 @@ module.exports.create = async (req, res) => {
         const { verified , name, description } = req.body;
 
         if (!req.ability.can('create', subject('drinkware', { verified })))
-            return res.status(401).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drinkware' });
+            return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drinkware' });
         else if (
             (verified && await VerifiedDrinkware.exists({ name })) ||
             (!verified && await UserDrinkware.exists({ user: req.user._id, name }))
@@ -44,9 +44,9 @@ module.exports.update = async (req, res) => {
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (drinkwareInfo.model === 'Verified Drinkware' ? 
             await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }) :
             await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })
@@ -76,9 +76,9 @@ module.exports.delete = async (req, res) => {
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('delete', subject('drinkware', drinkwareInfo)))
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         
         if (drinkwareInfo.cover)
             await fileOperations.deleteSingle(drinkwareInfo.cover);
@@ -99,9 +99,9 @@ module.exports.updatePrivacy = async (req, res) => {
 
         const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
         drinkwareInfo.public = !drinkwareInfo.public;
         await drinkwareInfo.save();
@@ -120,9 +120,9 @@ module.exports.getDrinkware = async (req, res) => {
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
 
         res.status(200).send(drinkwareInfo.getBasicInfo());
     } catch(err) {
@@ -139,9 +139,9 @@ module.exports.copy = async (req, res) => {
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo) 
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
         
@@ -179,10 +179,10 @@ module.exports.uploadCover = async (req, res) => {
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo) {
             await fileOperations.deleteSingle(filepath);
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         } else if (!req.ability.can('update', subject('drinkware', drinkwareInfo))) {
             await fileOperations.deleteSingle(filepath);
-            return res.status(401).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         }
         
         if (drinkwareInfo.model === 'Verified Drinkware') {
