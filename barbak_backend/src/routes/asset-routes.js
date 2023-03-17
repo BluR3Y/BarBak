@@ -5,6 +5,7 @@ const { AppAccessControl } = require('../models/access-control-model');
 
 module.exports.connect = function(router) {
     router.use('/assets/public', express.static('assets/public'));
+    router.use('/assets/default', express.static('static/default'));
 
     router.get('/assets/private/:file_id', async (req, res) => {
         try {

@@ -246,7 +246,7 @@ userSchema.methods.customValidate = async function() {
 userSchema.methods.getBasicInfo = function() {
     var { _id, username, fullname, profile_image, expertise } = this;
 
-    profile_image = `${process.env.HOST_URI}/${profile_image}`;
+    profile_image = `${process.env.HOST_URI}/${profile_image ? profile_image : 'assets/default/profile_image.png'}`;
 
     return { _id, username, fullname, profile_image, expertise };
 }
@@ -254,7 +254,7 @@ userSchema.methods.getBasicInfo = function() {
 userSchema.methods.getExtendedInfo = function() {
     var { _id, username, fullname, email, profile_image, expertise, date_registered } = this;
 
-    profile_image = `${process.env.HOST_URI}/${profile_image}`;
+    profile_image = `${process.env.HOST_URI}/${profile_image ? profile_image : 'assets/default/profile_image.png'}`;
 
     return { _id, username, fullname, email, profile_image, expertise, date_registered };
 }
