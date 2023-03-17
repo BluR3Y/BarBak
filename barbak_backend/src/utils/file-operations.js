@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const formatPath = (filepath) => path.normalize(filepath).replace(/\\/g, '/');
 
 // module.exports.uploadSingle = function(uploadPath, file) {
 //     return new Promise((resolve, reject) => {
@@ -25,23 +26,38 @@ const crypto = require('crypto');
 //     return Promise.all(files.map(async file => this.uploadSingle(uploadPath, file)));
 // };
 
+module.exports.moveSingle = function(sourcePath, destPath) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(sourcePath))
+            return reject('File does not exist');
+        var filename = path.basename(sourcePath);
+        while (fs.existsSync(path.join(destPath, filename)))
+            filename = crypto.randomUUID() + path.extname(filename);
+        const fileDest = path.join(destPath, filename);
+        fs.rename(sourcePath, fileDest, (err) => {
+            if (err)
+                return reject(err);
+            resolve(formatPath(fileDest));
+        });
+    });
+}
+
 module.exports.copySingle = function(readPath, writePath = path.dirname(readPath)) {
     return new Promise((resolve, reject) => {
-        const absReadPath = path.join(__dirname, '../..', readPath);
-        const absWritePath = path.join(__dirname, '../..', writePath ? writePath : path.dirname(readPath));
-
-        if (!fs.existsSync(absReadPath))
+        if (!fs.existsSync(readPath))
             return reject('File does not exist');
-
-        const filename = path.basename(readPath);
+        var filename = path.basename(readPath);
         var newFileName;
         do {
             newFileName = crypto.randomUUID() + path.extname(filename);
-        } while(fs.existsSync(path.join(absWritePath, newFileName)));
-        
-        fs.copyFile(absReadPath, path.join(absWritePath, newFileName), function(err) {
-            if (err) return reject(err);
-            resolve(path.posix.join(writePath, newFileName));
+        } while(fs.existsSync(path.join(writePath, newFileName)));
+
+        const fileDest = path.join(writePath, newFileName);
+        console.log(fileDest)
+        fs.copyFile(readPath, fileDest, (err) => {
+            if (err)
+                return reject(err);
+            resolve(formatPath(fileDest));
         });
     });
 };
@@ -52,10 +68,9 @@ module.exports.copyMultiple = function(readPaths, writePath) {
 
 module.exports.readSingle = function(filepath) {
     return new Promise((resolve, reject) => {
-        const absPath = path.join(__dirname, '../..', filepath);
-        if (!fs.existsSync(absPath))
+        if (!fs.existsSync(filepath))
             reject("File does not exist");
-        fs.readFile(absPath, function(err , data) {
+        fs.readFile(filepath, function(err , data) {
             if (err) return reject(err);
             resolve(data);
         });
@@ -64,10 +79,9 @@ module.exports.readSingle = function(filepath) {
 
 module.exports.deleteSingle = function(filepath) {
     return new Promise((resolve, reject) => {
-        const absPath = path.join(__dirname, '../..', filepath);
-        if (!fs.existsSync(absPath))
+        if (!fs.existsSync(filepath))
             reject("File does not exist");
-        fs.unlink(absPath, function(err) {
+        fs.unlink(filepath, function(err) {
             if (err) return reject(err);
             resolve();
         });

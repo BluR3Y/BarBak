@@ -243,13 +243,19 @@ userSchema.methods.customValidate = async function() {
         throw error;
 }
 
-userSchema.methods.getBasicUserInfo = function() {
-    const { _id, username, fullname, profile_image, expertise } = this;
+userSchema.methods.getBasicInfo = function() {
+    var { _id, username, fullname, profile_image, expertise } = this;
+
+    profile_image = `${process.env.HOST_URI}/${profile_image}`;
+
     return { _id, username, fullname, profile_image, expertise };
 }
 
-userSchema.methods.getPersonalUserInfo = function() {
-    const { _id, username, fullname, email, profile_image, expertise, date_registered } = this;
+userSchema.methods.getExtendedInfo = function() {
+    var { _id, username, fullname, email, profile_image, expertise, date_registered } = this;
+
+    profile_image = `${process.env.HOST_URI}/${profile_image}`;
+
     return { _id, username, fullname, email, profile_image, expertise, date_registered };
 }
 

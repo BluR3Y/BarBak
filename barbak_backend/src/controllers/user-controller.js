@@ -6,7 +6,7 @@ const { subject } = require('@casl/ability');
 module.exports.clientInfo = async (req, res) => {
     try {
         const userInfo = await User.findOne({ _id: req.user._id });
-        res.status(200).send(userInfo.getPersonalUserInfo());
+        res.status(200).send(userInfo.getExtendedInfo());
     } catch(err) {
         res.status(500).send(err);
     }
@@ -32,22 +32,32 @@ module.exports.getUser = async (req, res) => {
 
 module.exports.uploadProfileImage = async (req, res) => {
     try {
-        const upload = req.file || null;
-        if (!upload)
-            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
+        const profileImage = req.file;
+        if (!profileImage)
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'Imange was not provided' });
         
         const userInfo = await User.findOne({ _id: req.user._id });
-        const filepath = '/' + upload.destination + upload.filename;
+        const filepath = await fileOperations.moveSingle(profileImage.path, './assets/public/images');
 
-        if (userInfo.profile_image) {
-            try {
-                await fileOperations.deleteSingle(userInfo.profile_image);
-            } catch(err) {
-                console.log(err);
-            }
-        }
-            
+        if (userInfo.profile_image)
+            await fileOperations.deleteSingle(userInfo.profile_image);
+        
         userInfo.profile_image = filepath;
+        await userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.removeProfileImage = async (req, res) => {
+    try {
+        const userInfo = await User.findOne({ _id: req.user._id });
+        if (!userInfo.profile_image)
+            return res.status(404).send({ path: 'image', type: 'exist', message: 'Account has no profile image' });
+                
+        await fileOperations.deleteSingle(userInfo.profile_image);
+        userInfo.profile_image = null;
         await userInfo.save();
         res.status(204).send();
     } catch(err) {

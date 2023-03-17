@@ -108,7 +108,7 @@ module.exports.usernameSelection = async (req, res) => {
                 resolve();
             })
         });
-        res.status(200).send(createdUser.getPublicInfo());
+        res.status(200).send(createdUser.getBasicInfo());
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
