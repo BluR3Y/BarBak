@@ -186,6 +186,12 @@ const userSchema = new mongoose.Schema({
     }
 },{ collection: 'users' });
 
+userSchema.post('findOne', function(document, next) {
+    const { HOSTNAME, PORT } = process.env;
+    document.profile_image = `http://${HOSTNAME}:${PORT}/` + (document.profile_image ? document.profile_image : 'assets/default/profile_image.png');
+    next();
+});
+
 userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
     const salt = randomBytes(16).toString('hex');
@@ -244,19 +250,25 @@ userSchema.methods.customValidate = async function() {
 }
 
 userSchema.methods.getBasicInfo = function() {
-    var { _id, username, fullname, profile_image, expertise } = this;
-
-    profile_image = `${process.env.HOST_URI}/${profile_image ? profile_image : 'assets/default/profile_image.png'}`;
-
-    return { _id, username, fullname, profile_image, expertise };
+    return {
+        _id: this._id,
+        username: this.username,
+        fullname: this.fullname,
+        profile_image: this.profile_image,
+        expertise: this.expertise
+    }
 }
 
 userSchema.methods.getExtendedInfo = function() {
-    var { _id, username, fullname, email, profile_image, expertise, date_registered } = this;
-
-    profile_image = `${process.env.HOST_URI}/${profile_image ? profile_image : 'assets/default/profile_image.png'}`;
-
-    return { _id, username, fullname, email, profile_image, expertise, date_registered };
+    return {
+        _id: this._id,
+        username: this.username,
+        fullname: this.fullname,
+        email: this.email,
+        profile_image: this.profile_image,
+        expertise: this.expertise,
+        date_registered: this.date_registered
+    };
 }
 
 module.exports = mongoose.model('User', userSchema);

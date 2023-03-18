@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const Drinkware = mongoose.model('Drinkware', new mongoose.Schema({
+const drinkwareSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, 'Name is required'],
@@ -15,12 +15,46 @@ const Drinkware = mongoose.model('Drinkware', new mongoose.Schema({
         type: String,
         default: null
     }
-},{ collection: 'drinkware', discriminatorKey: 'model' }));
+},{ collection: 'drinkware', discriminatorKey: 'model' });
 
-Drinkware.schema.methods.getBasicInfo = function() {
-    const { _id, name, description, cover } = this;
-    return { _id, name, description, cover };
+drinkwareSchema.query.basicInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.extendedStripExcess()));
+        });
+    });
 }
+
+drinkwareSchema.query.extendedInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.basicStripExcess()));
+        });
+    });
+}
+
+drinkwareSchema.query.conditionalSearch = function(user) {
+    return this.where(user ? { $or: [{ model: 'Verified Drinkware' },{ user: user._id },{ public: true }] } : { model: 'Verified Drinkware' },{ public: true });
+}
+
+drinkwareSchema.post('find', function(documents, next) {
+    const { HOSTNAME, PORT } = process.env;
+    for (const doc of documents) 
+        doc.cover = `http://${HOSTNAME}:${PORT}/` + (doc.cover ? doc.cover : 'assets/default/drinkware_cover.jpg');
+    next();
+});
+
+drinkwareSchema.post('findOne', function(document, next) {
+    const { HOSTNAME, PORT } = process.env;
+    document.cover = `http://${HOSTNAME}:${PORT}/` + (document.cover ? document.cover : 'assets/default/drinkware_cover.jpg');
+    next();
+});
+
+const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
     date_verified: {
@@ -29,6 +63,26 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+verifiedSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: this.cover,
+            date_verified: this.date_verified
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: this.cover,
+        };
+    }
+}
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -49,8 +103,27 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-userSchema.query.authorInfo = function() {
-    return this.select('_id name description cover date_created -model');
+userSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: this.cover,
+            date_created: this.date_created,
+            public: this.public
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: this.cover,
+        };
+    }
 }
 
 // Make Public Function

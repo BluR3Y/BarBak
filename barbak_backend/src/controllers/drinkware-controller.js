@@ -124,7 +124,7 @@ module.exports.getDrinkware = async (req, res) => {
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
 
-        res.status(200).send(drinkwareInfo.getBasicInfo());
+        res.status(200).send(drinkwareInfo.basicStripExcess());
     } catch(err) {
         res.status(500).send(err);
     }
@@ -210,55 +210,6 @@ module.exports.uploadCover = async (req, res) => {
     }
 }
 
-// *** Issue: Verifed Drinkware cover gets stored in /assets/private
-// module.exports.uploadCover = async (req, res) => {
-//     try {
-//         const { drinkware_id } = req.body;
-//         const drinkwareCover = req.file;
-
-//         if (!drinkwareCover)
-//             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        
-//         const filepath = '/' + drinkwareCover.destination + drinkwareCover.filename;
-//         if (!mongoose.Types.ObjectId.isValid(drinkware_id)) {
-//             await fileOperations.deleteSingle(filepath);
-//             return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
-//         }
-
-//         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
-//         if (!drinkwareInfo) {
-//             await fileOperations.deleteSingle(filepath);
-//             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-//         } else if (!req.ability.can('update', subject('drinkware', drinkwareInfo))) {
-//             await fileOperations.deleteSingle(filepath);
-//             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-//         }
-
-//         if (drinkwareInfo.model === 'User Drinkware') {
-//             if (drinkwareInfo.cover) {
-//                 const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
-//                 await fileOperations.deleteSingle(aclDocument.file_path);
-//                 aclDocument.updateInstance(drinkwareCover);
-//                 await aclDocument.save();
-//                 drinkwareInfo.cover = '/assets/private/' + aclDocument._id;
-//             } else {
-//                 const createdACL = AppAccessControl.createInstance(drinkwareCover, req.user._id, drinkwareInfo._id);
-//                 await createdACL.save();
-//                 drinkwareInfo.cover = '/assets/private/' + createdACL._id;
-//             }
-//         } else {
-//             if (drinkwareInfo.cover)
-//                 await fileOperations.deleteSingle(drinkwareInfo.cover);
-//             drinkwareInfo.cover = filepath;
-//         }
-        
-//         await drinkwareInfo.save();
-//         res.status(204).send();
-//     } catch(err) {
-//         res.status(500).send(err);
-//     }
-// }
-
 module.exports.deleteCover = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
@@ -296,19 +247,17 @@ module.exports.search = async (req, res) => {
         const page_size = req.query.page_size || 10;
         const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
 
-        var searchConditions = Drinkware.where({ name: { $regex: query } })
+        const searchDocuments = await Drinkware
+            .find({ name: { $regex: query } })
+            .conditionalSearch(req.user)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .select('_id name description cover date_verified date_created user');
+            .basicInfo();
         
-        if (req.user) 
-            searchConditions = searchConditions.where({ $or: [{ model: 'Verified Drinkware' },{ user: req.user._id },{ public: true }] });
-        else
-            searchConditions = searchConditions.where({ model: 'Verified Drinkware' },{ public: true });
-            
-        res.status(200).send(await searchConditions);
+        res.status(200).send(searchDocuments);
     } catch(err) {
+        console.log(err)
         res.status(500).send(err);
     }
 }
@@ -324,7 +273,7 @@ module.exports.clientDrinkware = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .authorInfo();
+            .extendedInfo();
             
         res.status(200).send(userDocs);
     } catch(err) {

@@ -24,7 +24,7 @@ module.exports.getUser = async (req, res) => {
         else if (!req.ability.can('read', subject('users', userInfo)))
             return res.status(403).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
-        res.status(200).send(userInfo.getBasicUserInfo());
+        res.status(200).send(userInfo.getBasicInfo());
     } catch(err) {
         res.status(500).send(err);
     }
