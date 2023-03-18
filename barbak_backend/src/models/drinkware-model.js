@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const formatCoverImage = (filepath) => `http://${process.env.HOSTNAME}:${process.env.PORT}/` + (filepath ? filepath : 'assets/default/drinkware_cover.jpg');
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -41,19 +42,6 @@ drinkwareSchema.query.conditionalSearch = function(user) {
     return this.where(user ? { $or: [{ model: 'Verified Drinkware' },{ user: user._id },{ public: true }] } : { model: 'Verified Drinkware' },{ public: true });
 }
 
-drinkwareSchema.post('find', function(documents, next) {
-    const { HOSTNAME, PORT } = process.env;
-    for (const doc of documents) 
-        doc.cover = `http://${HOSTNAME}:${PORT}/` + (doc.cover ? doc.cover : 'assets/default/drinkware_cover.jpg');
-    next();
-});
-
-drinkwareSchema.post('findOne', function(document, next) {
-    const { HOSTNAME, PORT } = process.env;
-    document.cover = `http://${HOSTNAME}:${PORT}/` + (document.cover ? document.cover : 'assets/default/drinkware_cover.jpg');
-    next();
-});
-
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
@@ -70,7 +58,7 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
-            cover: this.cover,
+            cover: formatCoverImage(this.cover),
             date_verified: this.date_verified
         };
     },
@@ -79,7 +67,7 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
-            cover: this.cover,
+            cover: formatCoverImage(this.cover),
         };
     }
 }
@@ -110,7 +98,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: this.cover,
+            cover: formatCoverImage(this.cover),
             date_created: this.date_created,
             public: this.public
         };
@@ -121,7 +109,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: this.cover,
+            cover: formatCoverImage(this.cover)
         };
     }
 }

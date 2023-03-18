@@ -223,7 +223,7 @@ module.exports.deleteCover = async (req, res) => {
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
         else if (!drinkwareInfo.cover)
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
-
+        console.log(drinkwareInfo.cover)
         if (drinkwareInfo.model === 'User Drinkware') {
             const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
             await fileOperations.deleteSingle(aclDocument.file_path);

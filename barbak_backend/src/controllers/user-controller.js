@@ -6,7 +6,7 @@ const { subject } = require('@casl/ability');
 module.exports.clientInfo = async (req, res) => {
     try {
         const userInfo = await User.findOne({ _id: req.user._id });
-        res.status(200).send(userInfo.getExtendedInfo());
+        res.status(200).send(userInfo.basicStripExcess());
     } catch(err) {
         res.status(500).send(err);
     }
@@ -24,7 +24,7 @@ module.exports.getUser = async (req, res) => {
         else if (!req.ability.can('read', subject('users', userInfo)))
             return res.status(403).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
-        res.status(200).send(userInfo.getBasicInfo());
+        res.status(200).send(userInfo.extendedStripExcess());
     } catch(err) {
         res.status(500).send(err);
     }
@@ -55,7 +55,7 @@ module.exports.removeProfileImage = async (req, res) => {
         const userInfo = await User.findOne({ _id: req.user._id });
         if (!userInfo.profile_image)
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Account has no profile image' });
-                
+        
         await fileOperations.deleteSingle(userInfo.profile_image);
         userInfo.profile_image = null;
         await userInfo.save();

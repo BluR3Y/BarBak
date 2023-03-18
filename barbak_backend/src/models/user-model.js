@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient } = require('../config/database-config');
 const transporter = require('../config/nodemailer-config');
+const formatProfileImage = (filepath) => `http://${process.env.HOSTNAME}:${process.env.PORT}/` + (filepath ? filepath : 'assets/default/profile_image.png');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -186,12 +187,6 @@ const userSchema = new mongoose.Schema({
     }
 },{ collection: 'users' });
 
-userSchema.post('findOne', function(document, next) {
-    const { HOSTNAME, PORT } = process.env;
-    document.profile_image = `http://${HOSTNAME}:${PORT}/` + (document.profile_image ? document.profile_image : 'assets/default/profile_image.png');
-    next();
-});
-
 userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
     const salt = randomBytes(16).toString('hex');
@@ -249,25 +244,27 @@ userSchema.methods.customValidate = async function() {
         throw error;
 }
 
-userSchema.methods.getBasicInfo = function() {
-    return {
-        _id: this._id,
-        username: this.username,
-        fullname: this.fullname,
-        profile_image: this.profile_image,
-        expertise: this.expertise
-    }
-}
-
-userSchema.methods.getExtendedInfo = function() {
+userSchema.methods.basicStripExcess = function() {
     return {
         _id: this._id,
         username: this.username,
         fullname: this.fullname,
         email: this.email,
-        profile_image: this.profile_image,
+        profile_image: formatProfileImage(this.profile_image),
+        date_registered: this.date_registered,
         expertise: this.expertise,
-        date_registered: this.date_registered
+        public: this.public
+    }
+}
+
+userSchema.methods.extendedStripExcess = function() {
+    return {
+        _id: this._id,
+        username: this.username,
+        fullname: this.fullname,
+        profile_image: formatProfileImage(this.profile_image),
+        expertise: this.expertise,
+        public: this.public
     };
 }
 
