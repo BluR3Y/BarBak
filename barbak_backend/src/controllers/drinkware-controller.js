@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const fileOperations = require('../utils/file-operations');
 const { subject } = require('@casl/ability');
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
@@ -38,9 +37,6 @@ module.exports.create = async (req, res) => {
 module.exports.update = async (req, res) => {
     try {
         const { drinkware_id, name, description } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
@@ -70,9 +66,6 @@ module.exports.update = async (req, res) => {
 module.exports.delete = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
@@ -93,9 +86,6 @@ module.exports.delete = async (req, res) => {
 module.exports.updatePrivacy = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-    
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
 
         const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
@@ -114,9 +104,6 @@ module.exports.updatePrivacy = async (req, res) => {
 module.exports.getDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
@@ -133,9 +120,6 @@ module.exports.getDrinkware = async (req, res) => {
 module.exports.copy = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo) 
@@ -169,11 +153,6 @@ module.exports.uploadCover = async (req, res) => {
 
         if (!drinkwareCover)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id)) {
-            await fileOperations.deleteSingle(drinkwareCover.path);
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
-        }
 
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo) {
@@ -213,8 +192,6 @@ module.exports.uploadCover = async (req, res) => {
 module.exports.deleteCover = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
         
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
@@ -239,28 +216,6 @@ module.exports.deleteCover = async (req, res) => {
         res.status(500).send(err);
     }
 }
-
-// module.exports.search = async (req, res) => {
-//     try {
-//         const query = req.query.query || '';
-//         const page = req.query.page || 1;
-//         const page_size = req.query.page_size || 10;
-//         const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
-//         console.log(req.body)
-//         const searchDocuments = await Drinkware
-//             .find({ name: { $regex: query } })
-//             .conditionalSearch(req.user)
-//             .sort(ordering)
-//             .skip((page - 1) * page_size)
-//             .limit(page_size)
-//             .basicInfo();
-        
-//         res.status(200).send(searchDocuments);
-//     } catch(err) {
-//         console.log(err)
-//         res.status(500).send(err);
-//     }
-// }
 
 module.exports.search = async (req, res) => {
     try {

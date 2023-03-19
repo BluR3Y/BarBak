@@ -1,6 +1,5 @@
 const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
-const mongoose = require('mongoose');
 const { subject } = require('@casl/ability');
 
 module.exports.clientInfo = async (req, res) => {
@@ -15,9 +14,6 @@ module.exports.clientInfo = async (req, res) => {
 module.exports.getUser = async (req, res) => {
     try {
         const { user_id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(user_id))
-            return res.status(401).send({ path: 'user_id', type: 'valid', message: 'Invalid user ID' });
-    
         const userInfo = await User.findOne({ _id: user_id });
         if (!userInfo)
             return res.status(404).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });

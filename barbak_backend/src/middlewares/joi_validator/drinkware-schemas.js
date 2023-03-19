@@ -25,10 +25,14 @@ const createValidation = Joi.object({
     verified: Joi.bool().default(false)
 });
 
-const updateSchema = Joi.object({
+const updateValidation = Joi.object({
     drinkware_id: mongoIdSchema.required(),
     name: nameSchema.required(),
     description: descriptionSchema
+});
+
+const idValidation = Joi.object({
+    drinkware_id: mongoIdSchema.required()
 });
 
 const searchValidation = Joi.object({
@@ -40,11 +44,11 @@ const searchValidation = Joi.object({
 
 module.exports = {
     '/drinkware/create': createValidation,
-    '/drinkware/copy': mongoIdSchema.required(),
-    '/drinkware': mongoIdSchema.required(),
+    '/drinkware/copy': idValidation,
+    '/drinkware': idValidation,
     '/drinkware/search': searchValidation,
-    '/drinkware/update/cover/upload': mongoIdSchema.required(),
-    '/drinkware/update/cover/remove': mongoIdSchema.required(),
-    '/drinkware/update/info': updateSchema,
-    '/drinkware/update/privacy': mongoIdSchema.required()
+    '/drinkware/update/cover/upload': idValidation,
+    '/drinkware/update/cover/remove': idValidation,
+    '/drinkware/update/info': updateValidation,
+    '/drinkware/update/privacy': idValidation
 };
