@@ -6,7 +6,7 @@ const { AppAccessControl, AccessControl } = require('../models/access-control-mo
 
 module.exports.create = async (req, res) => {
     try {
-        const { verified , name, description } = req.body;
+        const { name, description, verified } = req.body;
 
         if (!req.ability.can('create', subject('drinkware', { verified })))
             return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drinkware' });
@@ -223,7 +223,7 @@ module.exports.deleteCover = async (req, res) => {
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
         else if (!drinkwareInfo.cover)
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
-        console.log(drinkwareInfo.cover)
+        
         if (drinkwareInfo.model === 'User Drinkware') {
             const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
             await fileOperations.deleteSingle(aclDocument.file_path);
@@ -240,24 +240,34 @@ module.exports.deleteCover = async (req, res) => {
     }
 }
 
+// module.exports.search = async (req, res) => {
+//     try {
+//         const query = req.query.query || '';
+//         const page = req.query.page || 1;
+//         const page_size = req.query.page_size || 10;
+//         const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
+//         console.log(req.body)
+//         const searchDocuments = await Drinkware
+//             .find({ name: { $regex: query } })
+//             .conditionalSearch(req.user)
+//             .sort(ordering)
+//             .skip((page - 1) * page_size)
+//             .limit(page_size)
+//             .basicInfo();
+        
+//         res.status(200).send(searchDocuments);
+//     } catch(err) {
+//         console.log(err)
+//         res.status(500).send(err);
+//     }
+// }
+
 module.exports.search = async (req, res) => {
     try {
-        const query = req.query.query || '';
-        const page = req.query.page || 1;
-        const page_size = req.query.page_size || 10;
-        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
+        const { query, page, page_size, ordering } = req.query;
 
-        const searchDocuments = await Drinkware
-            .find({ name: { $regex: query } })
-            .conditionalSearch(req.user)
-            .sort(ordering)
-            .skip((page - 1) * page_size)
-            .limit(page_size)
-            .basicInfo();
-        
-        res.status(200).send(searchDocuments);
+        console.log(query, page, page_size);
     } catch(err) {
-        console.log(err)
         res.status(500).send(err);
     }
 }

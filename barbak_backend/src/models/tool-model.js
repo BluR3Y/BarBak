@@ -73,10 +73,6 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-userSchema.query.authorInfo = function() {
-    return this.select('')
-}
-
 // Make Public Function
 
 module.exports = {

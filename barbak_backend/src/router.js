@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authorize = require('./middlewares/authorize');
-// const fieldValidator = require('./middleware/validator');
 
-// Validate Request Data
-// router.use('/', fieldValidator);
 router.use(authorize);
 
 require('./routes/asset-routes').connect(router);

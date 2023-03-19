@@ -44,7 +44,7 @@ function authenticationStrategyCallback(req, res, next) {
         req.logIn(user, function(err) {
             if (err)
                 return res.status(500).send('An error occured while processing your request');
-            const publicInfo = user.getBasicInfo();
+            const publicInfo = user.basicStripExcess();
             res.status(200).send(publicInfo);
         })
     }
