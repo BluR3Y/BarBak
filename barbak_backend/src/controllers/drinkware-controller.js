@@ -265,8 +265,15 @@ module.exports.deleteCover = async (req, res) => {
 module.exports.search = async (req, res) => {
     try {
         const { query, page, page_size, ordering } = req.query;
+        const searchDocuments = await Drinkware
+            .find({ name: { $regex: query } })
+            .conditionalSearch(req.user)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .basicInfo();
 
-        console.log(query, page, page_size);
+        res.status(200).send(searchDocuments);
     } catch(err) {
         res.status(500).send(err);
     }
