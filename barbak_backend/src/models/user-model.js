@@ -2,7 +2,16 @@ const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient } = require('../config/database-config');
 const transporter = require('../config/nodemailer-config');
-const formatProfileImage = (filepath) => `http://${process.env.HOSTNAME}:${process.env.PORT}/` + (filepath ? filepath : 'assets/default/profile_image.png');
+const fileOperations = require('../utils/file-operations');
+
+function formatProfileImage(filepath) {
+    const { HOSTNAME, PORT } = process.env;
+    if (!filepath) {
+        const defaultImage = fileOperations.findByName('static/default', 'profile_image');
+        filepath = defaultImage ? `assets/default/${defaultImage}` : null
+    }
+    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+}
 
 const userSchema = new mongoose.Schema({
     username: {

@@ -28,7 +28,7 @@ module.exports = (req, res, next) => {
     return ((req, res, next) => {
         const action = req.method.toLowerCase();
         const resource = req.path.split('/')[1];
-        const dataStorage = (Object.keys(req[methodStorage[action]]).length ? methodStorage[action] : 'params');
+        const dataStorage = (Object.keys(req[methodStorage[action]]).length ? methodStorage[action] : 'query');
         const data = req[dataStorage];
         const pathname = (dataStorage === 'params' ? path.dirname(req.path) : req.path);
         const relevantSchemas = Schemas[resource];

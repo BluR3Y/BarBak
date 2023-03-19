@@ -26,6 +26,11 @@ const formatPath = (filepath) => path.normalize(filepath).replace(/\\/g, '/');
 //     return Promise.all(files.map(async file => this.uploadSingle(uploadPath, file)));
 // };
 
+module.exports.findByName = function(fileDir, fileName) {
+    const files = fs.readdirSync(fileDir);
+    return files.filter((file) => file.startsWith(fileName));
+}
+
 module.exports.moveSingle = function(sourcePath, destPath) {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(sourcePath))

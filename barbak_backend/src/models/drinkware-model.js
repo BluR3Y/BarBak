@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
-const formatCoverImage = (filepath) => `http://${process.env.HOSTNAME}:${process.env.PORT}/` + (filepath ? filepath : 'assets/default/drinkware_cover.jpg');
+const fileOperations = require('../utils/file-operations');
+
+function formatCoverImage(filepath) {
+    const { HOSTNAME, PORT } = process.env;
+    if (!filepath) {
+        const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
+        filepath = defaultCover ? `assets/default/${defaultCover}` : null;
+    }
+    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+}
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
