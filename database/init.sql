@@ -51,52 +51,59 @@ CREATE TABLE barware_materials (
     FOREIGN KEY (`category_id`) REFERENCES barware_material_categories (`id`)
 );
 
+SELECT id INTO @glassware_material_id FROM barware_material_categories WHERE name = 'glassware';
+SELECT id INTO @ceramicware_material_id FROM barware_material_categories WHERE name = 'ceramicware';
+SELECT id INTO @metalware_material_id FROM barware_material_categories WHERE name = 'metalware';
+SELECT id INTO @plasticware_material_id FROM barware_material_categories WHERE name = 'plasticware';
+SELECT id INTO @woodenware_material_id FROM barware_material_categories WHERE name = 'woodenware';
+SELECT id INTO @other_material_id FROM barware_material_categories WHERE name = 'other';
+
 INSERT INTO barware_materials (`category_id`, `name`) VALUES
-    ((SELECT id FROM barware_material_categories WHERE name = 'glassware'), 'glass'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'glassware'), 'crystal'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'glassware'), 'soda lime'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'glassware'), 'borosilicate'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'glassware'), 'tempered'),
+    (@glassware_material_id, 'glass'),
+    (@glassware_material_id, 'crystal'),
+    (@glassware_material_id, 'soda lime'),
+    (@glassware_material_id, 'borosilicate'),
+    (@glassware_material_id, 'tempered'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'ceramicware'), 'ceramic'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'ceramicware'), 'clay'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'ceramicware'), 'porcelain'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'ceramicware'), 'earthenware'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'ceramicware'), 'stoneware'),
+    (@ceramicware_material_id, 'ceramic'),
+    (@ceramicware_material_id, 'clay'),
+    (@ceramicware_material_id, 'porcelain'),
+    (@ceramicware_material_id, 'earthenware'),
+    (@ceramicware_material_id, 'stoneware'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'metal'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'stainless steel'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'brass'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'aluminum'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'titanium'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'copper'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'pewter'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'silver'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'gold'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'cast iron'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'metalware'), 'enamelware'),
+    (@metalware_material_id, 'metal'),
+    (@metalware_material_id, 'stainless steel'),
+    (@metalware_material_id, 'brass'),
+    (@metalware_material_id, 'aluminum'),
+    (@metalware_material_id, 'titanium'),
+    (@metalware_material_id, 'copper'),
+    (@metalware_material_id, 'pewter'),
+    (@metalware_material_id, 'silver'),
+    (@metalware_material_id, 'gold'),
+    (@metalware_material_id, 'cast iron'),
+    (@metalware_material_id, 'enamelware'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'plastic'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'Polycarbonate'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'acrylic'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'tritan'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'polypropylene'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'plasticware'), 'melamine'),
+    (@plasticware_material_id, 'plastic'),
+    (@plasticware_material_id, 'Polycarbonate'),
+    (@plasticware_material_id, 'acrylic'),
+    (@plasticware_material_id, 'tritan'),
+    (@plasticware_material_id, 'polypropylene'),
+    (@plasticware_material_id, 'melamine'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'wood'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'oak'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'maple'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'cherry'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'teak'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'olive'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'pine'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'woodenware'), 'walnut'),
+    (@woodenware_material_id, 'wood'),
+    (@woodenware_material_id, 'oak'),
+    (@woodenware_material_id, 'maple'),
+    (@woodenware_material_id, 'cherry'),
+    (@woodenware_material_id, 'teak'),
+    (@woodenware_material_id, 'olive'),
+    (@woodenware_material_id, 'pine'),
+    (@woodenware_material_id, 'walnut'),
 
-    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'graphite'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'silicone'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'bamboo'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'paper'),
-    ((SELECT id FROM barware_material_categories WHERE name = 'other'), 'rubber')
+    (@other_material_id, 'graphite'),
+    (@other_material_id, 'silicone'),
+    (@other_material_id, 'bamboo'),
+    (@other_material_id, 'paper'),
+    (@other_material_id, 'rubber')
 ;
 
 -- Ingredients
@@ -127,53 +134,62 @@ INSERT INTO ingredient_categories (`name`) VALUES
     ('other')
 ;
 
+SELECT id INTO @liquor_category_id FROM ingredient_categories WHERE name = 'liquor';
+SELECT id INTO @liqueur_category_id FROM ingredient_categories WHERE name = 'liqueur';
+SELECT id INTO @beer_category_id FROM ingredient_categories WHERE name = 'beer';
+SELECT id INTO @wine_category_id FROM ingredient_categories WHERE name = 'wine';
+SELECT id INTO @mixer_category_id FROM ingredient_categories WHERE name = 'mixer';
+SELECT id INTO @enhancer_category_id FROM ingredient_categories WHERE name = 'enhancer';
+SELECT id INTO @fruit_category_id FROM ingredient_categories WHERE name = 'fruit';
+SELECT id INTO @other_category_id FROM ingredient_categories WHERE name = 'other';
+
 INSERT INTO ingredient_sub_categories (`category_id`, `name`, `measure_state`) VALUES 
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'whisky', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'gin', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'vodka', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'rum', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'tequila', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liquor'), 'brandy', 'volume'),
+    (@liquor_category_id, 'whisky', 'volume'),
+    (@liquor_category_id, 'gin', 'volume'),
+    (@liquor_category_id, 'vodka', 'volume'),
+    (@liquor_category_id, 'rum', 'volume'),
+    (@liquor_category_id, 'tequila', 'volume'),
+    (@liquor_category_id, 'brandy', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'orange', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'coffee', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'cream', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'nut', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'herb', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'liqueur'), 'fruit', 'volume'),
+    ((@liqueur_category_id), 'orange', 'volume'),
+    ((@liqueur_category_id), 'coffee', 'volume'),
+    ((@liqueur_category_id), 'cream', 'volume'),
+    ((@liqueur_category_id), 'nut', 'volume'),
+    ((@liqueur_category_id), 'herb', 'volume'),
+    ((@liqueur_category_id), 'fruit', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'lager', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'ale', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'wheat', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'stout', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'porter', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'sour', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'beer'), 'belgia', 'volume'),
+    ((@beer_category_id), 'lager', 'volume'),
+    ((@beer_category_id), 'ale', 'volume'),
+    ((@beer_category_id), 'wheat', 'volume'),
+    ((@beer_category_id), 'stout', 'volume'),
+    ((@beer_category_id), 'porter', 'volume'),
+    ((@beer_category_id), 'sour', 'volume'),
+    ((@beer_category_id), 'belgia', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'wine'), 'red', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'wine'), 'white', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'wine'), 'rosé', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'wine'), 'sparkling', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'wine'), 'fortified', 'volume'),
+    ((@wine_category_id), 'red', 'volume'),
+    ((@wine_category_id), 'white', 'volume'),
+    ((@wine_category_id), 'rosé', 'volume'),
+    ((@wine_category_id), 'sparkling', 'volume'),
+    ((@wine_category_id), 'fortified', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'juice', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'syrup', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'soda', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'dairy', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'tea', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'mixer'), 'coffee', 'volume'),
+    ((@mixer_category_id), 'juice', 'volume'),
+    ((@mixer_category_id), 'syrup', 'volume'),
+    ((@mixer_category_id), 'soda', 'volume'),
+    ((@mixer_category_id), 'dairy', 'volume'),
+    ((@mixer_category_id), 'tea', 'volume'),
+    ((@mixer_category_id), 'coffee', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'enhancer'), 'spice', 'mass'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'enhancer'), 'herb', 'quantity'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'enhancer'), 'salt', 'mass'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'enhancer'), 'bitter', 'volume'),
+    ((@enhancer_category_id), 'spice', 'mass'),
+    ((@enhancer_category_id), 'herb', 'quantity'),
+    ((@enhancer_category_id), 'salt', 'mass'),
+    ((@enhancer_category_id), 'bitter', 'volume'),
 
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'citrus', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'berry', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'melon', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'tropical', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'stone', 'volume'),
-    ((SELECT id FROM ingredient_categories WHERE name = 'fruit'), 'pome', 'volume')
+    ((@fruit_category_id), 'citrus', 'volume'),
+    ((@fruit_category_id), 'berry', 'volume'),
+    ((@fruit_category_id), 'melon', 'volume'),
+    ((@fruit_category_id), 'tropical', 'volume'),
+    ((@fruit_category_id), 'stone', 'volume'),
+    ((@fruit_category_id), 'pome', 'volume')
 
     -- *** Insert for other ***
 ;
