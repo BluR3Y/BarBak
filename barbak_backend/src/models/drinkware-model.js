@@ -1,54 +1,97 @@
 const mongoose = require('mongoose');
-const {executeSqlQuery} = require('../config/database-config');
-const FileOperations = require('../utils/file-operations');
+const fileOperations = require('../utils/file-operations');
 
-const Drinkware = mongoose.model("Drinkware", new mongoose.Schema({
+function formatCoverImage(filepath) {
+    const { HOSTNAME, PORT } = process.env;
+    if (!filepath) {
+        const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
+        filepath = defaultCover ? `assets/default/${defaultCover}` : null;
+    }
+    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+}
+
+const drinkwareSchema = new mongoose.Schema({
     name: {
         type: String,
-        minLength: [3, 'Name must be at least 3 characters long'],
-        maxLength: [30, 'Name length must not exceed 30 characters'],
-        lowercase: true,
-        required: [true, 'Drinkware name is required']
+        required: [true, 'Name is required'],
+        minlength: [3, 'Name length must be at least 3 characters long'],
+        maxlength: [30, 'Name length must be at most 30 characters long']
     },
     description: {
         type: String,
-        maxLength: [600, 'Description must not exceed 600 characters'],
+        maxlength: [600, 'Description length must be at most 600 characters long']
     },
-    material: {
-        type: String,
-        required: [true, 'Tool material is required'],
-    },
-    image: {
+    cover: {
         type: String,
         default: null
-    },
-},{ collection: 'drinkware', discriminatorKey: 'model' }));
-
-Drinkware.schema.statics = {
-    getMaterials: async function() {
-        const materials = await executeSqlQuery(`SELECT name FROM drinkware_materials`);
-        return (await materials.map(item => item.name));
-    },
-    validateMaterial: async function(material) {
-        const { materialCount } = await executeSqlQuery('SELECT COUNT(*) AS materialCount FROM drinkware_materials WHERE name = ? LIMIT 1;', [material]).then(res => res[0]);
-        return Boolean(materialCount);
     }
+},{ collection: 'drinkware', discriminatorKey: 'model' });
+
+drinkwareSchema.query.basicInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.extendedStripExcess()));
+        });
+    });
 }
 
-const publicDrinkwareSchema = new mongoose.Schema({
-    date_published: {
+drinkwareSchema.query.extendedInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.basicStripExcess()));
+        });
+    });
+}
+
+drinkwareSchema.query.conditionalSearch = function(user) {
+    return this.where(user ? { $or: [{ model: 'Verified Drinkware' },{ user: user._id },{ public: true }] } : { model: 'Verified Drinkware' },{ public: true });
+}
+
+const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
+
+const verifiedSchema = new mongoose.Schema({
+    date_verified: {
         type: Date,
         immutable: true,
         default: () => Date.now()
     }
 });
 
-const privateDrinkwareSchema = new mongoose.Schema({
-    user_id: {
+verifiedSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: formatCoverImage(this.cover),
+            date_verified: this.date_verified
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: formatCoverImage(this.cover),
+        };
+    }
+}
+
+const userSchema = new mongoose.Schema({
+    user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        immutable: true,
-        required: true
+        required: true,
+        immutable: true
+    },
+    public: {
+        type: Boolean,
+        required: true,
+        default: false,
     },
     date_created: {
         type: Date,
@@ -57,36 +100,33 @@ const privateDrinkwareSchema = new mongoose.Schema({
     }
 });
 
-privateDrinkwareSchema.query.userExposure = function() {
-    return this.select('name description material image date_created -model');
+userSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: formatCoverImage(this.cover),
+            date_created: this.date_created,
+            public: this.public
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: formatCoverImage(this.cover)
+        };
+    }
 }
 
-privateDrinkwareSchema.methods.customValidate = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
-
-    if (!await this.constructor.validateMaterial(this.material))
-        error.errors['material'] = { type: 'valid', message: 'Invalid material' };
-
-    if (Object.keys(error.errors).length)
-        throw error;
-}
-
-privateDrinkwareSchema.statics.makePublic = async function(snapshot) {
-    const { name, description, material, image } = snapshot;
-    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
-    const createdDocument = this.model('Public Drinkware')({
-        name,
-        description,
-        material,
-        image: copiedImage
-    });
-    await createdDocument.save();
-}
+// Make Public Function
 
 module.exports = {
-    PublicDrinkware: Drinkware.discriminator("Public Drinkware", publicDrinkwareSchema),
-    PrivateDrinkware: Drinkware.discriminator("Private Drinkware", privateDrinkwareSchema),
-    BaseDrinkware: Drinkware
+    Drinkware,
+    VerifiedDrinkware: Drinkware.discriminator('Verified Drinkware', verifiedSchema),
+    UserDrinkware: Drinkware.discriminator('User Drinkware', userSchema)
 };

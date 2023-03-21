@@ -1,25 +1,13 @@
 const userController = require('../controllers/user-controller');
-const auth = require('../middleware/auth');
 const multerConfig = require('../config/multer-config');
+const auth = require('../auth');
+const joiValidator = require('../middlewares/joi_validator');
 
-function connectRoutes(router) {
-    // router.post('/test', userController.test);
-    // router.get('/getTest', auth.sessionAuthenticationRequired, userController.test);
-    // // router.post('/testupload', userUploads.single('testImage'), userController.testUploads);
-    // router.post('/get-image', userController.testDownloads);
-    // router.get('/test-nodemailer', userController.testNodeMailer);
-    // router.post('/users/register', upload.single('profileImage'), userController.register);
+module.exports.connect = function(router) {
+    router.get('/users/@me', auth.sessionAuthenticationRequired, userController.clientInfo);
+    router.get('/users/:user_id', joiValidator, userController.getUser);
 
-    
-    router.post('/users/register', userController.register);
-    router.post('/users/register/verify', userController.validateRegistrationCode);
-    router.get('/users/register/resend', userController.resendRegistrationCode);
-    router.post('/users/register/username', userController.usernameSelection);
-
-    router.post('/users/login', userController.login);
-    router.get('/users/check-session', userController.checkSession);
-    router.get('/users/logout', auth.sessionAuthenticationRequired, userController.logout);
-    router.post('/users/upload-profile-image', auth.sessionAuthenticationRequired, multerConfig.PublicUpload.single('profile_image'), userController.uploadProfileImage);
-};
-
-module.exports.connect = connectRoutes;
+    router.patch('/users/update/profile-image/upload', multerConfig.single('profile_image'), userController.uploadProfileImage);
+    router.patch('/users/update/profile-image/remove', userController.removeProfileImage);
+    router.patch('/users/update/username', joiValidator, userController.changeUsername);
+}

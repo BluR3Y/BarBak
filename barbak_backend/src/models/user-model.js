@@ -1,46 +1,200 @@
 const mongoose = require('mongoose');
-const { scryptSync, randomBytes, timingSafeEqual, randomInt, createCipher, createDecipher, createCipheriv, createDecipheriv } = require('crypto');
+const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient } = require('../config/database-config');
 const transporter = require('../config/nodemailer-config');
+const fileOperations = require('../utils/file-operations');
+
+function formatProfileImage(filepath) {
+    const { HOSTNAME, PORT } = process.env;
+    if (!filepath) {
+        const defaultImage = fileOperations.findByName('static/default', 'profile_image');
+        filepath = defaultImage ? `assets/default/${defaultImage}` : null
+    }
+    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+}
 
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
-        required: true,
-        minLength: 6,
-        maxLength: 30
+        minlength: [6, 'Username must contain at least 6 characters'],
+        maxlength: [30, 'Username length must not exceed 30 characters'],
+        required: [true, 'Username is required'],
+        lowercase: true
+    },
+    fullname: {
+        type: String,
+        maxlength: [30, 'Name must not exceed 30 characters'],
+        lowercase: true
     },
     email: {
         type: String,
         required: true,
-        lowercase: true,
-    },
-    fullname: {
-        type: String,
-        lowercase: true,
-        default: null,
+        lowercase: true
     },
     password: {
         type: String,
         required: true,
-        minLength: 6,
+    },
+    about_me: {
+        type: String,
+        maxlength: [600, 'About me must not exceed 600 characters']
     },
     profile_image: {
         type: String,
         default: null
     },
     experience: {
-        type: String,
-        lowercase: true,
-        default: 'novice',
-        enum: [ "novice", "experienced", "expert" ]
+        type: [{
+            position: {
+                type: String,
+                required: [true, 'Job position is required'],
+                maxlength: [30, 'Job position must not exceed 30 characters']
+            },
+            workplace: {
+                type: String,
+                required: [true, 'Workplace field is required'],
+                minlength: [6, 'Workplace must contain at least 6 characters'],
+                maxlength: [40, 'Workplace must not exceed 40 characters']
+            },
+            bar_type: {
+                type: String,
+            },
+            location: {
+                type: String,
+                required: [true, 'Location field is required'],
+                maxlength: [30, 'Location exceeds character limit']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required']
+                    },
+                    end: {
+                        type: Date,
+                        default: null,
+                    }
+                },
+                required: [true, 'Position duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of work experience items has been exceeded'
+        }
     },
-    registration_date: {
+    achievements: {
+        type: [{
+            description: {
+                type: String,
+                minlength: [50, 'Description must contain at least 50 characters'],
+                maxlength: [600, 'Description has exceeded character limit'],
+                required: [true, 'Description is required']
+            },
+            location: {
+                type: String,
+                maxlength: [30, 'Location exceeds character limit'],
+                required: [true, 'Location is required']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required'],
+                    },
+                    end: {
+                        type: Date,
+                        default: null
+                    }
+                },
+                required: [true, 'Milestone duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of achievements has been exceeded'
+        }
+    },
+    education: {
+        type: [{
+            name: {
+                type: String,
+                maxlength: [30, 'Certificate name exceeds character limit'],
+                required: [true, 'Certificate name is required']
+            },
+            institute: {
+                type: String,
+                maxlength: [30, 'Institute name exceeds character limit'],
+                required: [true, 'Institute name is required']
+            },
+            location: {
+                type: String,
+                maxlength: [30, 'Location exceeds character limit'],
+                required: [true, 'Location is required']
+            },
+            duration: {
+                type: {
+                    start: {
+                        type: Date,
+                        required: [true, 'Start date is required'],
+                    },
+                    end: {
+                        type: Date,
+                        default: null
+                    }
+                },
+                required: [true, 'Certification duration is required']
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of certificates has been exceeded'
+        },
+    },
+    skills: {
+        type: [String],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 20;
+            },
+            message: 'Number of skills has been exceeded'
+        }
+    },
+    interests: {
+        type: [String],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 5;
+            },
+            message: 'Number of interests has been exceeded'
+        }
+    },
+    public: {
+        type: Boolean,
+        default: true
+    },
+    expertise: {
+        type: String,
+        default: 'novice',
+        enum: ['novice', 'intermediate', 'expert']
+    },
+    role: {
+        type: String,
+        enum: ['admin', 'editor', 'user'],
+        default: 'user'
+    },
+    date_registered: {
         type: Date,
         immutable: true,
-        default: () => Date.now(),
+        default: () => Date.now()
     }
-}, { collection: 'users' });
+},{ collection: 'users' });
 
 userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
@@ -49,43 +203,21 @@ userSchema.statics.hashPassword = function(password) {
     return `${salt}:${hashedPassword}`;
 }
 
-userSchema.statics.encryptData = function(plainData) {
-    // Generate a random encryption key
-    const encryptionKey = randomBytes(32);
+userSchema.methods.validatePassword = async function(attempt) {
+    const storedPassword = this.password;
+    const [salt,key] = storedPassword.split(':');
+    const hashedBuffer = scryptSync(attempt, salt, 64);
 
-    // Generate a random initialization vector
-    const iv = randomBytes(16);
+    // Prevents 'Timing Attacks'
+    const keyBuffer = Buffer.from(key, 'hex');
+    const match = timingSafeEqual(hashedBuffer, keyBuffer);
 
-    // Create a cipher object using the encryption key and iv
-    const cipher = createCipheriv('aes-256-cbc', encryptionKey, iv);
-
-    // Encrypt the information using the cipher object
-    let encryptedData = cipher.update(plainData, 'utf8', 'hex');
-    encryptedData += cipher.final('hex');
-
-    return { encryptionKey, iv, encryptedData };
-}
-
-userSchema.statics.decryptData = function(encryptionKey, iv, encryptedData) {
-    if (typeof encryptionKey === 'object')
-        encryptionKey = Buffer.from(encryptionKey);
-    if (typeof iv === 'object')
-        iv = Buffer.from(iv);
-
-    // Create a decipher object using the encryption key
-    const decipher = createDecipheriv('aes-256-cbc', encryptionKey, iv);
-
-    // Decrypt the data using the decipher object
-    let decryptedData = decipher.update(encryptedData, 'hex', 'utf8');
-    decryptedData += decipher.final('utf8');
-
-    return decryptedData;
+    return match;
 }
 
 userSchema.statics.sendRegistrationCode = async function(sessionId, email) {
-    var registrationCode = randomInt(100000, 999999);
-    
-    const codeDuration = 60 * 10;   // Code lasts 10 minutes
+    const registrationCode = randomInt(100000, 999999);
+    const codeDuration = 60 * 15;   // Code lasts 15 minutes
     const mailOptions = {
         from: 'noreply@barbak.com',
         to: email,
@@ -121,28 +253,28 @@ userSchema.methods.customValidate = async function() {
         throw error;
 }
 
-userSchema.methods.validatePassword = async function(attempt) {
-    const storedPassword = this.password;
-    const [salt,key] = storedPassword.split(':');
-    const hashedBuffer = scryptSync(attempt, salt, 64);
-
-    // Prevents 'Timing Attacks'
-    const keyBuffer = Buffer.from(key, 'hex');
-    const match = timingSafeEqual(hashedBuffer, keyBuffer);
-
-    return match;
+userSchema.methods.basicStripExcess = function() {
+    return {
+        _id: this._id,
+        username: this.username,
+        fullname: this.fullname,
+        email: this.email,
+        profile_image: formatProfileImage(this.profile_image),
+        date_registered: this.date_registered,
+        expertise: this.expertise,
+        public: this.public
+    }
 }
 
-userSchema.methods.getPublicInfo = function() {
-    const { _id, username, fullname, email, profile_image, experience } = this;
+userSchema.methods.extendedStripExcess = function() {
     return {
-        _id,
-        username,
-        fullname,
-        email,
-        profile_image,
-        experience
+        _id: this._id,
+        username: this.username,
+        fullname: this.fullname,
+        profile_image: formatProfileImage(this.profile_image),
+        expertise: this.expertise,
+        public: this.public
     };
 }
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);

@@ -1,5 +1,7 @@
 * 200 - OK success
 * 204 - No Content success
 * 400 - Bad Request response
-* 401 - Not Authenticated
+* 401 - Unauthorized | lacks credentials
+* 403 - Forbidden | lacks permission
+* 404 - Not Found
 * 500 - Internal Server Error

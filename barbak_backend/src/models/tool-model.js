@@ -1,109 +1,82 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
-const FileOperations = require('../utils/file-operations');
 
-const Tool = mongoose.model("Tool", new mongoose.Schema({
+const Tool = mongoose.model('Tool', new mongoose.Schema({
     name: {
         type: String,
-        minLength: [3, 'Name must be at least 3 characters long'],
-        maxLength: [30, 'Name length must not exceed 30 characters'],
-        required: [true , 'Tool name is required'],
+        required: [true, 'Name is required'],
+        minlength: [3, 'Name length must be at least 3 characters long'],
+        maxlength: [30, 'Name length must be at most 30 characters long']
     },
     description: {
         type: String,
-        maxLength: [600, 'Description must not exceed 600 characters'],
+        maxlength: [600, 'Description length must be at most 600 characters long']
     },
-    type: {
+    cover: {
         type: String,
-        required: [true, 'Tool type is required']
+        default: null
     },
-    material: {
+    category: {
         type: String,
-        required: [true, 'Tool material is required']
-    },
-    image: {
-        type: String,
-        default: null,
-    } 
-}, { collection: 'tools', discriminatorKey: 'model' }));
+        required: [true, 'Category is required']
+    }
+},{ collection: 'tools', discriminatorKey: 'model' }));
 
 Tool.schema.statics = {
-    getTypes: async function() {
-        const types = await executeSqlQuery(`SELECT name FROM tool_types`);
-        return (await types.map(item => item.name))
+    getCategories: async function() {
+        const categories = await executeSqlQuery('SELECT name FROM tool_categories');
+        return (await categories.map(item => item.name));
     },
-    getMaterials: async function() {
-        const materials = await executeSqlQuery(`SELECT name FROM tool_materials`);
-        return (await materials.map(item => item.name));
-    },
-    validateType: async function(type) {
-        const { typeCount } = await executeSqlQuery('SELECT COUNT(*) AS typeCount FROM tool_types WHERE name = ? LIMIT 1;', [type]).then(res => res[0]);
-        return Boolean(typeCount);
-    },
-    validateMaterial: async function(material) {
-        const { materialCount } = await executeSqlQuery('SELECT COUNT(*) AS materialCount FROM tool_materials WHERE name = ? LIMIT 1;', [material]).then(res => res[0]);
-        return Boolean(materialCount);
+    validateCategory: async function(category) {
+        const { categoryCount } = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category])
+            .then(res => res[0]);
+        return Boolean(categoryCount);
     }
 }
 
-const publicToolSchema = new mongoose.Schema({
-    date_published: {
+Tool.schema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = "CustomValidationError";
+    error.errors = {};
+
+    if (!await this.constructor.validateCategory(this.category))
+        error.errors['category'] = { type: 'valid', message: 'Invalid tool type' };
+    
+    if (Object.keys(error.errors).length)
+        throw error;
+}
+
+const verifiedSchema = new mongoose.Schema({
+    date_verified: {
         type: Date,
-        required: true,
         immutable: true,
         default: () => Date.now()
     }
 });
 
-const privateToolSchema = new mongoose.Schema({
-    user_id: {
+const userSchema = new mongoose.Schema({
+    user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
         immutable: true
     },
+    public: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
     date_created: {
         type: Date,
         immutable: true,
-        default: () => Date.now(),
+        default: () => Date.now()
     }
 });
 
-privateToolSchema.query.userExposure = function() {
-    return this.select('name description type material image date_created -model');
-}
-
-privateToolSchema.methods.customValidate = async function() {
-    const {type, material} = this;
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
- 
-    if (!await this.constructor.validateType(type))
-        error.errors['type'] = { type: 'valid', message: 'Invalid Tool Type' };
-
-    if (!await this.constructor.validateMaterial(material))
-        error.errors['material'] = { type: 'valid', message: 'Invalid Tool Material' };
-        
-    if (Object.keys(error.errors).length)
-        throw error;
-}
-
-privateToolSchema.statics.makePublic = async function(snapshot) {
-    const { name, description, type, material, image } = snapshot;
-    const copiedImage = image ? await FileOperations.copySingle(image, 'assets/public/images/') : null;
-    const createdDocument = this.model('Public Tool')({
-        name,
-        description,
-        type,
-        material,
-        image: copiedImage
-    });
-    await createdDocument.save();
-}
+// Make Public Function
 
 module.exports = {
-    PublicTool: Tool.discriminator('Public Tool', publicToolSchema),
-    PrivateTool: Tool.discriminator('Private Tool', privateToolSchema),
-    BaseTool: Tool
+    Tool,
+    VerifiedTool: Tool.discriminator('Verified Tool', verifiedSchema),
+    UserTool: Tool.discriminator('User Tool', userSchema)
 };

@@ -1,190 +1,254 @@
-const { PublicDrinkware, PrivateDrinkware } = require('../models/drinkware-model');
-const FileOperations = require('../utils/file-operations');
-const mongoose = require('mongoose');
+const fileOperations = require('../utils/file-operations');
+const { subject } = require('@casl/ability');
+const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
+const { AppAccessControl, AccessControl } = require('../models/access-control-model');
 
 module.exports.create = async (req, res) => {
     try {
-        const { name, description, material } = req.body;
+        const { name, description, verified } = req.body;
 
-        if (await PrivateDrinkware.exists({ user_id: req.user._id, name }))
+        if (!req.ability.can('create', subject('drinkware', { verified })))
+            return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drinkware' });
+        else if (
+            (verified && await VerifiedDrinkware.exists({ name })) ||
+            (!verified && await UserDrinkware.exists({ user: req.user._id, name }))
+        ) 
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
 
-        const createdDrinkware = new PrivateDrinkware({
+        const createdDrinkware = ( verified ? new VerifiedDrinkware({
+            name,
+            description
+        }) : new UserDrinkware({
             name,
             description,
-            material,
-            user_id: req.user._id
-        });
+            user: req.user._id
+        }) );
         await createdDrinkware.validate();
-        await createdDrinkware.customValidate();
         await createdDrinkware.save();
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError") {
-            var errors = [];
-            Object.keys(err.errors).forEach(error => {
-                const errorParts = error.split('.');
-                const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || 0;
-                
-                errors.push({
-                    path: errorPart,
-                    type: err.errors[error].properties.type,
-                    message: err.errors[error].properties.message,
-                    index: indexPart
-                });
-            })
-            return res.status(400).send(errors);
-        } else if (err.name === "CustomValidationError") {
-            var errors = [];
-            
-            Object.keys(err.errors).forEach(error => {
-                const { type, message, index } = err.errors[error];
-                errors.push({
-                    path: error, type, message, index
-                });
-            })
-            return res.status(400).send(errors);
-        }
+        if (err.name === 'ValidationError')
+            return res.status(400).send(err);
         res.status(500).send(err);
     }
 }
 
 module.exports.update = async (req, res) => {
     try {
-        const { drinkware_id, name, description, material } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id))
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid drinkware id' });
-
-        if (await PrivateDrinkware.exists({ user_id: req.user._id, name, _id: { $ne: drinkware_id } }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
-
-        const drinkwareDocument = await PrivateDrinkware.findOne({ user_id: req.user._id, _id: drinkware_id });
-        if (!drinkwareDocument)
-            return res.status(400).send({ path: 'drnkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        const { drinkware_id, name, description } = req.body;
         
-        drinkwareDocument.name = name;
-        drinkwareDocument.description = description;
-        drinkwareDocument.material = material;
-        await drinkwareDocument.validate();
-        await drinkwareDocument.customValidate();
-        await drinkwareDocument.save();
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+        else if (drinkwareInfo.model === 'Verified Drinkware' ? 
+            await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }) :
+            await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })
+        )
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+        
+        drinkwareInfo.name = name;
+        drinkwareInfo.description = description;
+
+        await drinkwareInfo.validate();
+        await drinkwareInfo.save();
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === "ValidationError") {
-            var errors = [];
-            Object.keys(err.errors).forEach(error => {
-                const errorParts = error.split('.');
-                const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || 0;
-                
-                errors.push({
-                    path: errorPart,
-                    type: err.errors[error].properties.type,
-                    message: err.errors[error].properties.message,
-                    index: indexPart
-                });
-            })
-            return res.status(400).send(errors);
-        } else if (err.name === "CustomValidationError") {
-            var errors = [];
-            
-            Object.keys(err.errors).forEach(error => {
-                const { type, message, index } = err.errors[error];
-                errors.push({
-                    path: error, type, message, index
-                });
-            })
-            return res.status(400).send(errors);
-        }
+        if (err.name === 'ValidationError')
+            return res.status(400).send(err);
         res.status(500).send(err);
     }
 }
 
-module.exports.uploadImage = async (req, res) => {
+module.exports.delete = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('delete', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+        
+        if (drinkwareInfo.cover)
+            await fileOperations.deleteSingle(drinkwareInfo.cover);
+
+        await drinkwareInfo.remove();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.updatePrivacy = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+
+        const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+
+        drinkwareInfo.public = !drinkwareInfo.public;
+        await drinkwareInfo.save();
+        res.status(200).send(drinkwareInfo);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.getDrinkware = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
+
+        res.status(200).send(drinkwareInfo.basicStripExcess());
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.copy = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo) 
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+        
+        const { name, description, cover } = drinkwareInfo;
+        const createdDrinkware = new UserDrinkware({
+            name,
+            description,
+            user: req.user._id,
+            cover: cover ? await fileOperations.copySingle(drinkwareInfo.cover) : null
+        });
+        await createdDrinkware.save();
+
+        res.status(204).send();
+    } catch(err) {
+        if (err.name === 'ValidationError')
+            return res.status(400).send(err);
+        res.status(500).send(err);
+    }
+}
+
+module.exports.uploadCover = async (req, res) => {
     try {
         const { drinkware_id } = req.body;
-        const drinkwareImage = req.file || null;
+        var drinkwareCover = req.file;
 
-        if (!drinkwareImage)
+        if (!drinkwareCover)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
 
-        const filepath = '/' + drinkwareImage.destination + drinkwareImage.filename;
-        if (!mongoose.Types.ObjectId.isValid(drinkware_id)) {
-            await FileOperations.deleteSingle(filepath);
-            return res.status(400).send({ path: 'drinkware_id', type: 'valid', message: 'Invalid Drinkware Id' });
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo) {
+            await fileOperations.deleteSingle(drinkwareCover.path);
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        } else if (!req.ability.can('update', subject('drinkware', drinkwareInfo))) {
+            await fileOperations.deleteSingle(drinkwareCover.path);
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         }
 
-        const drinkwareDocument = await PrivateDrinkware.findOne({ user_id: req.user._id, _id: drinkware_id });
-        if (!drinkwareDocument) {
-            await FileOperations.deleteSingle(filepath);
-            return res.status(400).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        drinkwareCover.path = await fileOperations.moveSingle(drinkwareCover.path, drinkwareInfo.model === 'User Drinkware' ? './assets/private/images' : './assets/public/images');
+        if (drinkwareInfo.model === 'User Drinkware') {
+            if (drinkwareInfo.cover) {
+                const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
+                await fileOperations.deleteSingle(aclDocument.file_path);
+                aclDocument.updateInstance(drinkwareCover);
+                await aclDocument.save();
+                drinkwareInfo.cover = 'assets/private/' + aclDocument._id;
+            } else {
+                const createdACL = AppAccessControl.createInstance(drinkwareCover, req.user._id, drinkwareInfo._id);
+                await createdACL.save();
+                drinkwareInfo.cover = 'assets/private/' + createdACL._id;
+            }
+        } else {
+            if (drinkwareInfo.cover)
+                await fileOperations.deleteSingle(drinkwareInfo.cover);
+            drinkwareInfo.cover = drinkwareCover.path;
         }
 
-        if (drinkwareDocument.image)
-            await FileOperations.deleteSingle(drinkwareDocument.image);
-
-        drinkwareDocument.image = filepath;
-        await drinkwareDocument.save();
+        await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
     }
 }
 
-module.exports.getPrivate = async (req, res) => {
+module.exports.deleteCover = async (req, res) => {
     try {
-        const page = req.query.page || 1;
-        const page_size = req.query.page_size || 10;
-        var materials = req.query.materials ? JSON.parse(req.query.materials) : null;
-        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : null;
-        const errors = {};
+        const { drinkware_id } = req.params;
         
-        if (materials) {
-            const materialErrors = {};
-            for (const materialIndex in materials) {
-                if (!await PrivateDrinkware.validateMaterial(materials[materialIndex]))
-                    materialErrors[`material.${materialIndex}`] = { type: 'valid', message: 'Invalid ingredient material' };
-            }
-            if (Object.keys(materialErrors).length)
-                errors['materials'] = materialErrors;
-        } else materials = await PrivateDrinkware.getMaterials();
-
-        if (ordering) {
-            const orderingErrors = {};
-            for (const orderingIndex in Object.keys(ordering)) {
-                const orderingKey = Object.keys(ordering)[orderingIndex];
-                if (!PrivateDrinkware.schema.paths[orderingKey])
-                    orderingErrors[`order.${orderingIndex}`] = { type: 'exist', message: 'Invalid sorting type' };
-            }
-            if (Object.keys(orderingErrors).length)
-                errors['ordering'] = orderingErrors;
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (!drinkwareInfo.cover)
+            return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
+        
+        if (drinkwareInfo.model === 'User Drinkware') {
+            const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
+            await fileOperations.deleteSingle(aclDocument.file_path);
+            await aclDocument.remove();
+        } else {
+            await fileOperations.deleteSingle(drinkwareInfo.cover);
         }
-        if (Object.keys(errors).length)
-            return res.status(400).send(errors);
 
-        const privateDocuments = await PrivateDrinkware
-            .find({ user_id: req.user._id })
-            .where('material').in(materials)
+        drinkwareInfo.cover = null;
+        await drinkwareInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.search = async (req, res) => {
+    try {
+        const { query, page, page_size, ordering } = req.query;
+        const searchDocuments = await Drinkware
+            .find({ name: { $regex: query } })
+            .conditionalSearch(req.user)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .userExposure();
+            .basicInfo();
 
-        res.status(200).send(privateDocuments);
+        res.status(200).send(searchDocuments);
     } catch(err) {
         res.status(500).send(err);
     }
 }
 
-module.exports.getMaterials = async (req, res) => {
+module.exports.clientDrinkware = async (req, res) => {
     try {
-        res.status(200).send(await PrivateDrinkware.getMaterials());
+        const page = req.query.page || 1;
+        const page_size = req.query.page_size || 10;
+        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
+
+        const userDocs = await UserDrinkware
+            .find({ user: req.user._id })
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .extendedInfo();
+            
+        res.status(200).send(userDocs);
     } catch(err) {
-        console.log(err)
         res.status(500).send(err);
     }
 }

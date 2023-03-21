@@ -1,175 +1,43 @@
-const FileOperations = require('../utils/file-operations');
+const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
-const auth = require('../middleware/auth');
+const { subject } = require('@casl/ability');
 
-// module.exports.test = async (req, res) => {
-//     console.log(req.session)
-//     console.log(req.user)
-
-//     res.send('TEST');
-// }
-
-// module.exports.testUploads = async (req,res) => {
-//     console.log(req.file)
-//     res.send('Test')
-// }
-
-// module.exports.testDownloads = async (req, res) => {
-//     try {
-//         const { filename } = req.body;
-
-//         const image = await FileOperations.readSingle('assets/images/', filename)
-//         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-//         res.end(image, 'binary');
-//     } catch (err) {
-//         res.status(500).send(err);
-//     }
-// }
-
-// module.exports.testNodeMailer = async (req, res) => {
-//     const mailerRes = await NodeMailerOperations.tester('reyhector1234@gmail.com');
-//     console.log(mailerRes);
-
-//     res.status(200).send('hello')
-// }
-
-module.exports.register = async (req, res) => {
+module.exports.clientInfo = async (req, res) => {
     try {
-        const { fullname, email, password } = req.body;
-
-        if (await User.findOne({ email }))
-            return res.status(400).send({ path: 'email', type: 'exist', message: 'Email is already associated with another account' });
-
-        const { encryptionKey, iv, encryptedData } = User.encryptData(JSON.stringify({ fullname, email, password }));
-        req.session.verifiedAccount = false;
-        req.session.encryptedRegistrationInfo = encryptedData;
-        req.session.registrationInfoEncryptionKey = encryptionKey;
-        req.session.registrationInfoIV = iv;
-
-        await User.sendRegistrationCode(req.sessionID, email);
-
-        res.status(204).send();
+        const userInfo = await User.findOne({ _id: req.user._id });
+        res.status(200).send(userInfo.basicStripExcess());
     } catch(err) {
         res.status(500).send(err);
     }
 }
 
-module.exports.resendRegistrationCode = async (req, res) => {
+module.exports.getUser = async (req, res) => {
     try {
-        const { verifiedAccount } = req.session;
-        if (verifiedAccount === undefined)
-            return res.status(401).send({ path: 'registration', type: 'exist', message: 'Registration process has not been initialized' });
-        else if (verifiedAccount === true)
-            return res.status(401).send({ path: 'registration', type: 'valid', message: 'Registration code has already been provided' });
+        const { user_id } = req.params;
+        const userInfo = await User.findOne({ _id: user_id });
+        if (!userInfo)
+            return res.status(404).send({ path: 'user_id', type: 'exist', message: 'User does not exist' });
+        else if (!req.ability.can('read', subject('users', userInfo)))
+            return res.status(403).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
-        const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
-        const decryptedData = User.decryptData(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
-        const registrationInfo = JSON.parse(decryptedData);
-
-        await User.sendRegistrationCode(req.sessionID, registrationInfo.email);
-
-        res.status(204).send();
+        res.status(200).send(userInfo.extendedStripExcess());
     } catch(err) {
-        res.status(500).send(err);
-    }
-}
-
-module.exports.validateRegistrationCode = async (req, res) => {
-    try {
-        const { verifiedAccount } = req.session;
-        if (verifiedAccount === undefined)
-            return res.status(401).send({ path: 'registration', type: 'exist', message: 'Registration process has not been initialized' });
-        else if (verifiedAccount === true)
-            return res.status(401).send({ path: 'registration', type: 'valid', message: 'Registration code has already been provided' });
-
-        const { registration_code } = req.body;
-        if (!await User.validateRegistrationCode(req.sessionID, registration_code))
-            return res.status(401).send({ path: 'code', type: 'valid', message: 'Registration Code is invalid' });
-        req.session.verifiedAccount = true;
-
-        res.status(204).send();
-    } catch(err) {
-        res.send(500).send(err);
-    }
-}
-
-module.exports.usernameSelection = async (req, res) => {
-    try {
-        const { verifiedAccount } = req.session;
-        if (verifiedAccount === undefined)
-            return res.status(401).send({ path: 'registration', type: 'exist', message: 'Registration process has not been initialized' });
-        else if (verifiedAccount === false)
-            return res.status(401).send({ path: 'registration', type: 'valid', message: 'Registration code has not been provided' });
-
-        const { username } = req.body;
-        if (await User.findOne({ username }))
-            return res.status(400).send({ path: 'username', type: 'exist', message: 'Username is already associated with another account' });
-        
-        const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
-        const decryptedData = User.decryptData(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
-        const { fullname, email, password } = JSON.parse(decryptedData);
-        const hashedPassword = await User.hashPassword(password);
-
-        const createdUser = new User({
-            username,
-            email,
-            fullname,
-            password: hashedPassword
-        });
-        await createdUser.validate();
-        await createdUser.customValidate();
-        await createdUser.save();
-
-        delete req.session.verifiedAccount;
-        delete req.session.encryptedRegistrationInfo;
-        delete req.session.registrationInfoEncryptionKey;
-        delete req.session.registrationInfoIV;
-
-        await new Promise((resolve, reject) => {
-            req.logIn(createdUser, (err) => {
-                if (err) return reject(err);
-                resolve();
-            })
-        });
-        res.status(200).send(createdUser.getPublicInfo());
-    } catch(err) {
-        if (err.name === "ValidationError" || err.name === "CustomValidationError") {
-            var errors = [];
-            
-            Object.keys(err.errors).forEach(error => {
-                const errorParts = error.split('.');
-                const errorPart = errorParts[0];
-                const indexPart = errorParts[1] || '0';
-                
-                errors.push({ 
-                    path: errorPart, 
-                    type: (err.name === "ValidationError") ? err.errors[error].properties.type : err.errors[error], 
-                    index: indexPart 
-                });
-            })
-            return res.status(400).send(errors);
-        }
         res.status(500).send(err);
     }
 }
 
 module.exports.uploadProfileImage = async (req, res) => {
     try {
-        const upload = req.file || null;
-        if (!upload)
-            return res.status(400).send({ path: 'upload', type: 'valid', message: 'Image was not provided' });
-
+        const profileImage = req.file;
+        if (!profileImage)
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'Imange was not provided' });
+        
         const userInfo = await User.findOne({ _id: req.user._id });
-        const filepath = '/' + upload.destination + upload.filename;
+        const filepath = await fileOperations.moveSingle(profileImage.path, './assets/public/images');
 
-        if (userInfo.profile_image) {
-            try {
-                await FileOperations.deleteSingle(userInfo.profile_image);
-            } catch(err) {
-                console.log(err);
-            }
-        }
-            
+        if (userInfo.profile_image)
+            await fileOperations.deleteSingle(userInfo.profile_image);
+        
         userInfo.profile_image = filepath;
         await userInfo.save();
         res.status(204).send();
@@ -178,28 +46,30 @@ module.exports.uploadProfileImage = async (req, res) => {
     }
 }
 
-// Authenticate the user via email and password input fields
-module.exports.login = auth.authenticate.localLogin;
-
-module.exports.checkSession = (req, res) => {
-    if (!req.isAuthenticated())
-        return res.status(401).send({ path: 'user', type: 'authenticated' });
+module.exports.removeProfileImage = async (req, res) => {
+    try {
+        const userInfo = await User.findOne({ _id: req.user._id });
+        if (!userInfo.profile_image)
+            return res.status(404).send({ path: 'image', type: 'exist', message: 'Account has no profile image' });
         
-    const { _id, username, email, profile_image, experience } = req.user;
-    const userInfo = {
-        userId: _id,
-        username,
-        email,
-        profile_image,
-        experience
-    };
-    res.status(200).send(userInfo);
+        await fileOperations.deleteSingle(userInfo.profile_image);
+        userInfo.profile_image = null;
+        await userInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
 }
 
-module.exports.logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) 
-            return res.status(500).send(err);
+module.exports.changeUsername = async (req, res) => {
+    try {
+        const { username } = req.body;
+        if (await User.exists({ username }))
+            return res.status(400).send({ path: 'username', type: 'exist', message: 'Username is already associated with another account' });
+        
+        await User.findOneAndUpdate({ _id: req.user._id },{ username });
         res.status(204).send();
-    })
-};
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
