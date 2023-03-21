@@ -1,92 +1,47 @@
-const path = require('path');
-const { Ability, AbilityBuilder, ForbiddenError, createAliasResolver } = require('@casl/ability');
+const { Ability, createAliasResolver } = require('@casl/ability');
+const { executeSqlQuery } = require('../config/database-config');
 
-function defineUserAbilities(user = {}) {
-    const { can, cannot, build } = new AbilityBuilder(Ability);
-
-    if (user.role === 'admin') {
-        can('manage', 'all');
-    } else if (user.role === 'editor') {
-        can('delete', 'account');
-        can('update', 'account');
-
-        can('read', 'users', { _id: user._id });
-        can('update', 'users', { _id: user._id });
-
-        // Create Content
-        can('create', 'content');
-
-        // Modify Verified Content
-        can('update', 'drinkware', { model: 'Verified Drinkware' });
-        can('delete', 'drinkware', { model: 'Verified Drinkware' });
-
-        can('update', 'tools', { model: 'Verified Tool' });
-        can('delete', 'tools', { model: 'Verified Tool' });
-
-        // Modify Public User Content
-        can('update', 'drinkware', { model: 'User Drinkware', public: true });
-        can('delete', 'drinkware', { model: 'User Drinkware', public: true });
-        
-        can('update', 'tools', { model: 'User Tool', public: true});
-        can('delete', 'tools', { model: 'User Tool', public: true});
-        
-        // Can Modify Private Created Content
-        can('create', 'drinkware');
-        can('read', 'drinkware', { model: 'User Drinkware', user: user._id });
-        can('update', 'drinkware', { model: 'User Drinkware', user: user._id });
-        can('delete', 'drinkware', { model: 'User Drinkware', user: user._id });
-
-        can('create', 'tools');
-        can('read', 'tools', { model: 'User Tool', user: user._id });
-        can('update', 'tools', { model: 'User Tool', user: user._id });
-        can('delete', 'tools', { model: 'User Tool', user: user._id });
-    } else if (user.role === 'user') {
-        can('delete', 'account');
-        can('update', 'account');
-
-        can('read', 'users', { _id: user._id });
-        can('update', 'users', { _id: user._id });
-
-        // Can Modify Private Created Content
-        can('create', 'drinkware', { verified: false });
-        can('read', 'drinkware', { model: 'User Drinkware', user: user._id });
-        can('update', 'drinkware', { model: 'User Drinkware', user: user._id });
-        can('delete', 'drinkware', { model: 'User Drinkware', user: user._id });
-
-        can('create', 'tools', { verified: false });
-        can('read', 'tools', { model: 'User Tool', user: user._id });
-        can('update', 'tools', { model: 'User Tool', user: user._id });
-        can('delete', 'tools', { model: 'User Tool', user: user._id });
-    } else {
-        can('create', 'account');
-    }
-    // Rules applied to any role
-    can('read', 'assets');
-    can('read', 'users', { public: true });
-    can('read', 'drinkware', { model: 'User Drinkware', public: true });
-    can('read', 'tools', { model: 'User Tool', public: true });
-
-    can('read', 'drinkware', { model: 'Verified Drinkware' });
-    can('read', 'tools', { model: 'Verified Drinkware' });
-    
+async function defineUserAbilities(user) {
     const aliasResolver = createAliasResolver({
         create: 'post',
         read: 'get',
         update: ['put','patch']
     });
 
-    return build({ resolveAction: aliasResolver });
+    const {role_id} = await executeSqlQuery('SELECT id AS role_id FROM user_roles WHERE name = ? LIMIT 1;', [user ? user.role : 'guest'])
+        .then(res => res[0] ?? res);
+    const userPermissions = await executeSqlQuery('SELECT * FROM role_permissions WHERE role_id = ? OR role_id IS NULL;', [role_id]);
+    
+    var jsonPermissions = [];
+    for (const permission of userPermissions) {
+        var formattedConditions = null;
+        if (permission.conditions) {
+            formattedConditions = JSON.parse(permission.conditions.replace('USER_ID', (match, key) => {
+                return JSON.stringify(user._id);
+            }));
+        }
+
+        jsonPermissions.push({
+            action: permission.action,
+            subject: permission.subject,
+            fields: permission.fields,
+            conditions: formattedConditions,
+            inverted: permission.inverted,
+        });
+    }
+    console.log(jsonPermissions)
+    return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
 }
 
-module.exports = function(req, res, next) {
+module.exports = async function(req, res, next) {
     const user = req.user;
     const action = req.method.toLowerCase();
     const resource = req.path.split('/')[1];
-    
-    // Define the ability object based on the user's role
-    const ability = defineUserAbilities(user);
+
+    const ability = await defineUserAbilities(user);
     if (!ability.can(action, resource)) 
         return res.status(403).send('Access denied');
     req.ability = ability;
+
     next();
 }

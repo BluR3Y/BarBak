@@ -1,6 +1,21 @@
 CREATE DATABASE barbak;
 USE barbak;
 
+-- Users
+
+CREATE TABLE user_roles (
+    `id` INT(6) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(50) NOT NULL,
+    PRIMARY KEY (`id`)
+);
+
+INSERT INTO user_roles (`name`) VALUES
+    ('admin'),
+    ('editor'),
+    ('user'),
+    ('guest')
+;
+
 -- Tools
 
 CREATE TABLE tool_categories (
