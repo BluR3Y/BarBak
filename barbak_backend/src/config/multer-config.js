@@ -2,56 +2,68 @@ const multer = require('multer');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const basePath = './assets/temp/';
+const basePath = './uploads';
 
-const setStorage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        const mime = file.mimetype.split('/');
-        const type = mime[0];     
-        
-        if (type === 'image')
-            cb (null, path.join(basePath, 'images'));
-        else if (type === 'video')
-            cb (null, path.join(basePath, 'videos'));
-        else cb (new multer.MulterError('Unexpected Error'));
-    },
-    filename: function(req, file, cb) {
-        var absReadPath = basePath;
+module.exports.imageUpload = multer({
+    storage: multer.diskStorage({
+        destination: function(req, file, cb) {
+            const dir = path.join(basePath, 'images');
+            if (!fs.existsSync(dir))
+                fs.mkdirSync(dir,{ recursive: true });
+            cb (null, dir);
+        },
+        filename: function(req, file, cb) {
+            var filename;
+            do {
+                filename = crypto.randomUUID() + path.extname(file.originalname);
+            } while(fs.existsSync(path.join(basePath, 'images', filename)));
+            cb (null, filename);
+        }
+    }),
+    fileFilter: function(req, file, cb) {
+        const supportedFormats = ['jpeg', 'png', 'gif', 'bmp', 'webp'];
         const mime = file.mimetype.split('/');
         const type = mime[0];
+        const subType = mime[1];
 
-        if (type === 'image')
-            absReadPath = path.join(absReadPath, 'images');
-        else if (type === 'video')
-            absReadPath = path.join(absReadPath, 'videos');
-        else cb (new multer.MulterError('Unsupported File Format'));
-
-        var filename;
-        do {
-            filename = crypto.randomUUID() + path.extname(file.originalname);
-        } while (fs.existsSync(path.join(absReadPath, filename)));
-        cb (null, filename);
+        if (type !== 'image' || !supportedFormats.includes(subType))
+            return cb(new multer.MulterError('Unsupported File Format'));
+        cb (null, true);
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024,  // 5 MB
+        files: 1,    // 1 file per request
     }
 });
 
-const setFileLimits = {
-    fileSize: 5 * 1024 * 1024,  // 5 MB
-    files: 10   // Maximum 10 files per request
-}
+module.exports.videoUpload = multer({
+    storage: multer.diskStorage({
+        destination: function(req, file, cb) {
+            const dir = path.join(basePath, 'video');
+            if (!fs.existsSync(dir))
+                fs.mkdirSync(dir,{ recursive: true });
+            cb (null, dir);
+        },
+        filename: function(req, file, cb) {
+            var filename;
+            do {
+                filename = crypto.randomUUID() + path.extname(file.originalname);
+            } while(fs.existsSync(path.join(basePath, 'videos', filename)));
+            cb (null, filename);
+        }
+    }),
+    fileFilter: function(req, file, cb) {
+        const supportedFormats = ['mp4','webm','mov','avi'];
+        const mime = file.mimetype.split('/');
+        const type = mime[0];
+        const subType = mime[1];
 
-// Used to validate the types of files being uploaded
-const setFileFilters = (req, file, cb) => {
-    const supportedImages = ['jpeg','png','gif','bmp','webp'];
-    const supportedVideos = ['mp4','webm','mov','avi'];
-    const mime = file.mimetype.split('/');
-    const type = mime[0];
-    const subType = mime[1];
-
-    if (type === 'image' && supportedImages.includes(subType))
+        if (type !== 'video' || !supportedFormats.includes(subType))
+            return cb(new multer.MulterError('Unsupported File Format'));
         cb (null, true);
-    else if (type === 'video' && supportedVideos.includes(subType))
-        cb (null, true);
-    else cb (new multer.MulterError('Unsupported File Format'));
-}
-
-module.exports = multer({ storage: setStorage, limits: setFileLimits, fileFilter: setFileFilters });
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024,  // 5 MB - change
+        files: 1,    // 1 file per request
+    }
+});

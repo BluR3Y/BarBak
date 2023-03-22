@@ -1,6 +1,26 @@
 const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const { subject } = require('@casl/ability');
+const s3Operations = require('../utils/aws-s3-operations');
+
+module.exports.testUpload = async (req, res) => {
+    try {
+        const data = await fileOperations.readSingle(req.file.path);
+        const obj = await s3Operations.crateObject('folder/testimage.png2', data);
+        console.log(obj)
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.testDownload = async (req, res) => {
+    try {
+        const result = await s3Operations.exists('testimage2.png');
+        console.log(result);
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
 
 module.exports.clientInfo = async (req, res) => {
     try {
