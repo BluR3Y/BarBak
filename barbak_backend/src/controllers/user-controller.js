@@ -1,6 +1,7 @@
 const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const { subject } = require('@casl/ability');
+const s3Operations = require('../utils/aws-s3-operations');
 
 module.exports.clientInfo = async (req, res) => {
     try {
@@ -27,22 +28,25 @@ module.exports.getUser = async (req, res) => {
 }
 
 module.exports.uploadProfileImage = async (req, res) => {
+    const profileImage = req.file;
     try {
-        const profileImage = req.file;
         if (!profileImage)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'Imange was not provided' });
         
         const userInfo = await User.findOne({ _id: req.user._id });
-        const filepath = await fileOperations.moveSingle(profileImage.path, './assets/public/images');
-
         if (userInfo.profile_image)
-            await fileOperations.deleteSingle(userInfo.profile_image);
+            await s3Operations.removeObject(userInfo.profile_image);
+
+        const uploadInfo = await s3Operations.createObject(profileImage, 'public/images');
+        userInfo.profile_image = uploadInfo.Key;
         
-        userInfo.profile_image = filepath;
         await userInfo.save();
         res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
+    } finally {
+        if (profileImage)
+            await fileOperations.deleteSingle(profileImage.path);
     }
 }
 
@@ -52,7 +56,7 @@ module.exports.removeProfileImage = async (req, res) => {
         if (!userInfo.profile_image)
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Account has no profile image' });
         
-        await fileOperations.deleteSingle(userInfo.profile_image);
+        await s3Operations.removeObject(userInfo.profile_image);
         userInfo.profile_image = null;
         await userInfo.save();
         res.status(204).send();

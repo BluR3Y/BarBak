@@ -5,13 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon -r dotenv/config src/index.js dotenv_config_path=./env/development.env",
+    "dev": "nodemon -r dotenv/config src/index.js dotenv_config_path=../env/barbak_backend/development.env",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Rey Flores",
   "license": "ISC",
   "dependencies": {
     "@casl/ability": "^6.3.3",
+    "aws-sdk": "^2.1340.0",
     "bcrypt": "^5.1.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.20.1",

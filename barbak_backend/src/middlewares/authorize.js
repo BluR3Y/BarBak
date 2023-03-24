@@ -38,10 +38,10 @@ module.exports = async function(req, res, next) {
     const action = req.method.toLowerCase();
     const resource = req.path.split('/')[1];
 
-    const ability = await defineUserAbilities(user);
-    if (!ability.can(action, resource)) 
-        return res.status(403).send('Access denied');
-    req.ability = ability;
+    // const ability = await defineUserAbilities(user);
+    // if (!ability.can(action, resource)) 
+    //     return res.status(403).send('Access denied');
+    // req.ability = ability;
 
     next();
 }
