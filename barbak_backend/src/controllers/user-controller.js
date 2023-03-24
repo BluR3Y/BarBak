@@ -45,8 +45,10 @@ module.exports.uploadProfileImage = async (req, res) => {
     } catch(err) {
         res.status(500).send(err);
     } finally {
-        if (profileImage)
-            await fileOperations.deleteSingle(profileImage.path);
+        if (profileImage) {
+            fileOperations.deleteSingle(profileImage.path)
+            .catch(err => console.log(err));    // Log Error
+        }
     }
 }
 

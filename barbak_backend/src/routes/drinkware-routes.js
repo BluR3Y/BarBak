@@ -1,7 +1,7 @@
 const drinkwareController = require('../controllers/drinkware-controller');
 const { imageUpload } = require('../config/multer-config');
 const joiValidator = require('../middlewares/joi_validator');
-const auth = require('../auth');
+const auth = require('../lib/auth');
 
 module.exports.connect = function(router) {
     router.post('/drinkware/create', joiValidator, drinkwareController.create);

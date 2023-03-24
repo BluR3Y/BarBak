@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient } = require('../config/database-config');
-const transporter = require('../config/nodemailer-config');
 const fileOperations = require('../utils/file-operations');
+const emailQueue = require('../lib/queue/email-queue');
 
 function formatProfileImage(filepath) {
     const { HOSTNAME, PORT } = process.env;
@@ -219,14 +219,12 @@ userSchema.statics.sendRegistrationCode = async function(sessionId, email) {
     const registrationCode = randomInt(100000, 999999);
     const codeDuration = 60 * 15;   // Code lasts 15 minutes
     const mailOptions = {
-        from: 'noreply@barbak.com',
-        to: email,
+        recipients: email,
         subject: 'Registration Code',
-        text: `The registration code for your BarBak account is: ${registrationCode}`
+        content: `<h1>The registration code for your BarBak account is: ${registrationCode}</h1>`
     };
-
     await redisClient.setEx(`registration-code:${sessionId}`, codeDuration, registrationCode.toString());
-    await transporter.sendMail(mailOptions);
+    await emailQueue(mailOptions);
 }
 
 userSchema.statics.validateRegistrationCode = async function(sessionId, registrationCode) {

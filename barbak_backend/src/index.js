@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const MongoStore = require('connect-mongo');
 const app = express();
 
-const auth = require('./auth');
+const auth = require('./lib/auth');
 const connectDB = require('./config/database-config');
 // const assetControl = require('./middleware/asset-control');
 const errorHandler = require('./middlewares/error-handler');

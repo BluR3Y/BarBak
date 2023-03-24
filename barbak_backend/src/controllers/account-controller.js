@@ -1,5 +1,5 @@
 const User = require('../models/user-model');
-const auth = require('../auth');
+const auth = require('../lib/auth');
 const fileOperations = require('../utils/file-operations');
 const encryptionOperations = require('../utils/encryption-operations');
 
