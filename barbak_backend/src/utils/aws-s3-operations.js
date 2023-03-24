@@ -1,4 +1,7 @@
 const { S3 } = require('aws-sdk');
+const { randomUUID } = require('crypto');
+const path = require('path');
+const fs = require('fs');
 
 const config = {
     accessKey: process.env.S3_ACCESS_KEY,
@@ -8,8 +11,10 @@ const config = {
 };
 
 const s3 = new S3({
-    accessKeyId: config.accessKey,
-    secretAccessKey: config.secretKey,
+    credentials: {
+        accessKeyId: config.accessKey,
+        secretAccessKey: config.secretKey
+    },
     region: config.region
 });
 
@@ -20,25 +25,23 @@ module.exports.exists = function(key) {
     }
     return new Promise((resolve, reject) => {
         s3.headObject(params, function(err, metadata) {
-            if (err && err.code === 'NotFound')
+            if (err && err.statusCode === 403)
                 resolve(false);
             else if (err)
                 reject(err);
             else
-                resolve(metadata);
+                resolve(true);
         });
     });
 }
 
-// Low-level method of uploading file
-module.exports.crateObject = function(key, body) {
+module.exports.getObject = function(key) {
     const params = {
         Bucket: config.bucket,
         Key: key,
-        Body: body
-    };
+    }
     return new Promise((resolve, reject) => {
-        s3.putObject(params, function(err, data) {
+        s3.getObject(params, function(err, data) {
             if (err)
                 return reject(err);
             resolve(data);
@@ -46,23 +49,36 @@ module.exports.crateObject = function(key, body) {
     });
 }
 
-// High-level method of uploading file
-// module.exports.upload = function() {
-//     const params = {
-//         Bucket: config.bucket
-//     }
-//     return new Promise((resolve, reject) => {
-//         s3.upload(params, function(err, ))
-//     });
-// }
-
-module.exports.getObject = function(key, body) {
+// Low-level method of uploading file
+module.exports.createObject = function(file, writepath) {
+    const fileStats = fs.statSync(file.path);
+    const filename = randomUUID() + path.extname(file.filename);
+    const fileData = fileStats.size >  5 * 1024 * 1024 ? fs.createReadStream(file.path) : fs.readFileSync(file.path);
     const params = {
         Bucket: config.bucket,
-        Key: key,
-    }
+        Key: path.posix.join(writepath, filename),
+        Body: fileData,
+        ContentType: file.mimetype
+    };
     return new Promise((resolve, reject) => {
-        s3.getObject(params, function(err, data) {
+        s3.putObject(params, function(err, data) {
+            if (err)
+                return reject(err);
+            resolve({
+                Key: path.posix.join(writepath, filename),
+                Data: data
+            });
+        });
+    });
+}
+
+module.exports.removeObject = function(key) {
+    const params = {
+        Bucket: config.bucket,
+        Key: key
+    };
+    return new Promise((resolve, reject) => {
+        s3.deleteObject(params, function(err, data) {
             if (err)
                 return reject(err);
             resolve(data);

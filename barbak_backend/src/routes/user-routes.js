@@ -10,7 +10,4 @@ module.exports.connect = function(router) {
     router.patch('/users/update/profile-image/upload', imageUpload.single('profile_image'), userController.uploadProfileImage);
     router.patch('/users/update/profile-image/remove', userController.removeProfileImage);
     router.patch('/users/update/username', joiValidator, userController.changeUsername);
-
-    router.post('/test/upload', imageUpload.single('file'), userController.testUpload);
-    router.get('/test/download', userController.testDownload);
 }

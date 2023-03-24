@@ -10,7 +10,7 @@ function formatProfileImage(filepath) {
         const defaultImage = fileOperations.findByName('static/default', 'profile_image');
         filepath = defaultImage ? `assets/default/${defaultImage}` : null
     }
-    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    return filepath ? `http://${HOSTNAME}:${PORT}/assets/${filepath}` : filepath;
 }
 
 const userSchema = new mongoose.Schema({

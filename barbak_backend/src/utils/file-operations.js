@@ -3,29 +3,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const formatPath = (filepath) => path.normalize(filepath).replace(/\\/g, '/');
 
-// module.exports.uploadSingle = function(uploadPath, file) {
-//     return new Promise((resolve, reject) => {
-//         var filename;
-//         do {
-//             filename = crypto.randomUUID() + path.extname(file.originalname);
-//         } while(fs.existsSync(filename));
-//         fs.open(uploadPath + filename, 'wx', function(err, fd) {
-//             if (err) return reject(err);
-//             fs.write(fd, file.buffer, function(err, bytes) {
-//                 if (err) return reject(err);
-//                 fs.close(fd, function(err) {
-//                     if(err) return reject(err);
-//                     resolve({ filepath: '/' + uploadPath + filename, bytes });
-//                 });
-//             });
-//         });
-//     });
-// };
-
-// module.exports.uploadMultiple = function(uploadPath, files) {
-//     return Promise.all(files.map(async file => this.uploadSingle(uploadPath, file)));
-// };
-
 module.exports.findByName = function(fileDir, fileName) {
     const files = fs.readdirSync(fileDir);
     return files.filter((file) => file.startsWith(fileName));
@@ -71,17 +48,6 @@ module.exports.copyMultiple = function(readPaths, writePath) {
     return Promise.all(readPaths.map(async file => this.copySingle(file, writePath)));
 }
 
-module.exports.readSingle = function(filepath) {
-    return new Promise((resolve, reject) => {
-        if (!fs.existsSync(filepath))
-            reject("File does not exist");
-        fs.readFile(filepath, function(err , data) {
-            if (err) return reject(err);
-            resolve(data);
-        });
-    });
-};
-
 module.exports.deleteSingle = function(filepath) {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(filepath))
@@ -95,4 +61,19 @@ module.exports.deleteSingle = function(filepath) {
 
 module.exports.deleteMultiple = function(filepaths) {
     return Promise.all(filepaths.map(async file => this.deleteSingle(file)));
+}
+
+module.exports.readSingle = function(filepath) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(filepath))
+            reject("File does not exist");
+        fs.readFile(filepath, function(err , data) {
+            if (err) return reject(err);
+            resolve(data);
+        });
+    });
+};
+
+module.exports.stremSingle = function(filepath) {
+    return fs.createReadStream(filepath);
 }
