@@ -1,6 +1,5 @@
 const User = require('../models/user-model');
 const auth = require('../lib/auth');
-const fileOperations = require('../utils/file-operations');
 const encryptionOperations = require('../utils/encryption-operations');
 
 module.exports.login = auth.authenticate.localLogin;
@@ -102,13 +101,11 @@ module.exports.usernameSelection = async (req, res) => {
         delete req.session.registrationInfoEncryptionKey;
         delete req.session.registrationInfoIV;
 
-        await new Promise((resolve, reject) => {
-            req.logIn(createdUser, (err) => {
-                if (err) return reject(err);
-                resolve();
-            })
+        req.logIn(createdUser, (err) => {
+            if (err)
+                throw err;
+            res.status(200).send(createdUser.basicStripExcess());
         });
-        res.status(200).send(createdUser.getBasicInfo());
     } catch(err) {
         if (err.name === "ValidationError" || err.name === "CustomValidationError") {
             var errors = [];
