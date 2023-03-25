@@ -18,19 +18,16 @@ const s3 = new S3({
     region: config.region
 });
 
-module.exports.exists = function(key) {
+module.exports.objectMetadata = function(key) {
     const params = {
         Bucket: config.bucket,
         Key: key
     }
     return new Promise((resolve, reject) => {
         s3.headObject(params, function(err, metadata) {
-            if (err && err.statusCode === 403)
-                resolve(false);
-            else if (err)
-                reject(err);
-            else
-                resolve(true);
+            if (err)
+                return reject(err);
+            resolve(metadata);
         });
     });
 }
@@ -58,15 +55,39 @@ module.exports.createObject = function(file, writepath) {
         Bucket: config.bucket,
         Key: path.posix.join(writepath, filename),
         Body: fileData,
-        ContentType: file.mimetype
+        ContentType: file.mimetype,
+        ContentEncoding: 'gzip',
+        StorageClass: 'STANDARD',
     };
     return new Promise((resolve, reject) => {
         s3.putObject(params, function(err, data) {
             if (err)
                 return reject(err);
             resolve({
-                Key: path.posix.join(writepath, filename),
-                Data: data
+                filename,
+                filepath: params.Key,
+                data
+            });
+        });
+    });
+}
+
+module.exports.copyObject = function(key, dest) {
+    const filename = randomUUID() + path.extname(key);
+    const params = {
+        Bucket: config.bucket,
+        CopySource: path.posix.join(config.bucket, key),
+        Key: path.posix.join(dest || path.dirname(key), filename)
+    };
+
+    return new Promise((resolve, reject) => {
+        s3.copyObject(params, function(err, data) {
+            if (err)
+                return reject(err);
+            resolve({
+                filename,
+                filepath: params.Key,
+                data
             });
         });
     });

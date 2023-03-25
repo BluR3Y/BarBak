@@ -16,9 +16,12 @@ async function defineUserAbilities(user) {
     for (const permission of userPermissions) {
         var formattedConditions = null;
         if (permission.conditions) {
-            formattedConditions = JSON.parse(permission.conditions.replace('USER_ID', (match, key) => {
-                return JSON.stringify(user._id);
-            }));
+            const jsonConditions = JSON.parse(permission.conditions);
+            for (const condition in jsonConditions) {
+                if (jsonConditions[condition] === 'USER_ID') 
+                    jsonConditions[condition] = user._id;
+            }
+            formattedConditions = jsonConditions;
         }
 
         jsonPermissions.push({
@@ -29,7 +32,7 @@ async function defineUserAbilities(user) {
             inverted: permission.inverted,
         });
     }
-    console.log(jsonPermissions)
+    // console.log(jsonPermissions)
     return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
 }
 
@@ -38,10 +41,10 @@ module.exports = async function(req, res, next) {
     const action = req.method.toLowerCase();
     const resource = req.path.split('/')[1];
 
-    // const ability = await defineUserAbilities(user);
-    // if (!ability.can(action, resource)) 
-    //     return res.status(403).send('Access denied');
-    // req.ability = ability;
+    const ability = await defineUserAbilities(user);
+    if (!ability.can(action, resource)) 
+        return res.status(403).send('Access denied');
+    req.ability = ability;
 
     next();
 }

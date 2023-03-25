@@ -1,7 +1,8 @@
-const fileOperations = require('../utils/file-operations');
-const { subject } = require('@casl/ability');
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
 const { AppAccessControl, AccessControl } = require('../models/access-control-model');
+const { subject } = require('@casl/ability');
+const fileOperations = require('../utils/file-operations');
+const s3Operations = require('../utils/aws-s3-operations');
 
 module.exports.create = async (req, res) => {
     try {
@@ -66,15 +67,19 @@ module.exports.update = async (req, res) => {
 module.exports.delete = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-        
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('delete', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        
-        if (drinkwareInfo.cover)
-            await fileOperations.deleteSingle(drinkwareInfo.cover);
+
+        if (drinkwareInfo.model === 'User Drinkware' && drinkwareInfo.cover_acl) {
+            const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
+            await s3Operations.removeObject(aclDocument.file_path);
+            await aclDocument.remove();
+        } else if (drinkwareInfo.model === 'Verified Drinkware' && drinkwareInfo.cover) 
+            await s3Operations.removeObject(drinkwareInfo.cover);
 
         await drinkwareInfo.remove();
         res.status(204).send();
@@ -101,6 +106,146 @@ module.exports.updatePrivacy = async (req, res) => {
     }
 }
 
+module.exports.uploadCover = async (req, res) => {
+    try {
+        const { drinkware_id } = req.body;
+        const drinkwareCover = req.file;
+
+        if (!drinkwareCover)
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
+
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+        
+        const uploadInfo = await s3Operations.createObject(drinkwareCover, 'assets/private/images');
+        if (drinkwareInfo.model === 'User Drinkware') {
+            if (drinkwareInfo.cover_acl) {
+                const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
+                await s3Operations.removeObject(aclDocument.file_path);
+                
+                aclDocument.file_name = uploadInfo.filename;
+                aclDocument.file_size = drinkwareCover.size;
+                aclDocument.mime_type = drinkwareCover.mimetype;
+                aclDocument.file_path = uploadInfo.filepath;
+                await aclDocument.save();
+            } else {
+                const createdACL = new AppAccessControl({
+                    file_name: uploadInfo.filename,
+                    file_size: drinkwareCover.size,
+                    mime_type: drinkwareCover.mimetype,
+                    file_path: uploadInfo.filepath,
+                    user: req.user._id,
+                    referenced_document: drinkwareInfo._id,
+                    referenced_model: 'Drinkware'
+                });
+                await createdACL.save();
+                drinkwareInfo.cover_acl = createdACL._id;
+            }
+        } else {
+            if (drinkwareInfo.cover)
+                await s3Operations.removeObject(drinkwareInfo.cover);
+            drinkwareInfo.cover = uploadInfo.filepath;
+        }
+
+        await drinkwareInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        console.log(err)
+        res.status(500).send(err);
+    } finally {
+        if (req.file) {
+            await fileOperations.deleteSingle(req.file.path)
+            .catch(err => console.error(err));  // Log error
+        }
+    }
+}
+
+module.exports.deleteCover = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo)
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (drinkwareInfo.model === 'User Drinkware' ? 
+            !drinkwareInfo.cover_acl :
+            !drinkwareInfo.cover
+        )
+            return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
+
+        if (drinkwareInfo.model === 'User Drinkware') {
+            const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
+            await s3Operations.removeObject(aclDocument.file_path);
+            await aclDocument.remove();
+            drinkwareInfo.cover_acl = null;
+        } else {
+            await s3Operations.removeObject(drinkwareInfo.cover);
+            drinkwareInfo.cover = null;
+        }
+
+        await drinkwareInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        res.status(500).send(err);
+    }
+}
+
+module.exports.copy = async (req, res) => {
+    try {
+        const { drinkware_id } = req.params;
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+        if (!drinkwareInfo) 
+            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+        else if (!req.ability.can('create', subject('drinkware', drinkwareInfo)))     // read may not be an ideal action
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+
+        const { name, description } = drinkwareInfo;
+        const createdDrinkware = new UserDrinkware({
+            name,
+            description,
+            user: req.user._id,
+        });
+
+        if (
+            (drinkwareInfo.model === 'User Drinkware' && drinkwareInfo.cover_acl) ||
+            (drinkwareInfo.model === 'Verified Drinkware' && drinkwareInfo.cover)
+        ) {
+            var coverPath;
+            if (drinkwareInfo.model === 'User Drinkware') {
+                const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
+                coverPath = aclDocument.file_path;
+            } else
+                coverPath = drinkwareInfo.cover;
+            
+            const copyInfo = await s3Operations.copyObject(coverPath);
+            const copyMetadata = await s3Operations.objectMetadata(copyInfo.filepath);
+            const createdACL = new AppAccessControl({
+                file_name: copyInfo.filename,
+                file_size: copyMetadata.ContentLength,
+                mime_type: copyMetadata.ContentType,
+                file_path: copyInfo.filepath,
+                user: req.user._id,
+                referenced_document: createdDrinkware._id,
+                referenced_model: 'Drinkware'
+            });
+            await createdACL.save();
+            createdDrinkware.cover_acl = createdACL._id;
+        }
+       
+        await createdDrinkware.save();
+        res.status(204).send();
+    } catch(err) {
+        console.log(err)
+        res.status(500).send(err);
+    }
+}
+
 module.exports.getDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
@@ -112,106 +257,6 @@ module.exports.getDrinkware = async (req, res) => {
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
 
         res.status(200).send(drinkwareInfo.basicStripExcess());
-    } catch(err) {
-        res.status(500).send(err);
-    }
-}
-
-module.exports.copy = async (req, res) => {
-    try {
-        const { drinkware_id } = req.params;
-        
-        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
-        if (!drinkwareInfo) 
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
-        else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
-        
-        const { name, description, cover } = drinkwareInfo;
-        const createdDrinkware = new UserDrinkware({
-            name,
-            description,
-            user: req.user._id,
-            cover: cover ? await fileOperations.copySingle(drinkwareInfo.cover) : null
-        });
-        await createdDrinkware.save();
-
-        res.status(204).send();
-    } catch(err) {
-        if (err.name === 'ValidationError')
-            return res.status(400).send(err);
-        res.status(500).send(err);
-    }
-}
-
-module.exports.uploadCover = async (req, res) => {
-    try {
-        const { drinkware_id } = req.body;
-        var drinkwareCover = req.file;
-
-        if (!drinkwareCover)
-            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-
-        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
-        if (!drinkwareInfo) {
-            await fileOperations.deleteSingle(drinkwareCover.path);
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        } else if (!req.ability.can('update', subject('drinkware', drinkwareInfo))) {
-            await fileOperations.deleteSingle(drinkwareCover.path);
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        }
-
-        drinkwareCover.path = await fileOperations.moveSingle(drinkwareCover.path, drinkwareInfo.model === 'User Drinkware' ? './assets/private/images' : './assets/public/images');
-        if (drinkwareInfo.model === 'User Drinkware') {
-            if (drinkwareInfo.cover) {
-                const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
-                await fileOperations.deleteSingle(aclDocument.file_path);
-                aclDocument.updateInstance(drinkwareCover);
-                await aclDocument.save();
-                drinkwareInfo.cover = 'assets/private/' + aclDocument._id;
-            } else {
-                const createdACL = AppAccessControl.createInstance(drinkwareCover, req.user._id, drinkwareInfo._id);
-                await createdACL.save();
-                drinkwareInfo.cover = 'assets/private/' + createdACL._id;
-            }
-        } else {
-            if (drinkwareInfo.cover)
-                await fileOperations.deleteSingle(drinkwareInfo.cover);
-            drinkwareInfo.cover = drinkwareCover.path;
-        }
-
-        await drinkwareInfo.save();
-        res.status(204).send();
-    } catch(err) {
-        res.status(500).send(err);
-    }
-}
-
-module.exports.deleteCover = async (req, res) => {
-    try {
-        const { drinkware_id } = req.params;
-        
-        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
-        if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
-        else if (!drinkwareInfo.cover)
-            return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
-        
-        if (drinkwareInfo.model === 'User Drinkware') {
-            const aclDocument = await AppAccessControl.getDocument(drinkwareInfo.cover);
-            await fileOperations.deleteSingle(aclDocument.file_path);
-            await aclDocument.remove();
-        } else {
-            await fileOperations.deleteSingle(drinkwareInfo.cover);
-        }
-
-        drinkwareInfo.cover = null;
-        await drinkwareInfo.save();
-        res.status(204).send();
     } catch(err) {
         res.status(500).send(err);
     }

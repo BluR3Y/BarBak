@@ -31,10 +31,6 @@ const AccessControl = mongoose.model('Access Control', new mongoose.Schema({
     }
 },{ collection: 'access-control', discriminatorKey: 'model' }));
 
-AccessControl.schema.statics.getDocument = async function(filepath) {
-    return (await this.findOne({ _id: path.basename(filepath) }));
-}
-
 const appLevelSchema = new mongoose.Schema({
     referenced_document: {
         type: mongoose.Schema.Types.ObjectId,
@@ -47,25 +43,6 @@ const appLevelSchema = new mongoose.Schema({
         enum: [ 'Drinkware', 'Tool' ]
     }
 });
-
-appLevelSchema.statics.createInstance = function(file, user, referenced_document) {
-    return new this({
-        file_name: file.filename,
-        file_size: file.size,
-        mime_type: file.mimetype,
-        file_path: file.path,
-        user,
-        referenced_document,
-        referenced_model: 'Drinkware'
-    });
-}
-
-appLevelSchema.methods.updateInstance = function(file) {
-    this.file_name = file.filename;
-    this.mime_type = file.mimetype;
-    this.file_size = file.size;
-    this.file_path = file.path;
-}
 
 // Authorize may change to variants if multiple models are used
 appLevelSchema.methods.authorize = async function(user) {

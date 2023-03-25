@@ -21,10 +21,6 @@ const drinkwareSchema = new mongoose.Schema({
         type: String,
         maxlength: [600, 'Description length must be at most 600 characters long']
     },
-    cover: {
-        type: String,
-        default: null
-    }
 },{ collection: 'drinkware', discriminatorKey: 'model' });
 
 drinkwareSchema.query.basicInfo = function() {
@@ -54,6 +50,10 @@ drinkwareSchema.query.conditionalSearch = function(user) {
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
+    cover: {
+        type: String,
+        default: null
+    },
     date_verified: {
         type: Date,
         immutable: true,
@@ -82,6 +82,11 @@ verifiedSchema.methods = {
 }
 
 const userSchema = new mongoose.Schema({
+    cover_acl: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'App Access Control',
+        default: null
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -107,7 +112,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover),
+            cover: formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
             date_created: this.date_created,
             public: this.public
         };
@@ -118,7 +123,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover)
+            cover: formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
         };
     }
 }

@@ -31,14 +31,14 @@ module.exports.uploadProfileImage = async (req, res) => {
     const profileImage = req.file;
     try {
         if (!profileImage)
-            return res.status(400).send({ path: 'image', type: 'exist', message: 'Imange was not provided' });
+            return res.status(400).send({ path: 'image', type: 'exist', message: 'Image was not provided' });
         
         const userInfo = await User.findOne({ _id: req.user._id });
         if (userInfo.profile_image)
             await s3Operations.removeObject(userInfo.profile_image);
 
-        const uploadInfo = await s3Operations.createObject(profileImage, 'public/images');
-        userInfo.profile_image = uploadInfo.Key;
+        const uploadInfo = await s3Operations.createObject(profileImage, 'assets/public/images');
+        userInfo.profile_image = uploadInfo.filepath;
         
         await userInfo.save();
         res.status(204).send();
