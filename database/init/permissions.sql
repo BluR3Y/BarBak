@@ -32,12 +32,14 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     
     -- Drinkware Rules
     (@editor_role_id, 'create', 'drinkware', '{ "verified": false }'),
+    (@editor_role_id, 'create', 'drinkware', '{ "verified": true }'),
     (@editor_role_id, 'read', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
     (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
 
     -- Tool Rules
     (@editor_role_id, 'create', 'tools', '{ "verified": false }'),
+    (@editor_role_id, 'create', 'tools', '{ "verified": true }'),
     (@editor_role_id, 'read', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
     (@editor_role_id, 'update', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),

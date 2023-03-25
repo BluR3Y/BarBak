@@ -1,5 +1,5 @@
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
-const { AppAccessControl, AccessControl } = require('../models/access-control-model');
+const { AppAccessControl } = require('../models/access-control-model');
 const { subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
@@ -38,15 +38,15 @@ module.exports.create = async (req, res) => {
 module.exports.update = async (req, res) => {
     try {
         const { drinkware_id, name, description } = req.body;
-        
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        else if (drinkwareInfo.model === 'Verified Drinkware' ? 
-            await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }) :
-            await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })
+        else if (
+            (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } })) ||
+            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, _id: { $ne: drinkware_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
         
@@ -55,7 +55,6 @@ module.exports.update = async (req, res) => {
 
         await drinkwareInfo.validate();
         await drinkwareInfo.save();
-
         res.status(204).send();
     } catch(err) {
         if (err.name === 'ValidationError')
@@ -91,8 +90,8 @@ module.exports.delete = async (req, res) => {
 module.exports.updatePrivacy = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-
         const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
+
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
@@ -167,10 +166,11 @@ module.exports.deleteCover = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (drinkwareInfo.model === 'User Drinkware' ? 
             !drinkwareInfo.cover_acl :
             !drinkwareInfo.cover
@@ -198,10 +198,14 @@ module.exports.copy = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+
         if (!drinkwareInfo) 
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('create', subject('drinkware', drinkwareInfo)))     // read may not be an ideal action
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized to view drinkware' });
+        else if (
+            (!req.ability.can('read', subject('drinkware', drinkwareInfo))) ||
+            (!req.ability.can('create', subject('drinkware', { verified: false })))
+        )
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
 
@@ -241,7 +245,6 @@ module.exports.copy = async (req, res) => {
         await createdDrinkware.save();
         res.status(204).send();
     } catch(err) {
-        console.log(err)
         res.status(500).send(err);
     }
 }
@@ -249,12 +252,12 @@ module.exports.copy = async (req, res) => {
 module.exports.getDrinkware = async (req, res) => {
     try {
         const { drinkware_id } = req.params;
-        
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
+
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized view drinkware' });
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
         res.status(200).send(drinkwareInfo.basicStripExcess());
     } catch(err) {
@@ -267,7 +270,21 @@ module.exports.search = async (req, res) => {
         const { query, page, page_size, ordering } = req.query;
         const searchDocuments = await Drinkware
             .find({ name: { $regex: query } })
-            .conditionalSearch(req.user)
+            .where(req.user ?
+                {
+                    $or: [
+                        { model: 'Verified Drinkware' },
+                        { user: req.user._id },
+                        { public: true }
+                    ]
+                } :
+                {
+                    $or: [
+                        { model: 'Verified Drinkware' },
+                        { public: true }
+                    ]
+                }
+            )
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
@@ -285,14 +302,14 @@ module.exports.clientDrinkware = async (req, res) => {
         const page_size = req.query.page_size || 10;
         const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
 
-        const userDocs = await UserDrinkware
+        const userDocuments = await UserDrinkware
             .find({ user: req.user._id })
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
             .extendedInfo();
             
-        res.status(200).send(userDocs);
+        res.status(200).send(userDocuments);
     } catch(err) {
         res.status(500).send(err);
     }

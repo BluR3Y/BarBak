@@ -1,7 +1,7 @@
 const Joi = require('joi');
 
 const usernameSchema = Joi.string().lowercase().min(6).max(30).pattern(new RegExp('^[a-zA-Z0-9_.-]*$'));
-const fullnameSchema = Joi.string().max(30).pattern(/^[a-zA-Z]+$/);
+const fullnameSchema = Joi.string().max(30).pattern(/^[a-zA-Z\s]+$/);
 const emailSchema = Joi.string().lowercase().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'org', 'co', 'us'] } });
 const passwordSchema = Joi.string().min(6).max(30).pattern(new RegExp('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).*$'));
 const codeSchema = Joi.string().length(6).pattern(/^[0-9]+$/);

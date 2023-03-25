@@ -43,10 +43,6 @@ drinkwareSchema.query.extendedInfo = function() {
     });
 }
 
-drinkwareSchema.query.conditionalSearch = function(user) {
-    return this.where(user ? { $or: [{ model: 'Verified Drinkware' },{ user: user._id },{ public: true }] } : { model: 'Verified Drinkware' },{ public: true });
-}
-
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({

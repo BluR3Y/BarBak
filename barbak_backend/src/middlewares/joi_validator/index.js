@@ -4,7 +4,9 @@ const path = require('path');
 const Schemas = {
     account: require('./account-schemas'),
     users: require('./user-schemas'),
-    drinkware: require('./drinkware-schemas')
+    assets: require('./asset-schemas'),
+    drinkware: require('./drinkware-schemas'),
+    tools: require('./tool-schemas')
 };
 
 module.exports = (req, res, next) => {
@@ -32,7 +34,7 @@ module.exports = (req, res, next) => {
         const data = req[dataStorage];
         const pathname = (dataStorage === 'params' ? path.dirname(req.path) : req.path);
         const relevantSchemas = Schemas[resource];
-        console.log('joi: ', dataStorage, pathname, action, resource, data);
+        console.log('joi: ', dataStorage, pathname, action, resource, data);    // Debugging
         if (relevantSchemas && _.has(relevantSchemas, pathname)) {
             const schema = _.get(relevantSchemas, pathname);
             if (schema) {
