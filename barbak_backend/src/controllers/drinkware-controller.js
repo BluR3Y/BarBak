@@ -153,7 +153,6 @@ module.exports.uploadCover = async (req, res) => {
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
-        console.log(err)
         res.status(500).send(err);
     } finally {
         if (req.file) {

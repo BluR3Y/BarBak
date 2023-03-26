@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
+const fileOperations = require('../utils/file-operations');
 
 const ingredientSchema = new mongoose.Schema({
     name: {
@@ -22,7 +23,36 @@ const ingredientSchema = new mongoose.Schema({
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
+ingredientSchema.query.basicInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.extendedStripExcess()));
+        });
+    });
+}
+
+ingredientSchema.query.extendedInfo = function() {
+    return new Promise((resolve, reject) => {
+        this.exec(function(err, documents) {
+            if (err)
+                return reject(err);
+            resolve(documents.map(doc => doc.basicStripExcess()));
+        });
+    });
+}
+
 ingredientSchema.statics = {
+    formatCoverImage: function(filepath) {
+        const { HOSTNAME, PORT } = process.env;
+        if (!filepath) {
+            const defaultCover = fileOperations.findByName('static/default', 'barware_cover');
+            if (defaultCover.length)
+                filepath = `assets/default/${defaultCover}`;
+        }
+        return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    },
     getCategories: async function() {
         const categories = await executeSqlQuery('SELECT name FROM ingredient_categories');
         return (await categories.map(item => item.name));
@@ -100,6 +130,26 @@ const verifiedSchema = new mongoose.Schema({
     }
 });
 
+verifiedSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: this.constructor.formatCoverImage(this.cover),
+            date_verified: this.date_verified
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            name: this.name,
+            description: this.description,
+            cover: this.constructor.formatCoverImage(this.cover),
+        };
+    }
+}
+
 const userSchema = new mongoose.Schema({
     cover_acl: {
         type: mongoose.Schema.Types.ObjectId,
@@ -122,6 +172,29 @@ const userSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+userSchema.methods = {
+    basicStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
+            date_created: this.date_created,
+            public: this.public
+        };
+    },
+    extendedStripExcess: function() {
+        return {
+            _id: this._id,
+            user: this.user,
+            name: this.name,
+            description: this.description,
+            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
+        };
+    }
+}
 
 module.exports = {
     Ingredient,
