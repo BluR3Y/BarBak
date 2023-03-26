@@ -45,7 +45,7 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
-            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, _id: { $ne: drinkware_id } })) ||
+            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })) ||
             (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
@@ -94,7 +94,7 @@ module.exports.updatePrivacy = async (req, res) => {
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
         drinkwareInfo.public = !drinkwareInfo.public;
