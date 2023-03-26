@@ -5,17 +5,17 @@ const fileOperations = require('../utils/file-operations');
 const toolSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Name is required'],
-        minlength: [3, 'Name length must be at least 3 characters long'],
-        maxlength: [30, 'Name length must be at most 30 characters long']
+        required: true,
+        minlength: 3,
+        maxlength: 30,
     },
     description: {
         type: String,
-        maxlength: [600, 'Description length must be at most 600 characters long']
+        maxlength: 600,
     },
     category: {
         type: String,
-        required: [true, 'Category is required']
+        required: true,
     }
 },{ collection: 'tools', discriminatorKey: 'model' });
 
@@ -132,7 +132,6 @@ const userSchema = new mongoose.Schema({
     },
     public: {
         type: Boolean,
-        required: true,
         default: false,
     },
     date_created: {

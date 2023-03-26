@@ -123,8 +123,8 @@ module.exports.uploadCover = async (req, res) => {
         else if (!req.ability.can('patch', subject('tools', toolInfo)))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
 
-        const uploadInfo = await s3Operations.createObject(toolCover, 'assets/private/images');
         if (toolInfo.model === 'User Tool') {
+            const uploadInfo = await s3Operations.createObject(toolCover, 'assets/private/images');
             if (toolInfo.cover_acl) {
                 const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
                 await s3Operations.removeObject(aclDocument.file_path);
@@ -148,6 +148,7 @@ module.exports.uploadCover = async (req, res) => {
                 toolInfo.cover_acl = createdACL._id;
             }
         } else {
+            const uploadInfo = await s3Operations.createObject(toolCover, 'assets/public/images');
             if (toolInfo.cover)
                 await s3Operations.removeObject(toolInfo.cover);
             toolInfo.cover = uploadInfo.filepath;

@@ -119,8 +119,8 @@ module.exports.uploadCover = async (req, res) => {
         else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         
-        const uploadInfo = await s3Operations.createObject(drinkwareCover, 'assets/private/images');
         if (drinkwareInfo.model === 'User Drinkware') {
+            const uploadInfo = await s3Operations.createObject(drinkwareCover, 'assets/private/images');
             if (drinkwareInfo.cover_acl) {
                 const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
                 await s3Operations.removeObject(aclDocument.file_path);
@@ -144,6 +144,7 @@ module.exports.uploadCover = async (req, res) => {
                 drinkwareInfo.cover_acl = createdACL._id;
             }
         } else {
+            const uploadInfo = await s3Operations.createObject(drinkwareCover, 'assets/public/images');
             if (drinkwareInfo.cover)
                 await s3Operations.removeObject(drinkwareInfo.cover);
             drinkwareInfo.cover = uploadInfo.filepath;

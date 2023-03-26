@@ -1,25 +1,16 @@
 const mongoose = require('mongoose');
 const fileOperations = require('../utils/file-operations');
 
-function formatCoverImage(filepath) {
-    const { HOSTNAME, PORT } = process.env;
-    if (!filepath) {
-        const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
-        filepath = defaultCover ? `assets/default/${defaultCover}` : null;
-    }
-    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
-}
-
 const drinkwareSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Name is required'],
-        minlength: [3, 'Name length must be at least 3 characters long'],
-        maxlength: [30, 'Name length must be at most 30 characters long']
+        required: true,
+        minlength: 3,
+        maxlength: 30
     },
     description: {
         type: String,
-        maxlength: [600, 'Description length must be at most 600 characters long']
+        maxlength: 600,
     },
 },{ collection: 'drinkware', discriminatorKey: 'model' });
 
@@ -43,6 +34,15 @@ drinkwareSchema.query.extendedInfo = function() {
     });
 }
 
+drinkwareSchema.statics.formatCoverImage = function(filepath) {
+    const { HOSTNAME, PORT } = process.env;
+    if (!filepath) {
+        const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
+        filepath = defaultCover ? `assets/default/${defaultCover}` : null;
+    }
+    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+}
+
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
@@ -63,7 +63,7 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover),
+            cover: this.constructor.formatCoverImage(this.cover),
             date_verified: this.date_verified
         };
     },
@@ -72,7 +72,7 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover),
+            cover: this.constructor.formatCoverImage(this.cover),
         };
     }
 }
@@ -91,7 +91,6 @@ const userSchema = new mongoose.Schema({
     },
     public: {
         type: Boolean,
-        required: true,
         default: false,
     },
     date_created: {
@@ -108,7 +107,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
+            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
             date_created: this.date_created,
             public: this.public
         };
@@ -119,7 +118,7 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
-            cover: formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
+            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
         };
     }
 }
