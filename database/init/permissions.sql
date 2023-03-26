@@ -32,33 +32,49 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     
     -- Drinkware Rules
     (@editor_role_id, 'create', 'drinkware', '{ "verified": false }'),
-    (@editor_role_id, 'create', 'drinkware', '{ "verified": true }'),
     (@editor_role_id, 'read', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
     (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
 
     -- Tool Rules
     (@editor_role_id, 'create', 'tools', '{ "verified": false }'),
-    (@editor_role_id, 'create', 'tools', '{ "verified": true }'),
     (@editor_role_id, 'read', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
     (@editor_role_id, 'update', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
+    
+    -- Ingredient Rules
+    (@editor_role_id, 'create', 'ingredients', '{ "verified": false }'),
+    (@editor_role_id, 'read', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+    (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+    (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
 
     -- Additional Rules
         -- Verified Drinkware Rules
+	    (@editor_role_id, 'create', 'drinkware', '{ "verified": true }'),
         (@editor_role_id, 'update', 'drinkware', '{ "model": "Verified Drinkware" }'),
         (@editor_role_id, 'delete', 'drinkware', '{ "model": "Verified Drinkware" }'),
 
         -- Verified Tool Rules
+	    (@editor_role_id, 'create', 'tools', '{ "verified": true }'),
         (@editor_role_id, 'update', 'tools', '{ "model": "Verified Tool" }'),
         (@editor_role_id, 'delete', 'tools', '{ "model": "Verified Tool" }'),
+        
+        -- Verified Ingredient Rules
+        (@editor_role_id, 'create', 'ingredients', '{ "verified": true }'),
+        (@editor_role_id, 'update', 'ingredients', '{ "model": "Verified Ingredient" }'),
+        (@editor_role_id, 'delete', 'ingredients', '{ "model": "Verified Ingredient" }'),
 
         -- Public User Drinkware Rules
         (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
         (@editor_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
 
+		-- Public User Tool Rules
         (@editor_role_id, 'update', 'tools', '{ "model": "User Tool", "public": true }'),
-        (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "public": true }')
+        (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "public": true }'),
+        
+        -- Public User Ingredient Rules
+        (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
+        (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "public": true }')
 ;
 
 -- User Permissions
@@ -81,7 +97,13 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@user_role_id, 'create', 'tools', '{ "verified": false }'),
     (@user_role_id, 'read', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
     (@user_role_id, 'update', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }')
+    (@user_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
+    
+    -- Ingredient Rules
+    (@user_role_id, 'create', 'ingredients', '{ "verified": false }'),
+    (@user_role_id, 'read', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+    (@user_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+    (@user_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }')
 ;
 
 -- Guest Permissions
@@ -98,8 +120,10 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (NULL, 'read', 'users', '{ "public": true }'),
     (NULL, 'read', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
     (NULL, 'read', 'tools', '{ "model": "User Tool", "public": true }'),
+    (NULL, 'read', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
 
     -- Verified Content
     (NULL, 'read', 'drinkware', '{ "model": "Verified Drinkware" }'),
-    (NULL, 'read', 'tools', '{ "model": "Verified Tool" }')
+    (NULL, 'read', 'tools', '{ "model": "Verified Tool" }'),
+    (NULL, 'read', 'ingredients', '{ "model": "Verified Ingredient" }')
 ;

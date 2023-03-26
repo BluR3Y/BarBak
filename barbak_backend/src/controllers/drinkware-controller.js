@@ -45,8 +45,8 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
-            (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } })) ||
-            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, _id: { $ne: drinkware_id } }))
+            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, _id: { $ne: drinkware_id } })) ||
+            (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
         
@@ -172,9 +172,9 @@ module.exports.deleteCover = async (req, res) => {
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        else if (drinkwareInfo.model === 'User Drinkware' ? 
-            !drinkwareInfo.cover_acl :
-            !drinkwareInfo.cover
+        else if (
+            (drinkwareInfo.model === 'User Drinkware' && !drinkwareInfo.cover_acl) ||
+            (drinkwareInfo.model === 'Verified Drinkware' && !drinkwareInfo.cover)
         )
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
 

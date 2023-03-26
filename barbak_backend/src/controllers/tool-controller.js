@@ -48,8 +48,8 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('tools', toolInfo)))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' })
         else if (
-            (toolInfo.model === 'Verified Tool' && await VerifiedTool.exists({ name, _id: { $ne: tool_id } })) ||
-            (toolInfo.model === 'User Tool' && await UserTool.exists({ user: req.user._id, name, _id: { $ne: tool_id } }))
+            (toolInfo.model === 'User Tool' && await UserTool.exists({ user: req.user._id, name, _id: { $ne: tool_id } })) ||
+            (toolInfo.model === 'Verified Tool' && await VerifiedTool.exists({ name, _id: { $ne: tool_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
         

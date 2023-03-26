@@ -8,10 +8,19 @@ async function defineUserAbilities(user) {
         update: ['put','patch']
     });
 
-    const {role_id} = await executeSqlQuery('SELECT id AS role_id FROM user_roles WHERE name = ? LIMIT 1;', [user ? user.role : 'guest'])
-        .then(res => res[0] ?? res);
-    const userPermissions = await executeSqlQuery('SELECT * FROM role_permissions WHERE role_id = ? OR role_id IS NULL;', [role_id]);
-    
+    const userPermissions = await executeSqlQuery(`
+        SELECT 
+            role_permissions.action, 
+            role_permissions.subject, 
+            role_permissions.fields, 
+            role_permissions.conditions,
+            role_permissions.inverted,
+            role_permissions.role_id
+        FROM user_roles
+        JOIN role_permissions ON user_roles.id = role_permissions.role_id OR role_id IS NULL
+        WHERE user_roles.name = ?;
+    `, [user?.role ?? 'guest']);
+
     var jsonPermissions = [];
     for (const permission of userPermissions) {
         var formattedConditions = null;
@@ -32,7 +41,7 @@ async function defineUserAbilities(user) {
             inverted: permission.inverted,
         });
     }
-    // console.log(jsonPermissions)     // debugging
+    // console.log(jsonPermissions.filter(item => true))     // debugging
     return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
 }
 
