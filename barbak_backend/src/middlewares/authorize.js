@@ -32,7 +32,7 @@ async function defineUserAbilities(user) {
             inverted: permission.inverted,
         });
     }
-    // console.log(jsonPermissions)
+    // console.log(jsonPermissions)     // debugging
     return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
 }
 

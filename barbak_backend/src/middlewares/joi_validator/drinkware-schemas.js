@@ -35,20 +35,32 @@ const idValidation = Joi.object({
     drinkware_id: mongoIdSchema.required()
 });
 
-const searchValidation = Joi.object({
-    query: querySchema.default(''),
+const clientDrinkwareValidation = Joi.object({
     page: pageSchema.default(1),
     page_size: pageSizeSchema.default(10),
     ordering: orderingSchema.default('')
 });
 
+const searchValidation = clientDrinkwareValidation.concat(Joi.object({
+    query: querySchema.default('')
+}));
+
 module.exports = {
+    // Create Routes
     '/drinkware/create': createValidation,
     '/drinkware/copy': idValidation,
+
+    // Read Routes
     '/drinkware': idValidation,
     '/drinkware/search': searchValidation,
+    '/drinkware/@me': clientDrinkwareValidation,
+
+    // Update Routes
     '/drinkware/update/cover/upload': idValidation,
     '/drinkware/update/cover/remove': idValidation,
     '/drinkware/update/info': updateValidation,
-    '/drinkware/update/privacy': idValidation
+    '/drinkware/update/privacy': idValidation,
+
+    // Delete Routes
+    '/drinkware/delete': idValidation
 };

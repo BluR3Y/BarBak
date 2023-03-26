@@ -298,17 +298,14 @@ module.exports.search = async (req, res) => {
 
 module.exports.clientDrinkware = async (req, res) => {
     try {
-        const page = req.query.page || 1;
-        const page_size = req.query.page_size || 10;
-        const ordering = req.query.ordering ? JSON.parse(req.query.ordering) : [];
-
+        const { page, page_size, ordering } = req.query;
         const userDocuments = await UserDrinkware
             .find({ user: req.user._id })
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
             .extendedInfo();
-            
+
         res.status(200).send(userDocuments);
     } catch(err) {
         res.status(500).send(err);

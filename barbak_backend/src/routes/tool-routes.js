@@ -16,5 +16,5 @@ module.exports.connect = function(router) {
     router.patch('/tools/update/cover/upload', imageUpload.single('tool_cover'), joiValidator, toolController.uploadCover);
     router.patch('/tools/update/cover/remove/:tool_id', joiValidator, toolController.deleteCover);
 
-    router.delete('/tools/delete', joiValidator, toolController.delete);
+    router.delete('/tools/delete/:tool_id', joiValidator, toolController.delete);
 }

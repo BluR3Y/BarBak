@@ -8,7 +8,7 @@ module.exports.connect = function(router) {
     router.post('/drinkware/create/copy/:drinkware_id', joiValidator, drinkwareController.copy);
 
     router.get('/drinkware/search', joiValidator, drinkwareController.search);
-    router.get('/drinkware/@me', auth.sessionAuthenticationRequired, drinkwareController.clientDrinkware);
+    router.get('/drinkware/@me', auth.sessionAuthenticationRequired, joiValidator, drinkwareController.clientDrinkware);
     router.get('/drinkware/:drinkware_id', joiValidator, drinkwareController.getDrinkware);
 
     router.patch('/drinkware/update/cover/upload', imageUpload.single('drinkware_cover'), joiValidator, drinkwareController.uploadCover);

@@ -36,27 +36,18 @@ const orderingSchema = Joi.string().custom((value, helpers) => {
     }
 });
 
+const idValidation = Joi.object({
+    tool_id: mongoIdSchema.required()
+});
+
 const createValidation = Joi.object({
     name: nameSchema.required(),
     description: descriptionSchema.required(),
-    category: categoriesSchema.required(),
+    category: categorySchema.required(),
     verified: Joi.bool().default(false)
 });
 
-const updateValidation = Joi.object({
-    tool_id: mongoIdSchema.required(),
-    name: nameSchema.required(),
-    description: descriptionSchema.required(),
-    category: categorySchema.required()
-});
-
-const searchValidation = Joi.object({
-    query: querySchema.default(''),
-    page: pageSchema.default(1),
-    page_size: pageSizeSchema.default(10),
-    ordering: orderingSchema.default(''),
-    categories: categoriesSchema.default([])
-});
+const updateValidation = createValidation.concat(idValidation);
 
 const clientToolValidation = Joi.object({
     page: pageSchema.default(1),
@@ -65,9 +56,26 @@ const clientToolValidation = Joi.object({
     categories: categoriesSchema.default([])
 });
 
+const searchValidation = clientToolValidation.concat(Joi.object({
+    query: querySchema.default('')
+}));
+
 module.exports = {
+    // Create Routes
     '/tools/create': createValidation,
-    '/tools/update': updateValidation,
+    '/tools/create/copy': idValidation,
+    
+    // Read Routes
     '/tools/search': searchValidation,
-    '/tools/@me': clientToolValidation
+    '/tools/@me': clientToolValidation,
+    '/tools': idValidation,
+    
+    // Update Routes
+    '/tools/update/info': updateValidation,
+    '/tools/update/privacy': idValidation,
+    '/tools/update/cover/upload': idValidation,
+    '/tools/update/cover/remove': idValidation,
+
+    // Delete Routes
+    'tools/delete': idValidation
 };
