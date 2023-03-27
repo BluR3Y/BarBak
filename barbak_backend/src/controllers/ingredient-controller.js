@@ -307,6 +307,7 @@ module.exports.search = async (req, res) => {
                     ]
                 }
             )
+            .categoryFilter(category_filter)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
@@ -321,9 +322,15 @@ module.exports.search = async (req, res) => {
 
 module.exports.clientIngredients = async (req, res) => {
     try {
-        const { page, page_size, ordering } = req.query;
+        const { page, page_size, ordering, category_filter } = req.query;
+        const { isValid, errors } = await Ingredient.validateCategories(category_filter);
+
+        if (!isValid)
+            return res.status(400).send({ category_filter: errors });
+
         const userDocuments = await UserIngredient
             .find({ user: req.user._id })
+            .categoryFilter(category_filter)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)

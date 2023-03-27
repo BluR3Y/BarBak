@@ -46,9 +46,16 @@ ingredientSchema.query.extendedInfo = function() {
 ingredientSchema.query.categoryFilter = function(filters) {
     const conditions = [];
 
-    for (const category in filters)
-        conditions.push({ category, sub_category: { $in: filters[category] } });
-    return this.or(conditions);
+    for (const category in filters) {
+        const formatted = { category };
+        const sub_category = filters[category];
+
+        if (sub_category.length)
+            formatted.sub_category = { $in: filters[category] };
+        conditions.push(formatted);
+    }
+
+    return conditions.length ? this.where({ $or: conditions }) : this;
 }
 
 ingredientSchema.statics = {
@@ -88,7 +95,7 @@ ingredientSchema.statics = {
             `, [key]);
             if (!categoryCount) {
                 errors[key] = { category: { type: 'valid', message: 'Invalid ingredient category' } };
-                return;
+                continue;
             }
 
             const values = Array.isArray(categories[key]) ? categories[key] : [categories[key]];
@@ -113,12 +120,12 @@ ingredientSchema.statics = {
 
 ingredientSchema.methods.customValidate = async function() {
     const { category, sub_category } = this;
-    const { isValid, errors } = await this.constructor.validateCategories(category, sub_category);
+    const { isValid, errors } = await this.constructor.validateCategories({ [category]: sub_category });
 
     if (!isValid) {
         const error = new Error();
         error.name = 'CustomValidationError';
-        error.errors = errors['category'] ? errors : { sub_category: errors['sub_categories'][0] };
+        error.errors = errors[category];
         throw error;
     }
 }
