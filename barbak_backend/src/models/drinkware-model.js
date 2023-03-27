@@ -38,7 +38,6 @@ drinkwareSchema.statics.formatCoverImage = function(filepath) {
     const { HOSTNAME, PORT } = process.env;
     if (!filepath) {
         const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
-        // filepath = defaultCover[0] ? `assets/default/${defaultCover}` : null;
         if (defaultCover.length)
             filepath = `assets/default/${defaultCover}`;
     }

@@ -31,13 +31,15 @@ module.exports.create = async (req, res) => {
     } catch(err) {
         if (err.name === 'ValidationError')
             return res.status(400).send(err);
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
 module.exports.update = async (req, res) => {
     try {
-        const { drinkware_id, name, description } = req.body;
+        const { name, description } = req.body;
+        const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
@@ -59,7 +61,8 @@ module.exports.update = async (req, res) => {
     } catch(err) {
         if (err.name === 'ValidationError')
             return res.status(400).send(err);
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -83,7 +86,8 @@ module.exports.delete = async (req, res) => {
         await drinkwareInfo.remove();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -101,13 +105,14 @@ module.exports.updatePrivacy = async (req, res) => {
         await drinkwareInfo.save();
         res.status(200).send(drinkwareInfo);
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
 module.exports.uploadCover = async (req, res) => {
     try {
-        const { drinkware_id } = req.body;
+        const { drinkware_id } = req.params;
         const drinkwareCover = req.file;
 
         if (!drinkwareCover)
@@ -153,11 +158,12 @@ module.exports.uploadCover = async (req, res) => {
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     } finally {
         if (req.file) {
             await fileOperations.deleteSingle(req.file.path)
-            .catch(err => console.error(err));  // Log error
+            .catch(err => console.error(err));
         }
     }
 }
@@ -190,7 +196,8 @@ module.exports.deleteCover = async (req, res) => {
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -245,7 +252,8 @@ module.exports.copy = async (req, res) => {
         await createdDrinkware.save();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -261,7 +269,8 @@ module.exports.getDrinkware = async (req, res) => {
 
         res.status(200).send(drinkwareInfo.basicStripExcess());
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -292,7 +301,8 @@ module.exports.search = async (req, res) => {
 
         res.status(200).send(searchDocuments);
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -308,6 +318,7 @@ module.exports.clientDrinkware = async (req, res) => {
 
         res.status(200).send(userDocuments);
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }

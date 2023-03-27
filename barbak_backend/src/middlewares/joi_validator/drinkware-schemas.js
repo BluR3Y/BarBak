@@ -1,66 +1,67 @@
 const Joi = require('joi');
 
-const mongoIdSchema =  Joi.string().hex().length(24).required();
-const nameSchema = Joi.string().lowercase().min(3).max(30).pattern(new RegExp(/^[A-Za-z0-9\- ]+$/));
-const descriptionSchema = Joi.string().max(600);
-
-// search
-const querySchema = Joi.string().max(30);
-const pageSchema = Joi.number().min(1).max(100);
-const pageSizeSchema = Joi.number().min(1).max(20);
-const orderingSchema = Joi.string().custom((value, helpers) => {
-    try {
-        const parsedValue = JSON.parse(value);
-        if (typeof parsedValue !== 'object')
-            throw new Error();
-        return parsedValue;
-    } catch(err) {
-        return helpers.error('any.invalid');
-    }
-});
-
-const createValidation = Joi.object({
-    name: nameSchema.required(),
-    description: descriptionSchema.required(),
-    verified: Joi.bool().default(false)
-});
-
-const updateValidation = Joi.object({
-    drinkware_id: mongoIdSchema.required(),
-    name: nameSchema.required(),
-    description: descriptionSchema
-});
+const {
+    mongoIdSchema, 
+    nameSchema,
+    descriptionSchema,
+    querySchema,
+    pageSchema,
+    pageSizeSchema,
+    orderingSchema
+} = require('./shared-schemas');
 
 const idValidation = Joi.object({
     drinkware_id: mongoIdSchema.required()
 });
 
-const clientDrinkwareValidation = Joi.object({
-    page: pageSchema.default(1),
-    page_size: pageSizeSchema.default(10),
-    ordering: orderingSchema.default('')
-});
+const createValidation = {
+    body: Joi.object({
+        name: nameSchema.required(),
+        description: descriptionSchema.required(),
+        verified: Joi.bool().default(false)
+    })
+};
 
-const searchValidation = clientDrinkwareValidation.concat(Joi.object({
-    query: querySchema.default('')
-}));
+const clientDrinkwareValidation = {
+    query: Joi.object({
+        page: pageSchema.default(1),
+        page_size: pageSizeSchema.default(10),
+        ordering: orderingSchema.default('')
+    })
+};
+
+const searchValidation = {
+    query: clientDrinkwareValidation.query.concat(Joi.object({
+        query: querySchema.default('')
+    }))
+};
+
+const updateValidation = {
+    params: idValidation,
+    body: Joi.object({
+        drinkware_id: mongoIdSchema.required(),
+        name: nameSchema.required(),
+        description: descriptionSchema
+    })
+};
 
 module.exports = {
-    // Create Routes
-    '/drinkware/create': createValidation,
-    '/drinkware/copy': idValidation,
-
-    // Read Routes
-    '/drinkware': idValidation,
-    '/drinkware/search': searchValidation,
-    '/drinkware/@me': clientDrinkwareValidation,
-
-    // Update Routes
-    '/drinkware/update/cover/upload': idValidation,
-    '/drinkware/update/cover/remove': idValidation,
-    '/drinkware/update/info': updateValidation,
-    '/drinkware/update/privacy': idValidation,
-
-    // Delete Routes
-    '/drinkware/delete': idValidation
+    post: {
+        '/drinkware': createValidation,
+        '/drinkware/copy/:drinkware_id': { params: idValidation }
+    },
+    get: {
+        '/drinkware/@me': clientDrinkwareValidation,
+        '/drinkware/search': searchValidation,
+        '/drinkware/:drinkware_id': { params: idValidation },
+    },
+    patch: {
+        '/drinkware/cover/upload/:drinkware_id': { params: idValidation },
+        '/drinkware/cover/remove/:drinkware_id': { params: idValidation },
+        '/drinkware/privacy/:drinkware_id': { params: idValidation },
+        '/drinkware/:drinkware_id': updateValidation,
+    },
+    delete: {
+        '/drinkware/:drinkware_id': { params: idValidation }
+    }
 };

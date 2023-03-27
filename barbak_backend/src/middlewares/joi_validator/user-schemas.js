@@ -1,6 +1,6 @@
 const Joi = require('joi');
+const { mongoIdSchema } = require('./shared-schemas');
 
-const mongoIdSchema =  Joi.string().hex().length(24).required();
 const usernameSchema = Joi.string().lowercase().min(6).max(30).pattern(new RegExp('^[a-zA-Z0-9_.-]*$'));
 
 const getUserValidator = Joi.object({
@@ -12,6 +12,10 @@ const changeUsernameValidator = Joi.object({
 });
 
 module.exports = {
-    '/users': getUserValidator,
-    '/users/update/username': changeUsernameValidator
+    get: {
+        '/users/:user_id': { params: getUserValidator },
+    },
+    patch: {
+        '/users/username': { body: changeUsernameValidator }
+    }
 };

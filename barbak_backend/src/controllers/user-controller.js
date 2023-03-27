@@ -8,7 +8,8 @@ module.exports.clientInfo = async (req, res) => {
         const userInfo = await User.findOne({ _id: req.user._id });
         res.status(200).send(userInfo.basicStripExcess());
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -23,13 +24,14 @@ module.exports.getUser = async (req, res) => {
 
         res.status(200).send(userInfo.extendedStripExcess());
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
 module.exports.uploadProfileImage = async (req, res) => {
-    const profileImage = req.file;
     try {
+        const profileImage = req.file;
         if (!profileImage)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'Image was not provided' });
         
@@ -43,11 +45,12 @@ module.exports.uploadProfileImage = async (req, res) => {
         await userInfo.save();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     } finally {
-        if (profileImage) {
-            fileOperations.deleteSingle(profileImage.path)
-            .catch(err => console.log(err));    // Log Error
+        if (req.file) {
+            fileOperations.deleteSingle(req.file.path)
+            .catch(err => console.error(err));
         }
     }
 }
@@ -63,7 +66,8 @@ module.exports.removeProfileImage = async (req, res) => {
         await userInfo.save();
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -76,6 +80,7 @@ module.exports.changeUsername = async (req, res) => {
         await User.findOneAndUpdate({ _id: req.user._id },{ username });
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }

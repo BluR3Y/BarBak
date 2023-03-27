@@ -26,8 +26,10 @@ const loginValidation = Joi.object({
 });
 
 module.exports = {
-    '/account/register': firstRegistrationValidation,
-    '/account/register/validate': secondRegistrationValidation,
-    '/account/register/username': thirdRegistrationValidation,
-    '/account/login': loginValidation,
-};
+    post: {
+        '/account/login': { body: loginValidation },
+        '/account/register': { body: firstRegistrationValidation },
+        '/account/register/validate/:registration_code': { params: secondRegistrationValidation },
+        '/account/register/username': { body: thirdRegistrationValidation },
+    }
+}

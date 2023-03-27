@@ -7,13 +7,13 @@ module.exports.connect = function(router) {
     router.post('/drinkware', joiValidator, drinkwareController.create);
     router.post('/drinkware/copy/:drinkware_id', joiValidator, drinkwareController.copy);
 
-    router.get('/drinkware/search', joiValidator, drinkwareController.search);
     router.get('/drinkware/@me', auth.sessionAuthenticationRequired, joiValidator, drinkwareController.clientDrinkware);
+    router.get('/drinkware/search', joiValidator, drinkwareController.search);
     router.get('/drinkware/:drinkware_id', joiValidator, drinkwareController.getDrinkware);
 
-    router.patch('/drinkware/cover/upload', imageUpload.single('drinkware_cover'), joiValidator, drinkwareController.uploadCover);
+    router.patch('/drinkware/cover/upload/:drinkware_id', imageUpload.single('drinkware_cover'), joiValidator, drinkwareController.uploadCover);
     router.patch('/drinkware/cover/remove/:drinkware_id', joiValidator, drinkwareController.deleteCover);
-    router.patch('/drinkware/info', joiValidator, drinkwareController.update);
+    router.patch('/drinkware/:drinkware_id', joiValidator, drinkwareController.update);
     router.patch('/drinkware/privacy/:drinkware_id', joiValidator, drinkwareController.updatePrivacy);
 
     router.delete('/drinkware/:drinkware_id', joiValidator, drinkwareController.delete);

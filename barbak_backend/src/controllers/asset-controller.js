@@ -1,5 +1,4 @@
 const s3Operations = require('../utils/aws-s3-operations');
-const mongoose = require('mongoose');
 const { AppAccessControl } = require('../models/access-control-model');
 
 module.exports.public = async (req, res) => {
@@ -11,7 +10,8 @@ module.exports.public = async (req, res) => {
     } catch(err) {
         if (err.statusCode === 404) 
             return res.status(404).send({ path: 'file', type: 'exist', message: 'file does not exist' });
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -29,6 +29,7 @@ module.exports.private = async (req, res) => {
         res.setHeader('Content-Type', fileData.ContentType);
         res.send(fileData.Body);
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }

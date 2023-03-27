@@ -37,7 +37,7 @@ emailQueue.process(async (job, done) => {
 });
 
 emailQueue.on('failed', (job, err) => {
-    console.error(err); // Log errors
+    console.error(err);
 });
 
 module.exports = sendEmail;

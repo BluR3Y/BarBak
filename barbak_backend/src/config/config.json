@@ -1,0 +1,18 @@
+{
+    "allowedFileFormats": {
+        "images": [
+            "jpeg",
+            "png",
+            "jpg",
+            "gif",
+            "bmp",
+            "webp"
+        ],
+        "videos": [
+            "mp4",
+            "webm",
+            "mov",
+            "avi"
+        ]
+    }
+}

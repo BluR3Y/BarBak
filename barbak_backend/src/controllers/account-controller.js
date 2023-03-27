@@ -6,7 +6,10 @@ module.exports.login = auth.authenticate.localLogin;
 
 module.exports.logout = async (req, res) => {
     req.session.destroy((err) => {
-        if (err) return res.status(500).send(err);
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal server error');
+        }
         res.status(204).send();
     });
 }
@@ -27,7 +30,8 @@ module.exports.register = async (req, res) => {
         await User.sendRegistrationCode(req.sessionID, email);
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -46,7 +50,8 @@ module.exports.resendRegistrationCode = async (req, res) => {
         await User.sendRegistrationCode(req.sessionID, registrationInfo.email);
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -58,14 +63,15 @@ module.exports.validateRegistrationCode = async (req, res) => {
         else if (verifiedAccount === true)
             return res.status(401).send({ path: 'registration', type: 'valid', message: 'Registration code has already been provided' });
 
-        const { registration_code } = req.body;
+        const { registration_code } = req.params;
         if (!await User.validateRegistrationCode(req.sessionID, registration_code))
             return res.status(401).send({ path: 'code', type: 'valid', message: 'Registration Code is invalid' });
         req.session.verifiedAccount = true;
 
         res.status(204).send();
     } catch(err) {
-        res.send(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -123,7 +129,8 @@ module.exports.usernameSelection = async (req, res) => {
             })
             return res.status(400).send(errors);
         }
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -132,6 +139,7 @@ module.exports.togglePrivacy = async (req, res) => {
         await User.findOneAndUpdate({ _id: req.user._id },{ privacy: req.user.privacy === 'private' ? 'public' : 'private' });
         res.status(204).send();
     } catch(err) {
-        res.status(500).send(err);
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }

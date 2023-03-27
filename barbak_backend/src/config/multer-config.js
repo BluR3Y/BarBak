@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const basePath = './uploads';
+const { allowedFileFormats } = require('./config.json');
 
 module.exports.imageUpload = multer({
     storage: multer.diskStorage({
@@ -21,12 +22,11 @@ module.exports.imageUpload = multer({
         }
     }),
     fileFilter: function(req, file, cb) {
-        const supportedFormats = ['jpeg', 'png', 'gif', 'bmp', 'webp'];
         const mime = file.mimetype.split('/');
         const type = mime[0];
         const subType = mime[1];
 
-        if (type !== 'image' || !supportedFormats.includes(subType))
+        if (type !== 'image' || !allowedFileFormats.images.includes(subType))
             return cb(new multer.MulterError('Unsupported File Format'));
         cb (null, true);
     },
@@ -53,12 +53,11 @@ module.exports.videoUpload = multer({
         }
     }),
     fileFilter: function(req, file, cb) {
-        const supportedFormats = ['mp4','webm','mov','avi'];
         const mime = file.mimetype.split('/');
         const type = mime[0];
         const subType = mime[1];
 
-        if (type !== 'video' || !supportedFormats.includes(subType))
+        if (type !== 'video' || !allowedFileFormats.videos.includes(subType))
             return cb(new multer.MulterError('Unsupported File Format'));
         cb (null, true);
     },
