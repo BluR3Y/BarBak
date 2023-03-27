@@ -198,6 +198,8 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
+            category: this.category,
+            sub_category: this.sub_category,
             cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
             date_created: this.date_created,
             public: this.public
@@ -209,6 +211,8 @@ userSchema.methods = {
             user: this.user,
             name: this.name,
             description: this.description,
+            category: this.category,
+            sub_category: this.sub_category,
             cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
         };
     }

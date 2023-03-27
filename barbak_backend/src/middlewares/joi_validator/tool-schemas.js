@@ -51,15 +51,15 @@ module.exports = {
     get: {
         '/tools/@me': { query: clientToolValidation },
         '/tools/search': { query: searchValidation },
-        '/tools': { params: idValidation }
-    },
-    patch: {
-        '/tools/privacy': { params: idValidation },
-        '/tools/cover/upload/:tool_id': { params: idValidation },
-        '/tools/cover/remove/:tool_id': { params: idValidation },
         '/tools/:tool_id': { params: idValidation }
     },
+    patch: {
+        '/tools/privacy/:tool_id': { params: idValidation },
+        '/tools/cover/upload/:tool_id': { params: idValidation },
+        '/tools/cover/remove/:tool_id': { params: idValidation },
+        '/tools/:tool_id': updateValidation
+    },
     delete: {
-        '/tools/:tool_id': { updateValidation }
+        '/tools/:tool_id': { params: idValidation }
     }
 }

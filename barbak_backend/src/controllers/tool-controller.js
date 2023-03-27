@@ -58,9 +58,11 @@ module.exports.update = async (req, res) => {
         toolInfo.name = name;
         toolInfo.description = description;
         toolInfo.category = category;
-
+        
         await toolInfo.validate();
         await toolInfo.customValidate();
+        await toolInfo.save();
+
         res.status(204).send();
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')

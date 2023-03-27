@@ -51,7 +51,7 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('ingredients', ingredientInfo)))
             return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
         else if (
-            (ingredientInfo.model === 'User Ingredient' && await UserIngredient.exists({ user: req.user._id, _id: { $ne: ingredient_id } })) ||
+            (ingredientInfo.model === 'User Ingredient' && await UserIngredient.exists({ user: req.user._id, name, _id: { $ne: ingredient_id } })) ||
             (ingredientInfo.model === 'Verified Ingredient' && await VerifiedIngredient.exists({ name, _id: { $ne: ingredient_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
@@ -121,7 +121,7 @@ module.exports.uploadCover = async (req, res) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientCover = req.file;
-        console.log('marker')
+
         if (!ingredientCover)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
 

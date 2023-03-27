@@ -13,8 +13,8 @@ module.exports.connect = function(router) {
 
     router.patch('/drinkware/cover/upload/:drinkware_id', imageUpload.single('drinkware_cover'), joiValidator, drinkwareController.uploadCover);
     router.patch('/drinkware/cover/remove/:drinkware_id', joiValidator, drinkwareController.deleteCover);
-    router.patch('/drinkware/:drinkware_id', joiValidator, drinkwareController.update);
     router.patch('/drinkware/privacy/:drinkware_id', joiValidator, drinkwareController.updatePrivacy);
+    router.patch('/drinkware/:drinkware_id', joiValidator, drinkwareController.update);
 
     router.delete('/drinkware/:drinkware_id', joiValidator, drinkwareController.delete);
 }

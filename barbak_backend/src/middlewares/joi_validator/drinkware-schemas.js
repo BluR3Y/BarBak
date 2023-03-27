@@ -39,7 +39,6 @@ const searchValidation = {
 const updateValidation = {
     params: idValidation,
     body: Joi.object({
-        drinkware_id: mongoIdSchema.required(),
         name: nameSchema.required(),
         description: descriptionSchema
     })
