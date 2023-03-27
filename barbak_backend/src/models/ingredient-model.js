@@ -43,6 +43,14 @@ ingredientSchema.query.extendedInfo = function() {
     });
 }
 
+ingredientSchema.query.categoryFilter = function(filters) {
+    const conditions = [];
+
+    for (const category in filters)
+        conditions.push({ category, sub_category: { $in: filters[category] } });
+    return this.or(conditions);
+}
+
 ingredientSchema.statics = {
     formatCoverImage: function(filepath) {
         const { HOSTNAME, PORT } = process.env;
@@ -66,41 +74,40 @@ ingredientSchema.statics = {
         `, [category]);
         return (await subCategories.map(item => item.name));
     },
-    validateCategories: async function(category, subCategories) {
-        let errors = {};
-        let isValid = true;
+    validateCategories: async function(categories) {
+        const errors = {};
+        
+        if (typeof categories !== 'object')
+            categories = { [categories]: [] };
 
-        if (!Array.isArray(subCategories))
-            subCategories = [subCategories];
-
-        const [{ categoryCount }] = await executeSqlQuery(`
-            SELECT COUNT(*) AS categoryCount
-            FROM ingredient_categories
-            WHERE name = ? LIMIT 1;
-        `, [category]);
-        if (!categoryCount) {
-            errors['category'] = { type: 'valid', message: 'Invalid ingredient category' };
-            isValid = false;
-            return { isValid, errors };
-        }
-
-        for (const index in subCategories) {
-            const [{ subCount }] = await executeSqlQuery(`
-                SELECT COUNT(*) AS subCount
+        for (const key in categories) {
+            const [{ categoryCount }] = await executeSqlQuery(`
+                SELECT COUNT(*) AS categoryCount
                 FROM ingredient_categories
-                JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
-                WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? LIMIT 1;
-            `, [category, subCategories[index]]);
-            if (!subCount) {
-                errors[index] = { type: 'valid', message: 'Invalid ingredient sub-category' };
-                isValid = false;
+                WHERE name = ? LIMIT 1;
+            `, [key]);
+            if (!categoryCount) {
+                errors[key] = { category: { type: 'valid', message: 'Invalid ingredient category' } };
+                return;
             }
+
+            const values = Array.isArray(categories[key]) ? categories[key] : [categories[key]];
+            await Promise.all(values.map(async subCategory => {
+                const [{ subCount }] = await executeSqlQuery(`
+                    SELECT COUNT(*) AS subCount
+                    FROM ingredient_categories
+                    JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+                    WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? LIMIT 1;
+                `, [key, subCategory]);
+                if (!subCount) {
+                    if (!errors[key]?.['sub_categories'])
+                        errors[key] = { sub_categories: {} };
+                    errors[key].sub_categories[subCategory] = { type: 'valid', message: 'Invalid ingredient sub-category' };
+                }
+            }));
         }
 
-        if (!isValid)
-            errors = { sub_categories: errors };
-
-        return { isValid, errors };
+        return { isValid: !Object.keys(errors).length, errors };
     }
 }
 
@@ -136,6 +143,8 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
+            category: this.category,
+            sub_category: this.sub_category,
             cover: this.constructor.formatCoverImage(this.cover),
             date_verified: this.date_verified
         };
@@ -145,6 +154,8 @@ verifiedSchema.methods = {
             _id: this._id,
             name: this.name,
             description: this.description,
+            category: this.category,
+            sub_category: this.sub_category,
             cover: this.constructor.formatCoverImage(this.cover),
         };
     }

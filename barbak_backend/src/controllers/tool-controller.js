@@ -282,10 +282,10 @@ module.exports.getTool = async (req, res) => {
 module.exports.search = async (req, res) => {
     try {
         const { query, page, page_size, ordering, categories } = req.query;
-        const categoryValidation = await Tool.validateCategories(categories);
+        const { isValid, errors } = await Tool.validateCategories(categories);
 
-        if (!categoryValidation.isValid)
-            return res.status(400).send({ categories: categoryValidation.errors });
+        if (!isValid)
+            return res.status(400).send({ categories: errors });
 
         const searchDocuments = await Tool
             .find({ name: { $regex: query } })
@@ -319,10 +319,10 @@ module.exports.search = async (req, res) => {
 module.exports.clientTools = async (req, res) => {
     try {
         const { page, page_size, ordering, categories } = req.query;
-        const categoryValidation = await Tool.validateCategories(categories);
+        const { isValid, errors } = await Tool.validateCategories(categories);
         
-        if (!categoryValidation.isValid)
-            return res.status(400).send({ categories: categoryValidation.errors });
+        if (!isValid)
+            return res.status(400).send({ categories: errors });
 
         const userDocuments = await UserTool
             .find({ user: req.user._id })

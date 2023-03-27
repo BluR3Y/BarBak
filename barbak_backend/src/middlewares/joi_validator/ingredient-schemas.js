@@ -10,6 +10,18 @@ const {
 } = require('./shared-schemas');
 
 const categorySchema = Joi.string().lowercase().max(30).pattern(new RegExp(/^[a-zA-Z]+$/));
+const categoryFilterSchema = Joi.string().custom((value, helpers) => {
+    try {
+        const parsedValue = JSON.parse(value);
+        if (typeof parsedValue !== 'object')
+            return helpers.error('any.invalid');
+        else if (Object.keys(parsedValue).length > 10)
+            return helpers.error('max.items');
+        return parsedValue;
+    } catch(err) {
+        return helpers.error('any.invalid');
+    }
+});
 
 const idValidation = Joi.object({
     ingredient_id: mongoIdSchema.required()
@@ -37,7 +49,7 @@ const clientIngredientValidation = Joi.object({
     page: pageSchema.default(1),
     page_size: pageSizeSchema.default(10),
     ordering: orderingSchema.default(''),
-    categoryFilter: Joi.string().default('')       // Temporary
+    category_filter: categoryFilterSchema.default(null)       // Temporary
 })
 
 const searchValidation = clientIngredientValidation.concat(Joi.object({

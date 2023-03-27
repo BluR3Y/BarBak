@@ -284,7 +284,12 @@ module.exports.getIngredient = async (req, res) => {
 
 module.exports.search = async (req, res) => {
     try {
-        const { query, page, page_size, ordering } = req.query;
+        const { query, page, page_size, ordering, category_filter } = req.query;
+        const { isValid, errors } = await Ingredient.validateCategories(category_filter);
+
+        if (!isValid)
+            return res.status(400).send({ category_filter: errors });
+
         const searchDocuments = await Ingredient
             .find({ name: { $regex: query } })
             .where(req.user ?
