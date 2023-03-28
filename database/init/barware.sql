@@ -1,21 +1,6 @@
 CREATE DATABASE barbak;
 USE barbak;
 
--- Users
-
-CREATE TABLE user_roles (
-    `id` INT(6) NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(50) NOT NULL,
-    PRIMARY KEY (`id`)
-);
-
-INSERT INTO user_roles (`name`) VALUES
-    ('admin'),
-    ('editor'),
-    ('user'),
-    ('guest')
-;
-
 -- Tools
 
 CREATE TABLE tool_categories (
@@ -166,47 +151,47 @@ INSERT INTO ingredient_sub_categories (`category_id`, `name`, `measure_state`) V
     (@liquor_category_id, 'tequila', 'volume'),
     (@liquor_category_id, 'brandy', 'volume'),
 
-    ((@liqueur_category_id), 'orange', 'volume'),
-    ((@liqueur_category_id), 'coffee', 'volume'),
-    ((@liqueur_category_id), 'cream', 'volume'),
-    ((@liqueur_category_id), 'nut', 'volume'),
-    ((@liqueur_category_id), 'herb', 'volume'),
-    ((@liqueur_category_id), 'fruit', 'volume'),
+    (@liqueur_category_id, 'orange', 'volume'),
+    (@liqueur_category_id, 'coffee', 'volume'),
+    (@liqueur_category_id, 'cream', 'volume'),
+    (@liqueur_category_id, 'nut', 'volume'),
+    (@liqueur_category_id, 'herb', 'volume'),
+    (@liqueur_category_id, 'fruit', 'volume'),
 
-    ((@beer_category_id), 'lager', 'volume'),
-    ((@beer_category_id), 'ale', 'volume'),
-    ((@beer_category_id), 'wheat', 'volume'),
-    ((@beer_category_id), 'stout', 'volume'),
-    ((@beer_category_id), 'porter', 'volume'),
-    ((@beer_category_id), 'sour', 'volume'),
-    ((@beer_category_id), 'belgia', 'volume'),
+    (@beer_category_id, 'lager', 'volume'),
+    (@beer_category_id, 'ale', 'volume'),
+    (@beer_category_id, 'wheat', 'volume'),
+    (@beer_category_id, 'stout', 'volume'),
+    (@beer_category_id, 'porter', 'volume'),
+    (@beer_category_id, 'sour', 'volume'),
+    (@beer_category_id, 'belgia', 'volume'),
 
-    ((@wine_category_id), 'red', 'volume'),
-    ((@wine_category_id), 'white', 'volume'),
-    ((@wine_category_id), 'rosé', 'volume'),
-    ((@wine_category_id), 'sparkling', 'volume'),
-    ((@wine_category_id), 'fortified', 'volume'),
+    (@wine_category_id, 'red', 'volume'),
+    (@wine_category_id, 'white', 'volume'),
+    (@wine_category_id, 'rosé', 'volume'),
+    (@wine_category_id, 'sparkling', 'volume'),
+    (@wine_category_id, 'fortified', 'volume'),
 
-    ((@mixer_category_id), 'juice', 'volume'),
-    ((@mixer_category_id), 'syrup', 'volume'),
-    ((@mixer_category_id), 'soda', 'volume'),
-    ((@mixer_category_id), 'dairy', 'volume'),
-    ((@mixer_category_id), 'tea', 'volume'),
-    ((@mixer_category_id), 'coffee', 'volume'),
+    (@mixer_category_id, 'juice', 'volume'),
+    (@mixer_category_id, 'syrup', 'volume'),
+    (@mixer_category_id, 'soda', 'volume'),
+    (@mixer_category_id, 'dairy', 'volume'),
+    (@mixer_category_id, 'tea', 'volume'),
+    (@mixer_category_id, 'coffee', 'volume'),
 
-    ((@enhancer_category_id), 'spice', 'mass'),
-    ((@enhancer_category_id), 'herb', 'quantity'),
-    ((@enhancer_category_id), 'salt', 'mass'),
-    ((@enhancer_category_id), 'bitter', 'volume'),
+    (@enhancer_category_id, 'spice', 'mass'),
+    (@enhancer_category_id, 'herb', 'quantity'),
+    (@enhancer_category_id, 'salt', 'mass'),
+    (@enhancer_category_id, 'bitter', 'volume'),
 
-    ((@fruit_category_id), 'citrus', 'volume'),
-    ((@fruit_category_id), 'berry', 'volume'),
-    ((@fruit_category_id), 'melon', 'volume'),
-    ((@fruit_category_id), 'tropical', 'volume'),
-    ((@fruit_category_id), 'stone', 'volume'),
-    ((@fruit_category_id), 'pome', 'volume')
+    (@fruit_category_id, 'citrus', 'volume'),
+    (@fruit_category_id, 'berry', 'volume'),
+    (@fruit_category_id, 'melon', 'volume'),
+    (@fruit_category_id, 'tropical', 'volume'),
+    (@fruit_category_id, 'stone', 'volume'),
+    (@fruit_category_id, 'pome', 'volume'),
 
-    -- *** Insert for other ***
+    (@other_category_id, 'n/a', 'any')
 ;
 
 -- Drink
@@ -286,7 +271,7 @@ INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `o
     ('quarter', NULL, false, 'miscellaneous', NULL),
     ('shaving', NULL, false, 'quantity', NULL),
     ('slice', NULL, false, 'quantity', NULL),
-    ('third', NULL, false, 'miscellane ous',NULL),
+    ('third', NULL, false, 'miscellaneous',NULL),
     ('twist', NULL, false, 'quantity', NULL),
     ('wedge', NULL, false, 'quantity', NULL),
     ('cube', NULL, false, 'quantity', NULL),

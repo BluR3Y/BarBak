@@ -3,7 +3,7 @@ const { executeSqlQuery } = require('../config/database-config');
 
 const ingredientSchema = {
     type: [{
-        ingredient_document: {
+        referenced_document: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Ingredient',
             required: true
@@ -26,7 +26,7 @@ const ingredientSchema = {
         },
         substitutes: {
             type: [{
-                ingredient_document: {
+                referenced_document: {
                     type: mongoose.Schema.Types.ObjectId,
                     ref: 'Ingredient',
                     required: true
@@ -150,20 +150,72 @@ drinkSchema.statics = {
         const servingStyles = await executeSqlQuery(`SELECT name FROM drink_serving_styles`);
         return (await servingStyles.map(item => item.name));
     },
-    validatePreparationMethod: async function(method) {
-        const { methodCount } = await executeSqlQuery('SELECT COUNT(*) AS methodCount FROM drink_preparation_methods WHERE name = ? LIMIT 1;', [method]).then(res => res[0]);
-        return !!methodCount;
+    validatePreparationMethods: async function(methods) {
+        const errors = {};
+
+        if (!Array.isArray(methods))
+            methods = [methods];
+
+        await Promise.all(methods.map(async method => {
+            const [{ methodCount }] = await executeSqlQuery('SELECT COUNT(*) AS methodCount FROM drink_preparation_methods WHERE name = ? LIMIT 1;', [method]);
+            if (!methodCount) {
+                errors[method] = { type: 'valid', message: 'Invalid drink preparation method' };
+            }
+        }));
+
+        return { isValid: !Object.keys(errors).length, errors };
     },
-    validateServingStyle: async function(style) {
-        const { styleCount } = await executeSqlQuery('SELECT COUNT(*) AS styleCount FROM drink_serving_styles WHERE name = ? LIMIT 1;', [style]).then(res => res[0]);
-        return !!styleCount;
+    validateServingStyles: async function(styles) {
+        const errors = {};
+
+        if (!Array.isArray(styles))
+            styles = [styles];
+
+        await Promise.all(styles.map(async style => {
+            const [{ styleCount }] = await executeSqlQuery('SELECT COUNT(*) AS styleCount FROM drink_serving_styles WHERE name = ? LIMIT 1;', [style]);
+            if (!styleCount) {
+                errors[style] = { type: 'valid', message: 'Invalid drink serving style' };
+            }
+        }));
+
+        return { isValid: !Object.keys(errors).length, errors };
+    },
+    validateDrinkware: async function(drinkware) {
+        const errors = {};
+
+        if (!Array.isArray(drinkware))
+            drinkware = [drinkware];
+        
+        await Promise.all(drinkware.map(async container => {
+            // last here
+        }));
+    },
+    validateIngredients: async function(ingredients) {
+
     }
+}
+
+drinkSchema.methods.customValidate = async function() {
+    const errors = {};
+    const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
+    const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
+    const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
+    const drinkwareValidation = await this.constructor.validateDrinkware(drinkware);
+    const ingredientValidation = await this.constructor.validateIngredients(ingredients);
+
+    if (!preparationMethodValidation.isValid)
+        errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
+    if (!servingStyleValidation.isValid)
+        errors['serving_style'] = servingStyleValidation.errors[serving_style];
+
+
+    
+    if (Object.keys(errors).length)
+        throw errors;
 }
 
 const Drink = mongoose.model('Drink', drinkSchema);
 
-Drink.validateServingStyle('neat')
-.then(res => console.log(res));
 
 const verifiedSchema = new mongoose.Schema({
     assets: {

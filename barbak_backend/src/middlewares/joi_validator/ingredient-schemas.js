@@ -9,7 +9,7 @@ const {
     querySchema,
 } = require('./shared-schemas');
 
-const categorySchema = Joi.string().lowercase().max(30).pattern(new RegExp(/^[a-zA-Z]+$/));
+const categorySchema = Joi.string().lowercase().max(30).pattern(new RegExp(/^[a-zA-Z/]+$/));
 const categoryFilterSchema = Joi.string().custom((value, helpers) => {
     try {
         const parsedValue = JSON.parse(value);

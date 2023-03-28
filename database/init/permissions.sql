@@ -1,3 +1,20 @@
+-- Users
+
+CREATE TABLE user_roles (
+    `id` INT(6) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(50) NOT NULL,
+    PRIMARY KEY (`id`)
+);
+
+INSERT INTO user_roles (`name`) VALUES
+    ('admin'),
+    ('editor'),
+    ('user'),
+    ('guest')
+;
+
+-- Permissions
+
 SELECT id INTO @admin_role_id FROM user_roles WHERE name = 'admin';
 SELECT id INTO @editor_role_id FROM user_roles WHERE name = 'editor';
 SELECT id INTO @user_role_id FROM user_roles WHERE name = 'user';
@@ -49,7 +66,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
 
 	-- Drink Rules
-    (@editor_role_id, 'create', 'drinks', '{ "verifed": false }'),
+    (@editor_role_id, 'create', 'drinks', '{ "verified": false }'),
     (@editor_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
     (@editor_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
@@ -121,7 +138,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@user_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
     
     -- Drink Rules
-    (@user_role_id, 'create', 'drinks', '{ "verifed": false }'),
+    (@user_role_id, 'create', 'drinks', '{ "verified": false }'),
     (@user_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
     (@user_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
     (@user_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }')
