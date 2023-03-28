@@ -182,6 +182,7 @@ INSERT INTO ingredient_sub_categories (`category_id`, `name`, `measure_state`) V
     (@enhancer_category_id, 'spice', 'mass'),
     (@enhancer_category_id, 'herb', 'quantity'),
     (@enhancer_category_id, 'salt', 'mass'),
+    (@enhancer_category_id, 'sugar', 'mass'),
     (@enhancer_category_id, 'bitter', 'volume'),
 
     (@fruit_category_id, 'citrus', 'volume'),
@@ -191,7 +192,7 @@ INSERT INTO ingredient_sub_categories (`category_id`, `name`, `measure_state`) V
     (@fruit_category_id, 'stone', 'volume'),
     (@fruit_category_id, 'pome', 'volume'),
 
-    (@other_category_id, 'n/a', 'any')
+    (@other_category_id, 'n/a', 'all')
 ;
 
 -- Drink
@@ -238,45 +239,45 @@ INSERT INTO drink_serving_styles (`name`) VALUES
 -- Measure
 
 CREATE TABLE measure (
-    `measure_id` INT NOT NULL AUTO_INCREMENT,
+    `id` INT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(50) NOT NULL,
     `abbriviation` VARCHAR(10),
-    `is_standarized` BOOLEAN NOT NULL,
+    `is_standarized` TINYINT(1) NOT NULL,
     `measure_use` VARCHAR(50) NOT NULL,
     `ounce_equivalence` FLOAT,
-    PRIMARY KEY(`measure_id`)
+    PRIMARY KEY(`id`)
 );
 
 INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `ounce_equivalence`) VALUES 
-    ('ounce', 'oz', true, 'mass', 1),
-    ('fluid ounce', 'fl oz', true, 'volume', 1),
-    ('milliliter', 'ml', true, 'volume', 29.5735),
-    ('teaspoon', 'tsp', true, 'volume', 6),
-    ('tablespoon', 'tbsp', true, 'volume', 2),
-    ('pint', 'pt', true, 'volume', 0.0625),
-    ('liter', 'L', true, 'volume', 0.0295735),
-    ('dash', NULL, false, 'volume', NULL),
-    ('centiliter', 'cl', true, 'volume', 2.95735),
-    ('cup', 'c', true, 'volume', 0.125),
-    ('quart', 'qt', true, 'volume', 0.03125),
-    ('drop', NULL, false, 'volume', NULL),
-    ('gram', 'gm', true, 'mass', 28.3495),
-    ('milligram', 'mg', true, 'mass', 28349.5),
-    ('pound', 'lb', true, 'mass', 0.0625),
-    ('splash', NULL, false, 'volume', NULL),
-    ('part', NULL, false, 'miscellaneous', NULL),
-    ('half', NULL, false, 'miscellaneous', NULL),
-    ('leaf', NULL, false, 'quantity', NULL),
-    ('peel' ,NULL, false, 'quantity', NULL),
-    ('quarter', NULL, false, 'miscellaneous', NULL),
-    ('shaving', NULL, false, 'quantity', NULL),
-    ('slice', NULL, false, 'quantity', NULL),
-    ('third', NULL, false, 'miscellaneous',NULL),
-    ('twist', NULL, false, 'quantity', NULL),
-    ('wedge', NULL, false, 'quantity', NULL),
-    ('cube', NULL, false, 'quantity', NULL),
-    ('pinch', NULL, false, 'quantity', NULL),
-    ('scoop', NULL, false, 'quantity', NULL),
-    ('sprig', NULL, false, 'quantity', NULL),
-    ('stalk', NULL, false, 'quantity', NULL)
+    ('ounce', 'oz', 1, 'mass', 1),
+    ('fluid ounce', 'fl oz', 1, 'volume', 1),
+    ('milliliter', 'ml', 1, 'volume', 29.5735),
+    ('teaspoon', 'tsp', 1, 'volume', 6),
+    ('tablespoon', 'tbsp', 1, 'volume', 2),
+    ('pint', 'pt', 1, 'volume', 0.0625),
+    ('liter', 'L', 1, 'volume', 0.0295735),
+    ('dash', NULL, 0, 'volume', NULL),
+    ('centiliter', 'cl', 1, 'volume', 2.95735),
+    ('cup', 'c', 1, 'volume', 0.125),
+    ('quart', 'qt', 1, 'volume', 0.03125),
+    ('drop', NULL, 0, 'volume', NULL),
+    ('gram', 'gm', 1, 'mass', 28.3495),
+    ('milligram', 'mg', 1, 'mass', 28349.5),
+    ('pound', 'lb', 1, 'mass', 0.0625),
+    ('splash', NULL, 0, 'volume', NULL),
+    ('part', NULL, 0, 'miscellaneous', NULL),
+    ('half', NULL, 0, 'miscellaneous', NULL),
+    ('leaf', NULL, 0, 'quantity', NULL),
+    ('peel' ,NULL, 0, 'quantity', NULL),
+    ('quarter', NULL, 0, 'miscellaneous', NULL),
+    ('shaving', NULL, 0, 'quantity', NULL),
+    ('slice', NULL, 0, 'quantity', NULL),
+    ('third', NULL, 0, 'miscellaneous',NULL),
+    ('twist', NULL, 0, 'quantity', NULL),
+    ('wedge', NULL, 0, 'quantity', NULL),
+    ('cube', NULL, 0, 'quantity', NULL),
+    ('pinch', NULL, 0, 'quantity', NULL),
+    ('scoop', NULL, 0, 'quantity', NULL),
+    ('sprig', NULL, 0, 'quantity', NULL),
+    ('stalk', NULL, 0, 'quantity', NULL)
 ;

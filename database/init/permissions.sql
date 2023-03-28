@@ -1,3 +1,5 @@
+use barbak;
+
 -- Users
 
 CREATE TABLE user_roles (
@@ -27,7 +29,7 @@ CREATE TABLE role_permissions (
     `subject` VARCHAR(50) NOT NULL,
     `fields` JSON,
     `conditions` VARCHAR(255),
-    `inverted` BOOLEAN NOT NULL DEFAULT 0,
+    `inverted` TINYINT(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 );
 

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
+const { Drinkware } = require('./drinkware-model');
 
 const ingredientSchema = {
     type: [{
@@ -179,43 +180,10 @@ drinkSchema.statics = {
         }));
 
         return { isValid: !Object.keys(errors).length, errors };
-    },
-    validateDrinkware: async function(drinkware) {
-        const errors = {};
-
-        if (!Array.isArray(drinkware))
-            drinkware = [drinkware];
-        
-        await Promise.all(drinkware.map(async container => {
-            // last here
-        }));
-    },
-    validateIngredients: async function(ingredients) {
-
     }
 }
 
-drinkSchema.methods.customValidate = async function() {
-    const errors = {};
-    const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
-    const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
-    const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
-    const drinkwareValidation = await this.constructor.validateDrinkware(drinkware);
-    const ingredientValidation = await this.constructor.validateIngredients(ingredients);
-
-    if (!preparationMethodValidation.isValid)
-        errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
-    if (!servingStyleValidation.isValid)
-        errors['serving_style'] = servingStyleValidation.errors[serving_style];
-
-
-    
-    if (Object.keys(errors).length)
-        throw errors;
-}
-
 const Drink = mongoose.model('Drink', drinkSchema);
-
 
 const verifiedSchema = new mongoose.Schema({
     assets: {
@@ -282,6 +250,34 @@ const userSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+// User Drink can use both private(own) and public ingredients/drinkware/tools etc.
+userSchema.methods.customValidate = async function() {
+    const error = new Error();
+    error.name = 'CustomValidationError';
+    error.errors = {};
+
+    const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
+    const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
+    const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
+    // const drinkwareValidation = await this.constructor.validateDrinkware(drinkware);
+
+    if (!preparationMethodValidation.isValid)
+        error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
+    if (!servingStyleValidation.isValid)
+        error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
+
+    if (!await Drinkware.exists(drinkware))
+        error.errors['drinkware'] = { type: 'exist', message: 'Drinkware does not exist' };
+    else if (!await Drinkware.useAuthorized(drinkware, this.user, false))
+        error.errors['drinkware'] = { type: 'valid', message: 'Unauthorized use of drinkware' };
+
+    // Stopped Here
+
+
+    if (Object.keys(error.errors).length)
+        throw error;
+}
 
 module.exports = {
     Drink,
