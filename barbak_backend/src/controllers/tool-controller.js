@@ -283,8 +283,8 @@ module.exports.getTool = async (req, res) => {
 
 module.exports.search = async (req, res) => {
     try {
-        const { query, page, page_size, ordering, categories } = req.query;
-        const { isValid, errors } = await Tool.validateCategories(categories);
+        const { query, page, page_size, ordering, category_filter } = req.query;
+        const { isValid, errors } = await Tool.validateCategories(category_filter);
 
         if (!isValid)
             return res.status(400).send({ categories: errors });
@@ -305,6 +305,7 @@ module.exports.search = async (req, res) => {
                         { public: true }
                     ] 
                 })
+            .categoryFilter(category_filter)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
@@ -320,14 +321,15 @@ module.exports.search = async (req, res) => {
 
 module.exports.clientTools = async (req, res) => {
     try {
-        const { page, page_size, ordering, categories } = req.query;
-        const { isValid, errors } = await Tool.validateCategories(categories);
+        const { page, page_size, ordering, category_filter } = req.query;
+        const { isValid, errors } = await Tool.validateCategories(category_filter);
         
         if (!isValid)
             return res.status(400).send({ categories: errors });
 
         const userDocuments = await UserTool
             .find({ user: req.user._id })
+            .categoryFilter(category_filter)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)

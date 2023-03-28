@@ -36,7 +36,7 @@ const clientToolValidation = Joi.object({
     page: pageSchema.default(1),
     page_size: pageSizeSchema.default(10),
     ordering: orderingSchema.default(''),
-    categories: arrLimit(10).default([])
+    category_filter: arrLimit(10).default([])
 });
 
 const searchValidation = clientToolValidation.concat(Joi.object({

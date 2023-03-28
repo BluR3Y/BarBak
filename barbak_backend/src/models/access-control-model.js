@@ -40,7 +40,7 @@ const appLevelSchema = new mongoose.Schema({
     referenced_model: {
         type: String,
         required: true,
-        enum: [ 'Drinkware', 'Tool', 'Ingredient' ]
+        enum: [ 'Drinkware', 'Tool', 'Ingredient', 'Drink' ]
     }
 });
 

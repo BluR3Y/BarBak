@@ -39,6 +39,10 @@ toolSchema.query.extendedInfo = function() {
     });
 }
 
+toolSchema.query.categoryFilter = function(categories) {
+    return categories.length ? this.where('category').in(categories) : this;
+}
+
 toolSchema.statics = {
     formatCoverImage: function(filepath) {
         const { HOSTNAME, PORT } = process.env;
@@ -54,18 +58,17 @@ toolSchema.statics = {
         return (await categories.map(item => item.name));
     },
     validateCategories: async function(categories) {
+        const errors = {};
         if (!Array.isArray(categories))
             categories = [categories];
 
-        const errors = {};
-        for (const index in categories) {
-            const { categoryCount } = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [categories[index]])
-                .then(res => res[0]);
+        await Promise.all(categories.map(async category => {
+            const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
             if (!categoryCount)
-                errors[index] = { type: 'valid', message: 'Invalid tool category' };
-        }
-        const isValid = Object.keys(errors).length === 0;
-        return { isValid, errors };
+                errors[category] = { type: 'valid', message: 'Invalid tool category' };
+        }));
+
+        return { isValid: !Object.keys(errors).length, errors };
     }
 }
 

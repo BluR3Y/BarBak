@@ -48,6 +48,12 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
     (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
 
+	-- Drink Rules
+    (@editor_role_id, 'create', 'drinks', '{ "verifed": false }'),
+    (@editor_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+    (@editor_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+    (@editor_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+
     -- Additional Rules
         -- Verified Drinkware Rules
 	    (@editor_role_id, 'create', 'drinkware', '{ "verified": true }'),
@@ -63,6 +69,11 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         (@editor_role_id, 'create', 'ingredients', '{ "verified": true }'),
         (@editor_role_id, 'update', 'ingredients', '{ "model": "Verified Ingredient" }'),
         (@editor_role_id, 'delete', 'ingredients', '{ "model": "Verified Ingredient" }'),
+        
+        -- Verified Drink Rules
+        (@editor_role_id, 'create', 'drinks', '{ "verified": true }'),
+        (@editor_role_id, 'update', 'drinks', '{ "model": "Verified Drink" }'),
+        (@editor_role_id, 'delete', 'drinks', '{ "model": "Verified Drink" }'),
 
         -- Public User Drinkware Rules
         (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
@@ -74,7 +85,11 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         
         -- Public User Ingredient Rules
         (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
-        (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "public": true }')
+        (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
+        
+        -- Public User Drink Rules
+        (@editor_role_id, 'update', 'drinks', '{ "model": "User Drink", "public": true }'),
+        (@editor_role_id, 'delete', 'drinks', '{ "model": "User Drink", "public": true }')
 ;
 
 -- User Permissions
@@ -103,7 +118,13 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@user_role_id, 'create', 'ingredients', '{ "verified": false }'),
     (@user_role_id, 'read', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
     (@user_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }')
+    (@user_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+    
+    -- Drink Rules
+    (@user_role_id, 'create', 'drinks', '{ "verifed": false }'),
+    (@user_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+    (@user_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+    (@user_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }')
 ;
 
 -- Guest Permissions
@@ -121,9 +142,11 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (NULL, 'read', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
     (NULL, 'read', 'tools', '{ "model": "User Tool", "public": true }'),
     (NULL, 'read', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
+    (NULL, 'read', 'drinks', '{ "model": "User Drink", "public": true }'),
 
     -- Verified Content
     (NULL, 'read', 'drinkware', '{ "model": "Verified Drinkware" }'),
     (NULL, 'read', 'tools', '{ "model": "Verified Tool" }'),
-    (NULL, 'read', 'ingredients', '{ "model": "Verified Ingredient" }')
+    (NULL, 'read', 'ingredients', '{ "model": "Verified Ingredient" }'),
+    (NULL, 'read', 'drinks', '{ "model": "Verified Drink" }')
 ;
