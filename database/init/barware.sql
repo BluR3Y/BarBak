@@ -257,6 +257,7 @@ INSERT INTO measure (`name`, `abbriviation`, `is_standardized`, `measure_use`, `
     ('pint', 'pt', 1, 'volume', 0.0625),
     ('liter', 'L', 1, 'volume', 0.0295735),
     ('dash', NULL, 0, 'volume', NULL),
+    ('shot', NULL, 0, 'volume', NULL),
     ('centiliter', 'cl', 1, 'volume', 2.95735),
     ('cup', 'c', 1, 'volume', 0.125),
     ('quart', 'qt', 1, 'volume', 0.03125),
@@ -280,6 +281,5 @@ INSERT INTO measure (`name`, `abbriviation`, `is_standardized`, `measure_use`, `
     ('scoop', NULL, 0, 'quantity', NULL),
     ('sprig', NULL, 0, 'quantity', NULL),
     ('stalk', NULL, 0, 'quantity', NULL),
-    ('shot', NULL, 0, 'quantity', NULL),
     ('bean', NULL, 0, 'quantity', NULL)
 ;

@@ -208,7 +208,7 @@ userSchema.methods = {
     extendedStripExcess: function() {
         return {
             _id: this._id,
-            user: this.user,
+            // user: this.user,
             name: this.name,
             description: this.description,
             category: this.category,

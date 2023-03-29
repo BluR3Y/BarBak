@@ -47,7 +47,7 @@ toolSchema.statics = {
     formatCoverImage: function(filepath) {
         const { HOSTNAME, PORT } = process.env;
         if (!filepath) {
-            const defaultCover = fileOperations.findByName('static/default', 'barwasre_cover');
+            const defaultCover = fileOperations.findByName('static/default', 'barware_cover');
             if (defaultCover.length)
                 filepath = 'assets/default/' + defaultCover;
         }
@@ -107,7 +107,7 @@ verifiedSchema.methods = {
             description: this.description,
             category: this.category,
             cover: this.constructor.formatCoverImage(this.cover),
-            date_created: this.date_created
+            date_verified: this.date_verified
         }
     },
     extendedStripExcess: function() {
@@ -160,7 +160,7 @@ userSchema.methods = {
     extendedStripExcess: function() {
         return {
             _id: this._id,
-            user: this.user,
+            // user: this.user,
             name: this.name,
             description: this.description,
             category: this.category,

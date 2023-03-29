@@ -116,7 +116,7 @@ userSchema.methods = {
     extendedStripExcess: function() {
         return {
             _id: this._id,
-            user: this.user,
+            // user: this.user,
             name: this.name,
             description: this.description,
             cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)

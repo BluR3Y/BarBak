@@ -38,10 +38,72 @@ module.exports.create = async (req, res) => {
         }) );
         await createdDrink.validate();
         await createdDrink.customValidate();
+        await createdDrink.save();
 
+        res.status(204).send();
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
+        console.error(err);
+        res.status(500).send(err);
+    }
+}
+
+module.exports.update = async (req, res) => {
+    try {
+        const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags } = req.body;
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('update', subject('drinks', drinkInfo)))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+        else if (
+            (drinkInfo.model === 'User Drink' && await UserDrink.exists({ user: req.user._id, name, _id: { $ne: drink_id } })) ||
+            (drinkInfo.model === 'Verified Drink' && await VerifiedDrink.exists({ name, _id: { $ne: drink_id } }))
+        )
+            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drink with that name currently exists' });
+
+        drinkInfo.set({
+            name,
+            description,
+            preparation_method,
+            serving_style,
+            drinkware,
+            preparation,
+            ingredients,
+            tools,
+            tags
+        });
+        await drinkInfo.validate();
+        await drinkInfo.customValidate();
+        await drinkInfo.save();
+
+        res.status(204).send();
+    } catch(err) {
+        if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
+            return res.status(400).send(err);
+        console.error(err);
+        res.status(500).send(err);
+    }
+}
+
+module.exports.clientDrinks = async (req, res) => {
+    try {
+
+        // .categoryFilter(category_filter)
+        // .sort(ordering)
+        // .skip((page - 1) * page_size)
+        // .limit(page_size)
+        // .extendedInfo();
+        
+        const userDocuments = await Drink
+            .find({ user: req.user._id })
+            .extendedInfo();
+            
+        res.status(200).send(userDocuments);
+    } catch(err) {
         console.error(err);
         res.status(500).send(err);
     }

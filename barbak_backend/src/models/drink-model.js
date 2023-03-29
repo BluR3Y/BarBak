@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { Drinkware } = require('./drinkware-model');
 const { Ingredient } = require('./ingredient-model');
+const { Tool } = require('./tool-model');
 
 const ingredientSchema = {
     type: [{
@@ -143,7 +144,20 @@ const drinkSchema = new mongoose.Schema({
     }
 },{ collection: 'drinks', discriminatorKey: 'model' });
 
+drinkSchema.query.basicInfo = async function() {
+    const documents = await this.exec();
+    return (await Promise.all(documents.map(async doc => await doc.extendedStripExcess())));
+}
+
+drinkSchema.query.extendedInfo = async function() {
+    const documents = await this.exec();
+    return (await Promise.all(documents.map(async doc => await doc.basicStripExcess())));
+}
+
+// Filter Query
+
 drinkSchema.statics = {
+    // Format content
     getPreparationMethods: async function() {
         const preparationMethods = await executeSqlQuery(`SELECT name FROM drink_preparation_methods`);
         return (await preparationMethods.map(item => item.name));
@@ -188,21 +202,20 @@ drinkSchema.statics = {
         if (!Array.isArray(drinkware))
             drinkware = [drinkware];
 
-        await Promise.all(drinkware.map(async container => {
+        await Promise.all(drinkware.map(async (container, index) => {
             const drinkwareInfo = await Drinkware.findOne({ _id: container });
 
-            if (!drinkwareInfo) {
-                errors[container] = { type: 'exist', message: 'Drinkware does not exist' };
-                return;
-            } else if (
-                (publicUse && (drinkwareInfo.model !== 'Verified Drinkware' && !(drinkwareInfo.user.equals(user) && drinkwareInfo.public))) ||      // Private User Drink
-                (!publicUse && (drinkwareInfo.mode !== 'Verified Drinkware' && !drinkwareInfo.user.equals(user)))       // Public User Drink
+            if (!drinkwareInfo)
+                errors[index] = { type: 'exist', message: 'Drinkware does not exist' };
+            else if (
+                (publicUse && (drinkwareInfo.model === 'User Drinkware' && !(drinkwareInfo.user.equals(user) && drinkwareInfo.public))) ||
+                (!publicUse && (drinkwareInfo.mode === 'User Drinkware' && !drinkwareInfo.user.equals(user)))
             )
-                errors[container] = { type: 'valid', message: 'Unauthorized to use drinkware' };
+                errors[index] = { type: 'valid', message: 'Unauthorized to use drinkware' };
         }));
         return { isValid: !Object.keys(errors).length, errors };
     },
-    validateIngredients: async function(ingredients) {
+    validateIngredients: async function(ingredients, publicUse, user) {
         const errors = {};
 
         if (!Array.isArray(ingredients))
@@ -212,7 +225,14 @@ drinkSchema.statics = {
             const ingredientErrors = {};
             const ingredientInfo = await Ingredient.findOne({ _id: ingredientObj.ingredient_id });
 
-            if (ingredientInfo) {
+            if (!ingredientInfo) {
+                ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
+            } else if (
+                (publicUse && (ingredientInfo.model === 'User Ingredient' && !(ingredientInfo.user.equals(user) && ingredientInfo.public))) ||
+                (!publicUse && (ingredientInfo.model === 'User Ingredient' && !ingredientInfo.user.equals(user)))
+            ) {
+                ingredientErrors.ingredient_id = { type: 'valid', message: 'Unauthorized to use ingredient' };
+            } else {
                 const [data] = await executeSqlQuery(`
                     SELECT measure.is_standardized, measure.measure_use ,measure.ounce_equivalence, measure.name
                     FROM ingredient_categories
@@ -229,47 +249,40 @@ drinkSchema.statics = {
                         quantity: ingredientObj.measure.quantity * data.ounce_equivalence
                     }
                 }
-                console.log(data, ingredientObj.measure.unit)
-            } else
-                ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
+            }
 
-            await Promise.all(ingredientObj.substitutes.map(async (substituteObj, subIndex) => {
-                const substituteErrors = {};
-                const substituteInfo = await Ingredient.findOne({ _id: substituteObj.ingredient_id });
-                
-                if (substituteInfo) {
-                    const [subData] = await executeSqlQuery(`
-                        SELECT measure.is_standardized, measure.measure_use ,measure.ounce_equivalence
-                        FROM ingredient_categories
-                        JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
-                        JOIN measure ON ingredient_sub_categories.measure_state = 'all' OR (ingredient_sub_categories.measure_state = measure.measure_use OR measure.measure_use = 'miscellaneous')
-                        WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? AND measure.name = ? LIMIT 1;
-                    `, [substituteInfo.category, substituteInfo.sub_category, substituteObj.measure.unit]);
-
-                    if (!subData) {
-                        substituteErrors.measure = { type: 'valid', message: 'Invalid ingredient measure unit' };
-                    } else if (subData && subData.is_standardized) {
-                        substituteObj.measure = {
-                            unit: subData.measure_use === 'volume' ? 'fluid ounce' : 'ounce',
-                            quantity: substituteObj.measure.quantity * subData.ounce_equivalence
-                        }
-                    }
-                } else
-                    substituteErrors.ingredient_id = { type: 'exist', messge: 'Ingredient substitute does not exist' };
-                
-                if (Object.keys(substituteErrors).length) {
-                    if (!ingredientErrors.substitutes)
-                        ingredientErrors.substitutes = {};
-                    ingredientErrors.substitutes[subIndex] = substituteErrors;
-                }
-            }));
+            if (ingredientObj.substitutes?.length) {
+                const substituteValidation = await this.validateIngredients(ingredientObj.substitutes, publicUse, user);
+                if (!substituteValidation.isValid)
+                    ingredientErrors.substitutes = substituteValidation.errors;
+            }
 
             if (Object.keys(ingredientErrors).length)
                 errors[index] = ingredientErrors;
         }));
         
         return { isValid: !Object.keys(errors).length, errors };
-    }
+    },
+    validateTools: async function(tools, publicUse, user) {
+        const errors = {};
+
+        if (!Array.isArray(tools))
+            tools = [tools];
+
+        await Promise.all(tools.map(async (tool, index) => {
+            const toolInfo = await Tool.findOne({ _id: tool });
+
+            if (!toolInfo) {
+                errors[index] = { type: 'exist', message: 'Tool does not exist' };
+            } else if (
+                (publicUse && (toolInfo.model === 'User Tool' && !(toolInfo.user.equals(user) && toolInfo.public))) ||
+                (!publicUse && (toolInfo.model === 'User Tool' && !toolInfo.user.equals(user)))
+            )
+                errors[index] = { type: 'valid', message: 'Unauthorized to use tool' };
+        }));
+        
+        return { isValid: !Object.keys(errors).length, errors };
+    },
 }
 
 const Drink = mongoose.model('Drink', drinkSchema);
@@ -299,6 +312,8 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+// Verifed CustomValidation
 
 const userSchema = new mongoose.Schema({
     assets: {
@@ -350,8 +365,9 @@ userSchema.methods.customValidate = async function() {
     const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
     const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
     const drinkwareValidation = await this.constructor.validateDrinkware(drinkware, false, this.user);
-    const ingredientValidtion = await this.constructor.validateIngredients(ingredients);
-
+    const ingredientValidtion = await this.constructor.validateIngredients(ingredients, false, this.user);
+    const toolValidation = await this.constructor.validateTools(tools, false, this.user);
+    
     if (!preparationMethodValidation.isValid)
         error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
     if (!servingStyleValidation.isValid)
@@ -360,10 +376,61 @@ userSchema.methods.customValidate = async function() {
         error.errors['drinkware'] = drinkwareValidation.errors[drinkware];
     if (!ingredientValidtion.isValid)
         error.errors['ingredients'] = ingredientValidtion.errors;
-
+    if (!toolValidation.isValid)
+        error.errors['tools'] = toolValidation.errors;
 
     if (Object.keys(error.errors).length)
         throw error;
+}
+
+userSchema.methods = {
+    basicStripExcess: async function() {
+        const populatedDrink = await this
+            .populate([
+                {
+                    path: 'drinkware'
+                },
+                {
+                    path: 'ingredients.ingredient_id'
+                },
+                {
+                    path: 'ingredients.substitutes.ingredient_id'
+                },
+                {
+                    path: 'tools'
+                }
+            ]);
+        const formattedDrinkware = populatedDrink.drinkware.extendedStripExcess();
+        const formattedTools = populatedDrink.tools.map(tool => tool.extendedStripExcess());
+        const formattedIngredients = populatedDrink.ingredients.map(ingredient => {
+            return {
+                ingredient: ingredient.ingredient_id.extendedStripExcess(),
+                measure: ingredient.measure,
+                optional: ingredient.optional,
+                garnish: ingredient.garnish,
+                substitutes: ingredient.substitutes.map(sub => {
+                    return {
+                        ingredient: sub.ingredient_id.extendedStripExcess(),
+                        measure: sub.measure
+                    }
+                })
+            }
+        });
+
+        return {
+            name: this.name,
+            description: this.description,
+            preparation_method: this.preparation_method,
+            serving_style: this.serving_style,
+            drinkware: formattedDrinkware,
+            ingredients: formattedIngredients,
+            tools: formattedTools,
+            tags: this.tags
+        };
+    },
+    extendedStripExcess: async function() {
+        
+    }
 }
 
 module.exports = {
