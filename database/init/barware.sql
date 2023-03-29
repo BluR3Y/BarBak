@@ -242,13 +242,13 @@ CREATE TABLE measure (
     `id` INT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(50) NOT NULL,
     `abbriviation` VARCHAR(10),
-    `is_standarized` TINYINT(1) NOT NULL,
+    `is_standardized` TINYINT(1) NOT NULL,
     `measure_use` VARCHAR(50) NOT NULL,
     `ounce_equivalence` FLOAT,
     PRIMARY KEY(`id`)
 );
 
-INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `ounce_equivalence`) VALUES 
+INSERT INTO measure (`name`, `abbriviation`, `is_standardized`, `measure_use`, `ounce_equivalence`) VALUES 
     ('ounce', 'oz', 1, 'mass', 1),
     ('fluid ounce', 'fl oz', 1, 'volume', 1),
     ('milliliter', 'ml', 1, 'volume', 29.5735),
@@ -279,5 +279,7 @@ INSERT INTO measure (`name`, `abbriviation`, `is_standarized`, `measure_use`, `o
     ('pinch', NULL, 0, 'quantity', NULL),
     ('scoop', NULL, 0, 'quantity', NULL),
     ('sprig', NULL, 0, 'quantity', NULL),
-    ('stalk', NULL, 0, 'quantity', NULL)
+    ('stalk', NULL, 0, 'quantity', NULL),
+    ('shot', NULL, 0, 'quantity', NULL),
+    ('bean', NULL, 0, 'quantity', NULL)
 ;

@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { Drinkware } = require('./drinkware-model');
+const { Ingredient } = require('./ingredient-model');
 
 const ingredientSchema = {
     type: [{
-        referenced_document: {
+        ingredient_id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Ingredient',
             required: true
@@ -27,7 +28,7 @@ const ingredientSchema = {
         },
         substitutes: {
             type: [{
-                referenced_document: {
+                ingredient_id: {
                     type: mongoose.Schema.Types.ObjectId,
                     ref: 'Ingredient',
                     required: true
@@ -180,6 +181,94 @@ drinkSchema.statics = {
         }));
 
         return { isValid: !Object.keys(errors).length, errors };
+    },
+    validateDrinkware: async function(drinkware, publicUse, user) {
+        const errors = {};
+
+        if (!Array.isArray(drinkware))
+            drinkware = [drinkware];
+
+        await Promise.all(drinkware.map(async container => {
+            const drinkwareInfo = await Drinkware.findOne({ _id: container });
+
+            if (!drinkwareInfo) {
+                errors[container] = { type: 'exist', message: 'Drinkware does not exist' };
+                return;
+            } else if (
+                (publicUse && (drinkwareInfo.model !== 'Verified Drinkware' && !(drinkwareInfo.user.equals(user) && drinkwareInfo.public))) ||      // Private User Drink
+                (!publicUse && (drinkwareInfo.mode !== 'Verified Drinkware' && !drinkwareInfo.user.equals(user)))       // Public User Drink
+            )
+                errors[container] = { type: 'valid', message: 'Unauthorized to use drinkware' };
+        }));
+        return { isValid: !Object.keys(errors).length, errors };
+    },
+    validateIngredients: async function(ingredients) {
+        const errors = {};
+
+        if (!Array.isArray(ingredients))
+            ingredients = [ingredients];
+
+        await Promise.all(ingredients.map(async (ingredientObj, index) => {
+            const ingredientErrors = {};
+            const ingredientInfo = await Ingredient.findOne({ _id: ingredientObj.ingredient_id });
+
+            if (ingredientInfo) {
+                const [data] = await executeSqlQuery(`
+                    SELECT measure.is_standardized, measure.measure_use ,measure.ounce_equivalence, measure.name
+                    FROM ingredient_categories
+                    JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+                    JOIN measure ON ingredient_sub_categories.measure_state = 'all' OR (ingredient_sub_categories.measure_state = measure.measure_use OR measure.measure_use = 'miscellaneous')
+                    WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? AND measure.name = ? LIMIT 1;
+                `, [ingredientInfo.category, ingredientInfo.sub_category, ingredientObj.measure.unit]);
+
+                if (!data) {
+                    ingredientErrors.measure = { type: 'valid', message: 'Invalid ingredient measure unit' };
+                } else if (data && data.is_standardized) {
+                    ingredientObj.measure = {
+                        unit: data.measure_use === 'volume' ? 'fluid ounce' : 'ounce',
+                        quantity: ingredientObj.measure.quantity * data.ounce_equivalence
+                    }
+                }
+                console.log(data, ingredientObj.measure.unit)
+            } else
+                ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
+
+            await Promise.all(ingredientObj.substitutes.map(async (substituteObj, subIndex) => {
+                const substituteErrors = {};
+                const substituteInfo = await Ingredient.findOne({ _id: substituteObj.ingredient_id });
+                
+                if (substituteInfo) {
+                    const [subData] = await executeSqlQuery(`
+                        SELECT measure.is_standardized, measure.measure_use ,measure.ounce_equivalence
+                        FROM ingredient_categories
+                        JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+                        JOIN measure ON ingredient_sub_categories.measure_state = 'all' OR (ingredient_sub_categories.measure_state = measure.measure_use OR measure.measure_use = 'miscellaneous')
+                        WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? AND measure.name = ? LIMIT 1;
+                    `, [substituteInfo.category, substituteInfo.sub_category, substituteObj.measure.unit]);
+
+                    if (!subData) {
+                        substituteErrors.measure = { type: 'valid', message: 'Invalid ingredient measure unit' };
+                    } else if (subData && subData.is_standardized) {
+                        substituteObj.measure = {
+                            unit: subData.measure_use === 'volume' ? 'fluid ounce' : 'ounce',
+                            quantity: substituteObj.measure.quantity * subData.ounce_equivalence
+                        }
+                    }
+                } else
+                    substituteErrors.ingredient_id = { type: 'exist', messge: 'Ingredient substitute does not exist' };
+                
+                if (Object.keys(substituteErrors).length) {
+                    if (!ingredientErrors.substitutes)
+                        ingredientErrors.substitutes = {};
+                    ingredientErrors.substitutes[subIndex] = substituteErrors;
+                }
+            }));
+
+            if (Object.keys(ingredientErrors).length)
+                errors[index] = ingredientErrors;
+        }));
+        
+        return { isValid: !Object.keys(errors).length, errors };
     }
 }
 
@@ -260,19 +349,17 @@ userSchema.methods.customValidate = async function() {
     const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
     const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
     const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
-    // const drinkwareValidation = await this.constructor.validateDrinkware(drinkware);
+    const drinkwareValidation = await this.constructor.validateDrinkware(drinkware, false, this.user);
+    const ingredientValidtion = await this.constructor.validateIngredients(ingredients);
 
     if (!preparationMethodValidation.isValid)
         error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
     if (!servingStyleValidation.isValid)
         error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
-
-    if (!await Drinkware.exists(drinkware))
-        error.errors['drinkware'] = { type: 'exist', message: 'Drinkware does not exist' };
-    else if (!await Drinkware.useAuthorized(drinkware, this.user, false))
-        error.errors['drinkware'] = { type: 'valid', message: 'Unauthorized use of drinkware' };
-
-    // Stopped Here
+    if (!drinkwareValidation.isValid)
+        error.errors['drinkware'] = drinkwareValidation.errors[drinkware];
+    if (!ingredientValidtion.isValid)
+        error.errors['ingredients'] = ingredientValidtion.errors;
 
 
     if (Object.keys(error.errors).length)
