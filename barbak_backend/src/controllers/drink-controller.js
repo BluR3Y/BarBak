@@ -45,7 +45,7 @@ module.exports.create = async (req, res) => {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -85,7 +85,24 @@ module.exports.update = async (req, res) => {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).send('Internal server error');
+    }
+}
+
+module.exports.getDrink = async (req, res) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('read', subject('drinks', drinkInfo)))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+
+        res.status(200).send(await drinkInfo.basicStripExcess());
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
     }
 }
 
@@ -105,6 +122,6 @@ module.exports.clientDrinks = async (req, res) => {
         res.status(200).send(userDocuments);
     } catch(err) {
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).send('Internal server error');
     }
 }

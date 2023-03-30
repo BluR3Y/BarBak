@@ -22,10 +22,13 @@ const ingredientSchema = {
                     type: Number,
                     required: true,
                     min: 0.1,
-                    max: Number.MAX_SAFE_INTEGER
+                    max: Number.MAX_SAFE_INTEGER,
+                    get: val => parseFloat(val).toFixed(2),
+                    set: val => parseFloat(val).toFixed(2)
                 }
             },
-            required: true
+            required: true,
+            _id: false
         },
         substitutes: {
             type: [{
@@ -45,10 +48,13 @@ const ingredientSchema = {
                             type: Number,
                             required: true,
                             min: 0.1,
-                            max: Number.MAX_SAFE_INTEGER
+                            max: Number.MAX_SAFE_INTEGER,
+                            get: val => parseFloat(val).toFixed(2),
+                            set: val => parseFloat(val).toFixed(2)
                         }
                     },
-                    required: true
+                    required: true,
+                    _id: false
                 }
             }],
             validate: {
@@ -157,7 +163,10 @@ drinkSchema.query.extendedInfo = async function() {
 // Filter Query
 
 drinkSchema.statics = {
-    // Format content
+    formatDrinkImage: function(filepath) {
+        const { HOSTNAME, PORT } = process.env;
+
+    },
     getPreparationMethods: async function() {
         const preparationMethods = await executeSqlQuery(`SELECT name FROM drink_preparation_methods`);
         return (await preparationMethods.map(item => item.name));
@@ -196,6 +205,195 @@ drinkSchema.statics = {
 
         return { isValid: !Object.keys(errors).length, errors };
     },
+}
+
+const Drink = mongoose.model('Drink', drinkSchema);
+
+const verifiedSchema = new mongoose.Schema({
+    assets: {
+        type: {
+            cover: {
+                type: String,
+                default: null
+            },
+            gallery: {
+                type: [String],
+                validate: {
+                    validator: function(items) {
+                        return items && items.length <= 10;
+                    },
+                    message: 'Cannot exceed limit of 10 images'
+                },
+                default: null
+            }
+        }
+    },
+    date_verified: {
+        type: Date,
+        immutable: true,
+        default: () => Date.now()
+    }
+});
+
+verifiedSchema.statics = {
+    validateDrinkware: async function(drinkware) {
+        const errors = {};
+
+        if (!Array.isArray(drinkware))
+            drinkware = [drinkware];
+        
+        await Promise.all(drinkware.map(async (container, index) => {
+            const drinkwareInfo = await Drinkware.findOne({ _id: container });
+
+            if (!drinkwareInfo)
+                errors[index] = { type: 'exist', message: 'Drinkware does not exist' };
+            else if (drinkwareInfo.model !== 'Verified Drinkware')
+                errors[index] = { type: 'valid', message: 'Unauthorized to use drinkware' };
+        }));
+        return { isValid: !Object.keys(errors).length, errors };
+    },
+    validateIngredients: async function(ingredients) {
+        const errors = {};
+
+        if (!Array.isArray(ingredients))
+            ingredients = [ingredients];
+
+        await Promise.all(ingredients.map(async (ingredientObj, index) => {
+            const ingredientErrors = {};
+            const ingredientInfo = await Ingredient.findOne({ _id: ingredientObj.ingredient_id });
+
+            if (!ingredientInfo)
+                ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
+            else if (ingredientInfo.model !== 'Verified Ingredient')
+                ingredientErrors.ingredient_id = { type: 'valid', message: 'Unauthorized to use ingredient' };
+            else {
+                const [data] = await executeSqlQuery(`
+                    SELECT measure.is_standardized, measure.measure_use ,measure.ounce_equivalence, measure.name
+                    FROM ingredient_categories
+                    JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+                    JOIN measure ON ingredient_sub_categories.measure_state = 'all' OR (ingredient_sub_categories.measure_state = measure.measure_use OR measure.measure_use = 'miscellaneous')
+                    WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? AND measure.name = ? LIMIT 1;
+                `, [ingredientInfo.category, ingredientInfo.sub_category, ingredientObj.measure.unit]);
+
+                if (!data) {
+                    ingredientErrors.measure = { type: 'valid', message: 'Invalid ingredient measure unit' };
+                } else if (data && data.is_standardized) {
+                    ingredientObj.measure = {
+                        unit: data.measure_use === 'volume' ? 'fluid ounce' : 'ounce',
+                        quantity: ingredientObj.measure.quantity * data.ounce_equivalence
+                    }
+                }
+            }
+
+            if (ingredientObj.substitutes?.length) {
+                const substituteValidation = await this.validateIngredients(ingredientObj.substitutes);
+                if (!substituteValidation.isValid)
+                    ingredientErrors.substitutes = substituteValidation.errors;
+            }
+
+            if (Object.keys(ingredientErrors).length)
+                errors[index] = ingredientErrors;            
+        }));
+        
+        return { isValid: !Object.keys(errors).length, errors };
+    },
+    validateTools: async function(tools) {
+        const errors = {};
+        
+        if (!Array.isArray(tools))
+            tools = [tools];
+
+        await Promise.all(tools.map(async (tool, index) => {
+            const toolInfo = await Tool.findOne({ _id: tool });
+
+            if (!toolInfo)
+                errors[index] = { type: 'exist', message: 'Tool does not exist' };
+            else if (toolInfo.model !== 'Verified Tool')
+                errors[index] = { type: 'valid', message: 'Unauthorized to use tool' };
+        }));
+
+        return { isValid: !Object.keys(errors).length, errors };
+    }
+}
+
+verifiedSchema.methods = {
+    customValidate: async function() {
+        const error = new Error();
+        error.name = 'CustomValidationError';
+        error.errors = {};
+
+        const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
+        const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
+        const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
+        const drinkwareValidation = await this.constructor.validateDrinkware(drinkware);
+        const ingredientValidtion = await this.constructor.validateIngredients(ingredients);
+        const toolValidation = await this.constructor.validateTools(tools);
+
+        if (!preparationMethodValidation.isValid)
+            error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
+        if (!servingStyleValidation.isValid)
+            error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
+        if (!drinkwareValidation.isValid)
+            error.errors['drinkware'] = drinkwareValidation.errors[0];
+        if (!ingredientValidtion.isValid)
+            error.errors['ingredients'] = ingredientValidtion.errors;
+        if (!toolValidation.isValid)
+            error.errors['tools'] = toolValidation.errors;
+
+        if (Object.keys(error.errors).length)
+            throw error;
+    },
+    basicStripExcess: async function() {
+
+    },
+    extendedStripExcess: async function() {
+
+    }
+}
+
+const userSchema = new mongoose.Schema({
+    assets: {
+        type: {
+            cover_acl: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'App Access Control',
+                default: null
+            },
+            gallery_acl: {
+                type: [{
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'App Access Control',
+                }],
+                validate: {
+                    validator: function(items) {
+                        return items && items.length <= 10;
+                    },
+                    message: 'Cannot exceed limit of 10 images'
+                },
+                default: null
+            },
+        },
+        default: Object,
+        _id: false
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        immutable: true,
+        required: true,
+    },
+    public: {
+        type: Boolean,
+        default: false
+    },
+    date_created: {
+        type: Date,
+        immutable: true,
+        default: () => Date.now()
+    }
+});
+
+userSchema.statics = {
     validateDrinkware: async function(drinkware, publicUse, user) {
         const errors = {};
 
@@ -282,123 +480,43 @@ drinkSchema.statics = {
         }));
         
         return { isValid: !Object.keys(errors).length, errors };
-    },
-}
-
-const Drink = mongoose.model('Drink', drinkSchema);
-
-const verifiedSchema = new mongoose.Schema({
-    assets: {
-        type: {
-            cover: {
-                type: String,
-                default: null
-            },
-            gallery: {
-                type: [String],
-                validate: {
-                    validator: function(items) {
-                        return items && items.length <= 10;
-                    },
-                    message: 'Cannot exceed limit of 10 images'
-                },
-                default: null
-            }
-        }
-    },
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
-});
-
-// Verifed CustomValidation
-
-const userSchema = new mongoose.Schema({
-    assets: {
-        type: {
-            cover_acl: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'App Access Control',
-                default: null
-            },
-            gallery_acl: {
-                type: [{
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'App Access Control',
-                }],
-                validate: {
-                    validator: function(items) {
-                        return items && items.length <= 10;
-                    },
-                    message: 'Cannot exceed limit of 10 images'
-                },
-                default: null
-            }
-        }
-    },
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        immutable: true,
-        required: true,
-    },
-    public: {
-        type: Boolean,
-        default: false
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
-
-// User Drink can use both private(own) and public ingredients/drinkware/tools etc.
-userSchema.methods.customValidate = async function() {
-    const error = new Error();
-    error.name = 'CustomValidationError';
-    error.errors = {};
-
-    const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
-    const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
-    const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
-    const drinkwareValidation = await this.constructor.validateDrinkware(drinkware, false, this.user);
-    const ingredientValidtion = await this.constructor.validateIngredients(ingredients, false, this.user);
-    const toolValidation = await this.constructor.validateTools(tools, false, this.user);
-    
-    if (!preparationMethodValidation.isValid)
-        error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
-    if (!servingStyleValidation.isValid)
-        error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
-    if (!drinkwareValidation.isValid)
-        error.errors['drinkware'] = drinkwareValidation.errors[drinkware];
-    if (!ingredientValidtion.isValid)
-        error.errors['ingredients'] = ingredientValidtion.errors;
-    if (!toolValidation.isValid)
-        error.errors['tools'] = toolValidation.errors;
-
-    if (Object.keys(error.errors).length)
-        throw error;
 }
 
 userSchema.methods = {
+    customValidate: async function() {
+        const error = new Error();
+        error.name = 'CustomValidationError';
+        error.errors = {};
+    
+        const { preparation_method, serving_style, drinkware, ingredients, tools } = this;
+        const preparationMethodValidation = await this.constructor.validatePreparationMethods(preparation_method);
+        const servingStyleValidation = await this.constructor.validateServingStyles(serving_style);
+        const drinkwareValidation = await this.constructor.validateDrinkware(drinkware, false, this.user);
+        const ingredientValidtion = await this.constructor.validateIngredients(ingredients, false, this.user);
+        const toolValidation = await this.constructor.validateTools(tools, false, this.user);
+        
+        if (!preparationMethodValidation.isValid)
+            error.errors['preparation_method'] = preparationMethodValidation.errors[preparation_method];
+        if (!servingStyleValidation.isValid)
+            error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
+        if (!drinkwareValidation.isValid)
+            error.errors['drinkware'] = drinkwareValidation.errors[drinkware];
+        if (!ingredientValidtion.isValid)
+            error.errors['ingredients'] = ingredientValidtion.errors;
+        if (!toolValidation.isValid)
+            error.errors['tools'] = toolValidation.errors;
+    
+        if (Object.keys(error.errors).length)
+            throw error;
+    },
     basicStripExcess: async function() {
         const populatedDrink = await this
             .populate([
-                {
-                    path: 'drinkware'
-                },
-                {
-                    path: 'ingredients.ingredient_id'
-                },
-                {
-                    path: 'ingredients.substitutes.ingredient_id'
-                },
-                {
-                    path: 'tools'
-                }
+                { path: 'drinkware' }, 
+                { path: 'ingredients.ingredient_id' }, 
+                { path: 'ingredients.substitutes.ingredient_id' },
+                { path: 'tools' }
             ]);
         const formattedDrinkware = populatedDrink.drinkware.extendedStripExcess();
         const formattedTools = populatedDrink.tools.map(tool => tool.extendedStripExcess());
@@ -408,15 +526,17 @@ userSchema.methods = {
                 measure: ingredient.measure,
                 optional: ingredient.optional,
                 garnish: ingredient.garnish,
+                _id: ingredient._id,
                 substitutes: ingredient.substitutes.map(sub => {
                     return {
                         ingredient: sub.ingredient_id.extendedStripExcess(),
-                        measure: sub.measure
+                        measure: sub.measure,
+                        _id: sub._id
                     }
                 })
             }
         });
-
+        // Stopped Here, working on Cover/Gallery
         return {
             name: this.name,
             description: this.description,
@@ -425,7 +545,10 @@ userSchema.methods = {
             drinkware: formattedDrinkware,
             ingredients: formattedIngredients,
             tools: formattedTools,
-            tags: this.tags
+            tags: this.tags,
+            // assets: {
+            //     cover: this.constructor.formatCoverImage(this.assets.cover_acl ? `assets/private/${this.assets.cover_acl}` : null)
+            // }
         };
     },
     extendedStripExcess: async function() {
