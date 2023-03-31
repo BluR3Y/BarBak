@@ -6,7 +6,16 @@ const s3Operations = require('../utils/aws-s3-operations');
 module.exports.clientInfo = async (req, res) => {
     try {
         const userInfo = await User.findOne({ _id: req.user._id });
-        res.status(200).send(userInfo.basicStripExcess());
+
+        res.status(200).send(Object.assign({
+            id: userInfo._id,
+            username: userInfo.username,
+            fullname: userInfo.fullname,
+            email: userInfo.email,
+            profile_image: userInfo.profile_image_url,
+            expertise_level: userInfo.expertise_level,
+            date_registered: userInfo.date_registered
+        }));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -22,7 +31,14 @@ module.exports.getUser = async (req, res) => {
         else if (!req.ability.can('read', subject('users', userInfo)))
             return res.status(403).send({ path: 'user_id', type: 'valid', message: 'Can not view user' });
 
-        res.status(200).send(userInfo.extendedStripExcess());
+        res.status(200).send(Object.assign({
+            id: userInfo._id,
+            username: userInfo.username,
+            fullname: userInfo.fullname,
+            profile_image: userInfo.profile_image_url,
+            expertise_level: userInfo.expertise_level,
+            public: userInfo.public
+        }));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -43,7 +59,10 @@ module.exports.uploadProfileImage = async (req, res) => {
         userInfo.profile_image = uploadInfo.filepath;
         
         await userInfo.save();
-        res.status(204).send();
+
+        res.status(200).send(Object.assign({
+            cover: userInfo.profile_image_url
+        }));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');

@@ -27,7 +27,15 @@ module.exports.create = async (req, res) => {
         await createdDrinkware.validate();
         await createdDrinkware.save();
 
-        res.status(204).send();
+        res.status(201).send(Object.assign({
+            id: createdDrinkware._id,
+            name: createdDrinkware.name,
+            description: createdDrinkware.description,
+            cover: createdDrinkware.cover_url,
+            date_created: createdDrinkware.date_created,
+            date_verified: createdDrinkware.date_verified,
+            public: createdDrinkware.public
+        }));
     } catch(err) {
         if (err.name === 'ValidationError')
             return res.status(400).send(err);
@@ -51,12 +59,15 @@ module.exports.update = async (req, res) => {
             (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
-        
-        drinkwareInfo.name = name;
-        drinkwareInfo.description = description;
+
+        drinkwareInfo.set({
+            name,
+            description
+        });
 
         await drinkwareInfo.validate();
         await drinkwareInfo.save();
+
         res.status(204).send();
     } catch(err) {
         if (err.name === 'ValidationError')
@@ -103,7 +114,10 @@ module.exports.updatePrivacy = async (req, res) => {
 
         drinkwareInfo.public = !drinkwareInfo.public;
         await drinkwareInfo.save();
-        res.status(200).send(drinkwareInfo);
+        
+        res.status(200).send({
+            public: drinkwareInfo.public
+        });
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -129,11 +143,13 @@ module.exports.uploadCover = async (req, res) => {
             if (drinkwareInfo.cover_acl) {
                 const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
                 await s3Operations.removeObject(aclDocument.file_path);
-                
-                aclDocument.file_name = uploadInfo.filename;
-                aclDocument.file_size = drinkwareCover.size;
-                aclDocument.mime_type = drinkwareCover.mimetype;
-                aclDocument.file_path = uploadInfo.filepath;
+
+                aclDocument.set({
+                    file_name: uploadInfo.filename,
+                    file_size: drinkwareCover.size,
+                    mime_type: drinkwareCover.mimetype,
+                    file_path: uploadInfo.filepath
+                });
                 await aclDocument.save();
             } else {
                 const createdACL = new AppAccessControl({
@@ -154,9 +170,11 @@ module.exports.uploadCover = async (req, res) => {
                 await s3Operations.removeObject(drinkwareInfo.cover);
             drinkwareInfo.cover = uploadInfo.filepath;
         }
-
         await drinkwareInfo.save();
-        res.status(204).send();
+        
+        res.status(200).send({
+            cover: drinkwareInfo.cover_url
+        });
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -247,10 +265,17 @@ module.exports.copy = async (req, res) => {
             });
             await createdACL.save();
             createdDrinkware.cover_acl = createdACL._id;
-        }
-       
+        }       
         await createdDrinkware.save();
-        res.status(204).send();
+
+        res.status(200).send({
+            id: createdDrinkware._id,
+            cover: createdDrinkware.cover_url,
+            name: createdDrinkware.name,
+            description: createdDrinkware.description,
+            date_created: createdDrinkware.date_created,
+            public: createdDrinkware.public
+        });
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -266,8 +291,15 @@ module.exports.getDrinkware = async (req, res) => {
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+        
+        res.status(200).send(Object.assign({
+            id: drinkwareInfo._id,
+            name: drinkwareInfo.name,
+            description: drinkwareInfo.description,
+            cover: drinkwareInfo.cover_url,
+            user: drinkwareInfo.user
+        }));
 
-        res.status(200).send(drinkwareInfo.basicStripExcess());
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -297,7 +329,13 @@ module.exports.search = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .basicInfo();
+            .then(documents => documents.map(doc => Object.assign({
+                id: doc._id,
+                name: doc.name,
+                description: doc.description,
+                cover: doc.cover_url,
+                user: doc.user
+            })));
 
         res.status(200).send(searchDocuments);
     } catch(err) {
@@ -314,7 +352,14 @@ module.exports.clientDrinkware = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .extendedInfo();
+            .then(documents => documents.map(doc => Object.assign({
+                id: doc._id,
+                name: doc.name,
+                description: doc.description,
+                cover: doc.cover_url,
+                public: doc.public,
+                date_created: doc.date_created
+            })));
 
         res.status(200).send(userDocuments);
     } catch(err) {

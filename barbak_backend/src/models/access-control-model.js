@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
-const path = require('path');
 
 // Abstract Schema that all discriminators will contain
-
 const AccessControl = mongoose.model('Access Control', new mongoose.Schema({
     file_name: {
         type: String,

@@ -1,7 +1,10 @@
 * 200 - OK success
+* 201 - Resource Created
 * 204 - No Content success
 * 400 - Bad Request response
 * 401 - Unauthorized | lacks credentials
 * 403 - Forbidden | lacks permission
 * 404 - Not Found
+* 422 - Invalid input
+* 409 - Conflicts
 * 500 - Internal Server Error

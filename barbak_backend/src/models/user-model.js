@@ -1,17 +1,8 @@
 const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient } = require('../config/database-config');
-const fileOperations = require('../utils/file-operations');
 const emailQueue = require('../lib/queue/email-queue');
-
-function formatProfileImage(filepath) {
-    const { HOSTNAME, PORT } = process.env;
-    if (!filepath) {
-        const defaultImage = fileOperations.findByName('static/default', 'profile_image');
-        filepath = defaultImage ? `assets/default/${defaultImage}` : null
-    }
-    return `http://${HOSTNAME}:${PORT}/${filepath}`;
-}
+const { default_covers } = require('../config/config.json');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -179,7 +170,7 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    expertise: {
+    expertise_level: {
         type: String,
         default: 'novice',
         enum: ['novice', 'intermediate', 'expert']
@@ -251,28 +242,35 @@ userSchema.methods.customValidate = async function() {
         throw error;
 }
 
-userSchema.methods.basicStripExcess = function() {
-    return {
-        _id: this._id,
-        username: this.username,
-        fullname: this.fullname,
-        email: this.email,
-        profile_image: formatProfileImage(this.profile_image),
-        date_registered: this.date_registered,
-        expertise: this.expertise,
-        public: this.public
-    }
-}
+// userSchema.methods.basicStripExcess = function() {
+//     return {
+//         _id: this._id,
+//         username: this.username,
+//         fullname: this.fullname,
+//         email: this.email,
+//         profile_image: formatProfileImage(this.profile_image),
+//         date_registered: this.date_registered,
+//         expertise: this.expertise,
+//         public: this.public
+//     }
+// }
 
-userSchema.methods.extendedStripExcess = function() {
-    return {
-        _id: this._id,
-        username: this.username,
-        fullname: this.fullname,
-        profile_image: formatProfileImage(this.profile_image),
-        expertise: this.expertise,
-        public: this.public
-    };
-}
+// userSchema.methods.extendedStripExcess = function() {
+//     return {
+//         _id: this._id,
+//         username: this.username,
+//         fullname: this.fullname,
+//         profile_image: formatProfileImage(this.profile_image),
+//         expertise: this.expertise,
+//         public: this.public
+//     };
+// }
+
+userSchema.virtual('profile_image_url').get(function() {
+    const { HOSTNAME, PORT, NODE_ENV } = process.env;
+    const filepath = this.profile_image || default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
+
+    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+});
 
 module.exports = mongoose.model('User', userSchema);

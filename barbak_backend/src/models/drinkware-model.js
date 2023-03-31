@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const fileOperations = require('../utils/file-operations');
+const { default_covers } = require('../config/config.json');
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -14,35 +14,20 @@ const drinkwareSchema = new mongoose.Schema({
     },
 },{ collection: 'drinkware', discriminatorKey: 'model' });
 
-drinkwareSchema.query.basicInfo = function() {
-    return new Promise((resolve, reject) => {
-        this.exec(function(err, documents) {
-            if (err)
-                return reject(err);
-            resolve(documents.map(doc => doc.extendedStripExcess()));
-        });
-    });
-}
+drinkwareSchema.virtual('cover_url').get(function() {
+    const { HOSTNAME, PORT, NODE_ENV } = process.env;
+    const verified = this.model === 'Verified Drinkware';
+    let filepath;
 
-drinkwareSchema.query.extendedInfo = function() {
-    return new Promise((resolve, reject) => {
-        this.exec(function(err, documents) {
-            if (err)
-                return reject(err);
-            resolve(documents.map(doc => doc.basicStripExcess()));
-        });
-    });
-}
+    if (verified && this.cover) 
+        filepath = this.cover;
+    else if (!verified && this.cover_acl)
+        filepath = 'assets/private/' + this.cover_acl;
+    else 
+        filepath = default_covers['drinkware'] ? 'assets/default/' + default_covers['drinkware'] : null;
 
-drinkwareSchema.statics.formatCoverImage = function(filepath) {
-    const { HOSTNAME, PORT } = process.env;
-    if (!filepath) {
-        const defaultCover = fileOperations.findByName('static/default', 'drinkware_cover');
-        if (defaultCover.length)
-            filepath = `assets/default/${defaultCover}`;
-    }
-    return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
-}
+    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+});
 
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
@@ -57,26 +42,6 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
-
-verifiedSchema.methods = {
-    basicStripExcess: function() {
-        return {
-            _id: this._id,
-            name: this.name,
-            description: this.description,
-            cover: this.constructor.formatCoverImage(this.cover),
-            date_verified: this.date_verified
-        };
-    },
-    extendedStripExcess: function() {
-        return {
-            _id: this._id,
-            name: this.name,
-            description: this.description,
-            cover: this.constructor.formatCoverImage(this.cover),
-        };
-    }
-}
 
 const userSchema = new mongoose.Schema({
     cover_acl: {
@@ -100,29 +65,6 @@ const userSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
-
-userSchema.methods = {
-    basicStripExcess: function() {
-        return {
-            _id: this._id,
-            user: this.user,
-            name: this.name,
-            description: this.description,
-            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
-            date_created: this.date_created,
-            public: this.public
-        };
-    },
-    extendedStripExcess: function() {
-        return {
-            _id: this._id,
-            // user: this.user,
-            name: this.name,
-            description: this.description,
-            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
-        };
-    }
-}
 
 // Make Public Function
 

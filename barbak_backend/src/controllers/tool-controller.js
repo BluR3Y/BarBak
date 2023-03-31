@@ -30,7 +30,16 @@ module.exports.create = async (req, res) => {
         await createdTool.customValidate();
         await createdTool.save();
 
-        res.status(204).send();
+        res.status(201).send(Object.assign({
+            id: createdTool._id,
+            name: createdTool.name,
+            description: createdTool.description,
+            category: createdTool.category,
+            cover: createdTool.cover_url,
+            public: createdTool.public,
+            date_created: createdTool.date_created,
+            date_verified: createdTool.date_verified
+        }));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -63,7 +72,9 @@ module.exports.update = async (req, res) => {
         await toolInfo.customValidate();
         await toolInfo.save();
 
-        res.status(204).send();
+        res.status(201).send(Object.assign({
+            // Last Here ***
+        }));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -274,7 +285,13 @@ module.exports.getTool = async (req, res) => {
         else if (!req.ability.can('read', subject('tools', toolInfo)))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
 
-        res.status(200).send(toolInfo.basicStripExcess());
+        res.status(200).send(Object.assign({
+            id: toolInfo._id,
+            name: toolInfo.name,
+            description: toolInfo.description,
+            category: toolInfo.category,
+            cover: toolInfo.cover_url,
+        }));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
