@@ -298,6 +298,44 @@ module.exports.getTool = async (req, res) => {
     }
 }
 
+// module.exports.search = async (req, res) => {
+//     try {
+//         const { query, page, page_size, ordering, category_filter } = req.query;
+//         const { isValid, errors } = await Tool.validateCategories(category_filter);
+
+//         if (!isValid)
+//             return res.status(400).send({ categories: errors });
+
+//         const searchDocuments = await Tool
+//             .find({ name: { $regex: query } })
+//             .where(req.user ? 
+//                 { 
+//                     $or: [
+//                         { model: 'Verified Tool' },
+//                         { user: req.user._id },
+//                         { public: true }
+//                     ] 
+//                 } : 
+//                 { 
+//                     $or: [
+//                         { model: 'Verified Tool' },
+//                         { public: true }
+//                     ] 
+//                 })
+//             .categoryFilter(category_filter)
+//             .sort(ordering)
+//             .skip((page - 1) * page_size)
+//             .limit(page_size)
+//             .basicInfo();
+
+
+//         res.status(200).send(searchDocuments);
+//     } catch(err) {
+//         console.error(err);
+//         res.status(500).send('Internal server error');
+//     }
+// }
+
 module.exports.search = async (req, res) => {
     try {
         const { query, page, page_size, ordering, category_filter } = req.query;
@@ -306,32 +344,40 @@ module.exports.search = async (req, res) => {
         if (!isValid)
             return res.status(400).send({ categories: errors });
 
-        const searchDocuments = await Tool
-            .find({ name: { $regex: query } })
-            .where(req.user ? 
-                { 
-                    $or: [
-                        { model: 'Verified Tool' },
-                        { user: req.user._id },
-                        { public: true }
-                    ] 
-                } : 
-                { 
-                    $or: [
-                        { model: 'Verified Tool' },
-                        { public: true }
-                    ] 
-                })
-            .categoryFilter(category_filter)
-            .sort(ordering)
-            .skip((page - 1) * page_size)
-            .limit(page_size)
-            .basicInfo();
+        const searchQuery = Tool
+            .where({ name: { $regex: query } })
+            .or(req.user ? [
+                { model: 'Verified Tool' },
+                { user: req.user._id },
+                { public: true }
+            ] : [
+                { model: 'Verified Tool' },
+                { public: true }
+            ]);
 
-
-        res.status(200).send(searchDocuments);
+            const totalDocuments = await Tool.countDocuments(searchQuery);
+            const responseDocuments = await Tool.find(searchQuery)
+                .sort(ordering)
+                .skip((page - 1) * page_size)
+                .limit(page_size)
+                .then(documents => documents.map(doc => doc.responseObject([
+                    'id',
+                    'name',
+                    'category',
+                    'cover',
+                    'verified'
+                ])));
+                // Last Here
+        const response = {
+            page,
+            page_size,
+            total_pages: Math.ceil(totalDocuments / page_size),
+            total_results: totalDocuments,
+            data: responseDocuments
+        };
+        res.status(200).send(response);
     } catch(err) {
-        console.error(err);
+        console.log(err);
         res.status(500).send('Internal server error');
     }
 }

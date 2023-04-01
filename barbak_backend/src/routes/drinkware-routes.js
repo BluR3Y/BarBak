@@ -9,7 +9,7 @@ module.exports.connect = function(router) {
 
     router.get('/drinkware/@me', auth.sessionAuthenticationRequired, joiValidator, drinkwareController.clientDrinkware);
     router.get('/drinkware/search', joiValidator, drinkwareController.search);
-    router.get('/drinkware/:drinkware_id', joiValidator, drinkwareController.getDrinkware);
+    router.get('/drinkware/:drinkware_id/:privacy?', joiValidator, drinkwareController.getDrinkware);
 
     router.patch('/drinkware/cover/upload/:drinkware_id', imageUpload.single('drinkware_cover'), joiValidator, drinkwareController.uploadCover);
     router.patch('/drinkware/cover/remove/:drinkware_id', joiValidator, drinkwareController.deleteCover);

@@ -275,17 +275,48 @@ module.exports.copy = async (req, res) => {
 
 module.exports.getDrinkware = async (req, res) => {
     try {
-        const { drinkware_id } = req.params;
+        const { drinkware_id, privacy = 'public' } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
-
+        
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('read', subject('drinkware', {
+            privacy,
+            document: drinkwareInfo
+        })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        
-        const response = drinkwareInfo.responseObject(['id','name','description','cover','verified','user']);
 
-        res.status(200).send(response);
+        const responseFields = [
+            {
+                name: '_id',
+                alias: 'id',
+            },
+            { name: 'name' },
+            { name: 'description' },
+            {
+                name: 'cover_url',
+                alias: 'cover'
+            },
+            { name: 'verified' },
+            {
+                name: 'date_verified',
+                condition: (document) => document instanceof VerifiedDrinkware && privacy === 'private'
+            },
+            {
+                name: 'user',
+                condition: (document) => document instanceof UserDrinkware
+            },
+            {
+                name: 'date_created',
+                condition: (document) => document instanceof UserDrinkware && privacy === 'private'
+            },
+            {
+                name: 'public',
+                condition: (document) => document instanceof UserDrinkware && privacy === 'private'
+            }
+        ];
+        
+        res.status(200).send(drinkwareInfo.responseObject(responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -315,10 +346,8 @@ module.exports.search = async (req, res) => {
             .then(documents => documents.map(doc => doc.responseObject([
                 'id',
                 'name',
-                'description',
                 'cover',
-                'verified',
-                'user'
+                'verified'
             ])));
 
         const response = {

@@ -154,7 +154,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
 -- All Users Permissions
 INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
     -- Asset Rules
-        (NULL, 'read', 'assets', NULL),
+    (NULL, 'read', 'assets', NULL),
         
     -- User Content
     (NULL, 'read', 'users', '{ "public": true }'),
