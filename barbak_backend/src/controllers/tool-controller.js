@@ -4,42 +4,56 @@ const { subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 
+// module.exports.create = async (req, res) => {
+//     try {
+//         const { name, description, category, verified } = req.body;
+
+//         if (!req.ability.can('create', subject('tools', { verified })))
+//             return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create tool' });
+//         else if (
+//             (verified && await VerifiedTool.exists({ name })) ||
+//             (!verified && await UserTool.exists({ user: req.user._id, name }))
+//         )
+//             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
+        
+//         const createdTool = (verified ? new VerifiedTool({
+//             name,
+//             description,
+//             category
+//         }) : new UserTool({
+//             name,
+//             description,
+//             category,
+//             user: req.user._id
+//         }) );
+//         await createdTool.validate();
+//         await createdTool.customValidate();
+//         await createdTool.save();
+
+//         res.status(201).send(Object.assign({
+//             id: createdTool._id,
+//             name: createdTool.name,
+//             description: createdTool.description,
+//             category: createdTool.category,
+//             cover: createdTool.cover_url,
+//             public: createdTool.public,
+//             date_created: createdTool.date_created,
+//             date_verified: createdTool.date_verified
+//         }));
+//     } catch(err) {
+//         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
+//             return res.status(400).send(err);
+//         console.error(err);
+//         res.status(500).send('Internal server error');
+//     }
+// }
+
 module.exports.create = async (req, res) => {
     try {
-        const { name, description, category, verified } = req.body;
+        const { tool_type } = req.params;
+        const { name, description, category } = req.body;
 
-        if (!req.ability.can('create', subject('tools', { verified })))
-            return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create tool' });
-        else if (
-            (verified && await VerifiedTool.exists({ name })) ||
-            (!verified && await UserTool.exists({ user: req.user._id, name }))
-        )
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
-        
-        const createdTool = (verified ? new VerifiedTool({
-            name,
-            description,
-            category
-        }) : new UserTool({
-            name,
-            description,
-            category,
-            user: req.user._id
-        }) );
-        await createdTool.validate();
-        await createdTool.customValidate();
-        await createdTool.save();
-
-        res.status(201).send(Object.assign({
-            id: createdTool._id,
-            name: createdTool.name,
-            description: createdTool.description,
-            category: createdTool.category,
-            cover: createdTool.cover_url,
-            public: createdTool.public,
-            date_created: createdTool.date_created,
-            date_verified: createdTool.date_verified
-        }));
+        console.log(tool_type)
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -382,6 +396,29 @@ module.exports.search = async (req, res) => {
     }
 }
 
+// module.exports.clientTools = async (req, res) => {
+//     try {
+//         const { page, page_size, ordering, category_filter } = req.query;
+//         const { isValid, errors } = await Tool.validateCategories(category_filter);
+        
+//         if (!isValid)
+//             return res.status(400).send({ categories: errors });
+
+//         const userDocuments = await UserTool
+//             .find({ user: req.user._id })
+//             .categoryFilter(category_filter)
+//             .sort(ordering)
+//             .skip((page - 1) * page_size)
+//             .limit(page_size)
+//             .extendedInfo();
+        
+//         res.status(200).send(userDocuments);
+//     } catch(err) {
+//         console.error(err);
+//         res.status(500).send('Internal server error');
+//     }
+// }
+
 module.exports.clientTools = async (req, res) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
@@ -390,15 +427,28 @@ module.exports.clientTools = async (req, res) => {
         if (!isValid)
             return res.status(400).send({ categories: errors });
 
-        const userDocuments = await UserTool
-            .find({ user: req.user._id })
-            .categoryFilter(category_filter)
+        const searchQuery = Tool
+            .where({ user: req.user._id })
+            .categoryFilter(category_filter);
+
+        const totalDocuments = await Tool.countDocuments(searchQuery);
+        const responseDocuments = await Tool
+            .find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .extendedInfo();
-        
-        res.status(200).send(userDocuments);
+            .then(documents => documents.map(doc => doc.responseObject([
+                { name: '_id', alias: 'id' }
+            ])));
+
+        const response = {
+            page,
+            page_size,
+            total_pages: Math.ceil(totalDocuments / page_size),
+            total_results: totalDocuments,
+            data: responseDocuments
+        };
+        res.status(200).send(response);
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');

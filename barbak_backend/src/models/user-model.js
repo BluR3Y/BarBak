@@ -187,6 +187,13 @@ const userSchema = new mongoose.Schema({
     }
 },{ collection: 'users' });
 
+userSchema.virtual('profile_image_url').get(function() {
+    const { HOSTNAME, PORT, NODE_ENV } = process.env;
+    const filepath = this.profile_image || default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
+
+    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+});
+
 userSchema.statics.hashPassword = function(password) {
     // A random value added to the hashed password making it harder to guess
     const salt = randomBytes(16).toString('hex');
@@ -242,35 +249,17 @@ userSchema.methods.customValidate = async function() {
         throw error;
 }
 
-// userSchema.methods.basicStripExcess = function() {
-//     return {
-//         _id: this._id,
-//         username: this.username,
-//         fullname: this.fullname,
-//         email: this.email,
-//         profile_image: formatProfileImage(this.profile_image),
-//         date_registered: this.date_registered,
-//         expertise: this.expertise,
-//         public: this.public
-//     }
-// }
+userSchema.methods.responseObject = function(fields) {
+    const resObject = {};
 
-// userSchema.methods.extendedStripExcess = function() {
-//     return {
-//         _id: this._id,
-//         username: this.username,
-//         fullname: this.fullname,
-//         profile_image: formatProfileImage(this.profile_image),
-//         expertise: this.expertise,
-//         public: this.public
-//     };
-// }
-
-userSchema.virtual('profile_image_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const filepath = this.profile_image || default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
-
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
-});
+    for (const obj of fields) {
+        if (obj.condition && !obj.condition(this))
+            continue;
+    
+        if (obj.name in this)
+            resObject[obj.alias || obj.name] = this[obj.name];
+    }
+    return resObject;
+}
 
 module.exports = mongoose.model('User', userSchema);

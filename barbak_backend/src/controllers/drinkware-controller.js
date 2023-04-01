@@ -45,8 +45,7 @@ module.exports.create = async (req, res) => {
                 name: "public",
                 condition: (document) => document instanceof UserDrinkware
             }
-        ]
-
+        ];
         res.status(201).send(createdDrinkware.responseObject(responseFields));
     } catch(err) {
         if (err.name === 'ValidationError')

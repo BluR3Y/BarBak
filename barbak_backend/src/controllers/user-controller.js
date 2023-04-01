@@ -3,25 +3,6 @@ const User = require('../models/user-model');
 const { subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
 
-module.exports.clientInfo = async (req, res) => {
-    try {
-        const userInfo = await User.findOne({ _id: req.user._id });
-
-        res.status(200).send(Object.assign({
-            id: userInfo._id,
-            username: userInfo.username,
-            fullname: userInfo.fullname,
-            email: userInfo.email,
-            profile_image: userInfo.profile_image_url,
-            expertise_level: userInfo.expertise_level,
-            date_registered: userInfo.date_registered
-        }));
-    } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
-    }
-}
-
 module.exports.getUser = async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -98,6 +79,25 @@ module.exports.changeUsername = async (req, res) => {
         
         await User.findOneAndUpdate({ _id: req.user._id },{ username });
         res.status(204).send();
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+}
+
+module.exports.clientInfo = async (req, res) => {
+    try {
+        const userInfo = await User.findOne({ _id: req.user._id });
+
+        res.status(200).send(Object.assign({
+            id: userInfo._id,
+            username: userInfo.username,
+            fullname: userInfo.fullname,
+            email: userInfo.email,
+            profile_image: userInfo.profile_image_url,
+            expertise_level: userInfo.expertise_level,
+            date_registered: userInfo.date_registered
+        }));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');

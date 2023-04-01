@@ -4,17 +4,17 @@ const { imageUpload } = require('../config/multer-config');
 const auth = require('../lib/auth');
 
 module.exports.connect = function(router) {
-    router.post('/tools', joiValidator, toolController.create);
-    router.post('/tools/copy/:tool_id', joiValidator, toolController.copy);
+    router.post('/tools/:tool_type?', toolController.create);
+    router.post('/tools/copy/:tool_id', toolController.copy);
 
-    router.get('/tools/search', joiValidator, toolController.search);
-    router.get('/tools/@me', auth.sessionAuthenticationRequired, joiValidator, toolController.clientTools);
-    router.get('/tools/:tool_id', joiValidator, toolController.getTool);
+    router.get('/tools/search', toolController.search);
+    router.get('/tools/@me', auth.sessionAuthenticationRequired, toolController.clientTools);
+    router.get('/tools/:tool_id', toolController.getTool);
 
-    router.patch('/tools/privacy/:tool_id', joiValidator, toolController.updatePrivacy);
-    router.patch('/tools/cover/upload/:tool_id', imageUpload.single('tool_cover'), joiValidator, toolController.uploadCover);
-    router.patch('/tools/cover/remove/:tool_id', joiValidator, toolController.deleteCover);
-    router.patch('/tools/:tool_id', joiValidator, toolController.update);
+    router.patch('/tools/privacy/:tool_id', toolController.updatePrivacy);
+    router.patch('/tools/cover/upload/:tool_id', imageUpload.single('tool_cover'), toolController.uploadCover);
+    router.patch('/tools/cover/remove/:tool_id', toolController.deleteCover);
+    router.patch('/tools/:tool_id', toolController.update);
 
-    router.delete('/tools/:tool_id', joiValidator, toolController.delete);
+    router.delete('/tools/:tool_id', toolController.delete);
 }
