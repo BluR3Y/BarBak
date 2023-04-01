@@ -52,7 +52,7 @@ const updateValidation = {
 
 module.exports = {
     post: {
-        '/drinkware': createValidation,
+        '/drinkware/:drinkware_type?': createValidation,
         '/drinkware/copy/:drinkware_id': { params: idValidation }
     },
     get: {
