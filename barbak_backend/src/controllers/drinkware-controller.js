@@ -27,15 +27,15 @@ module.exports.create = async (req, res) => {
         await createdDrinkware.validate();
         await createdDrinkware.save();
 
-        res.status(201).send(Object.assign({
-            id: createdDrinkware._id,
-            name: createdDrinkware.name,
-            description: createdDrinkware.description,
-            cover: createdDrinkware.cover_url,
-            date_created: createdDrinkware.date_created,
-            date_verified: createdDrinkware.date_verified,
-            public: createdDrinkware.public
-        }));
+        const responseFields = [
+            'id',
+            'name',
+            'description',
+            'cover',
+            ...(createdDrinkware instanceof VerifiedDrinkware ? ['date_verified'] : ['date_created','public'])
+        ];
+
+        res.status(201).send(createdDrinkware.responseObject(responseFields));
     } catch(err) {
         if (err.name === 'ValidationError')
             return res.status(400).send(err);
@@ -55,8 +55,8 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
-            (drinkwareInfo.model === 'User Drinkware' && await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })) ||
-            (drinkwareInfo.model === 'Verified Drinkware' && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }))
+            (drinkwareInfo instanceof UserDrinkware && await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })) ||
+            (drinkwareInfo instanceof VerifiedDrinkware && await VerifiedDrinkware.exists({ name, _id: { $ne: drinkware_id } }))
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
 
@@ -87,11 +87,11 @@ module.exports.delete = async (req, res) => {
         else if (!req.ability.can('delete', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
-        if (drinkwareInfo.model === 'User Drinkware' && drinkwareInfo.cover_acl) {
+        if (drinkwareInfo instanceof UserDrinkware && drinkwareInfo.cover_acl) {
             const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
             await s3Operations.removeObject(aclDocument.file_path);
             await aclDocument.remove();
-        } else if (drinkwareInfo.model === 'Verified Drinkware' && drinkwareInfo.cover) 
+        } else if (drinkwareInfo instanceof VerifiedDrinkware && drinkwareInfo.cover) 
             await s3Operations.removeObject(drinkwareInfo.cover);
 
         await drinkwareInfo.remove();
@@ -115,9 +115,7 @@ module.exports.updatePrivacy = async (req, res) => {
         drinkwareInfo.public = !drinkwareInfo.public;
         await drinkwareInfo.save();
         
-        res.status(200).send({
-            public: drinkwareInfo.public
-        });
+        res.status(204).send();
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -138,7 +136,7 @@ module.exports.uploadCover = async (req, res) => {
         else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         
-        if (drinkwareInfo.model === 'User Drinkware') {
+        if (drinkwareInfo instanceof UserDrinkware) {
             const uploadInfo = await s3Operations.createObject(drinkwareCover, 'assets/private/images');
             if (drinkwareInfo.cover_acl) {
                 const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
@@ -196,12 +194,12 @@ module.exports.deleteCover = async (req, res) => {
         else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
-            (drinkwareInfo.model === 'User Drinkware' && !drinkwareInfo.cover_acl) ||
-            (drinkwareInfo.model === 'Verified Drinkware' && !drinkwareInfo.cover)
+            (drinkwareInfo instanceof UserDrinkware && !drinkwareInfo.cover_acl) ||
+            (drinkwareInfo instanceof VerifiedDrinkware && !drinkwareInfo.cover)
         )
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
 
-        if (drinkwareInfo.model === 'User Drinkware') {
+        if (drinkwareInfo instanceof UserDrinkware) {
             const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
             await s3Operations.removeObject(aclDocument.file_path);
             await aclDocument.remove();
@@ -242,11 +240,11 @@ module.exports.copy = async (req, res) => {
         });
 
         if (
-            (drinkwareInfo.model === 'User Drinkware' && drinkwareInfo.cover_acl) ||
-            (drinkwareInfo.model === 'Verified Drinkware' && drinkwareInfo.cover)
+            (drinkwareInfo instanceof UserDrinkware && drinkwareInfo.cover_acl) ||
+            (drinkwareInfo instanceof VerifiedDrinkware && drinkwareInfo.cover)
         ) {
             var coverPath;
-            if (drinkwareInfo.model === 'User Drinkware') {
+            if (drinkwareInfo instanceof UserDrinkware) {
                 const aclDocument = await AppAccessControl.findOne({ _id: drinkwareInfo.cover_acl });
                 coverPath = aclDocument.file_path;
             } else
@@ -268,14 +266,7 @@ module.exports.copy = async (req, res) => {
         }       
         await createdDrinkware.save();
 
-        res.status(200).send({
-            id: createdDrinkware._id,
-            cover: createdDrinkware.cover_url,
-            name: createdDrinkware.name,
-            description: createdDrinkware.description,
-            date_created: createdDrinkware.date_created,
-            public: createdDrinkware.public
-        });
+        res.status(201).send(createdDrinkware.responseObject(['id','name','description','cover','public','date_created']));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -292,14 +283,9 @@ module.exports.getDrinkware = async (req, res) => {
         else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         
-        res.status(200).send(Object.assign({
-            id: drinkwareInfo._id,
-            name: drinkwareInfo.name,
-            description: drinkwareInfo.description,
-            cover: drinkwareInfo.cover_url,
-            user: drinkwareInfo.user
-        }));
+        const response = drinkwareInfo.responseObject(['id','name','description','cover','verified','user']);
 
+        res.status(200).send(response);
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -309,37 +295,42 @@ module.exports.getDrinkware = async (req, res) => {
 module.exports.search = async (req, res) => {
     try {
         const { query, page, page_size, ordering } = req.query;
-        const searchDocuments = await Drinkware
-            .find({ name: { $regex: query } })
-            .where(req.user ?
-                {
-                    $or: [
-                        { model: 'Verified Drinkware' },
-                        { user: req.user._id },
-                        { public: true }
-                    ]
-                } :
-                {
-                    $or: [
-                        { model: 'Verified Drinkware' },
-                        { public: true }
-                    ]
-                }
-            )
+
+        const searchQuery = Drinkware
+            .where({ name: { $regex: query } })
+            .or(req.user ? [
+                { model: 'Verified Drinkware' },
+                { user: req.user._id },
+                { public: true }
+            ] : [
+                { model: 'Verified Drinkware' },
+                { public: true }
+            ]);
+
+        const totalDocuments = await Drinkware.countDocuments(searchQuery);
+        const responseDocuments = await Drinkware.find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => Object.assign({
-                id: doc._id,
-                name: doc.name,
-                description: doc.description,
-                cover: doc.cover_url,
-                user: doc.user
-            })));
+            .then(documents => documents.map(doc => doc.responseObject([
+                'id',
+                'name',
+                'description',
+                'cover',
+                'verified',
+                'user'
+            ])));
 
-        res.status(200).send(searchDocuments);
+        const response = {
+            page,
+            page_size,
+            total_pages: Math.ceil(totalDocuments / page_size),
+            total_results: totalDocuments,
+            data: responseDocuments
+        };
+        res.status(200).send(response);
     } catch(err) {
-        console.error(err);
+        console.log(err);
         res.status(500).send('Internal server error');
     }
 }
@@ -347,21 +338,24 @@ module.exports.search = async (req, res) => {
 module.exports.clientDrinkware = async (req, res) => {
     try {
         const { page, page_size, ordering } = req.query;
-        const userDocuments = await UserDrinkware
-            .find({ user: req.user._id })
+        const searchQuery = Drinkware.where({ user: req.user._id });
+
+        const totalDocuments = await Drinkware.countDocuments(searchQuery);
+        const responseDocuments = await Drinkware
+            .find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => Object.assign({
-                id: doc._id,
-                name: doc.name,
-                description: doc.description,
-                cover: doc.cover_url,
-                public: doc.public,
-                date_created: doc.date_created
-            })));
+            .then(documents => documents.map(doc => doc.responseObject(['id','name','description','cover','public','date_created'])));
 
-        res.status(200).send(userDocuments);
+        const response = {
+            page,
+            page_size,
+            total_pages: Math.ceil(totalDocuments / page_size),
+            total_results: totalDocuments,
+            data: responseDocuments
+        };
+        res.status(200).send(response);
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');

@@ -29,6 +29,27 @@ drinkwareSchema.virtual('cover_url').get(function() {
     return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
 });
 
+drinkwareSchema.virtual('verified').get(function() {
+    return this instanceof VerifiedDrinkware;
+});
+
+drinkwareSchema.methods.responseObject = function(fields) {
+    const fieldMap = {
+        'id': '_id',
+        'cover': 'cover_url',
+    };
+    const resObject = {};
+
+    for (const key of fields) {
+        const fieldName = fieldMap[key] || key;
+        
+        if (fieldName in this)
+            resObject[key] = this[fieldName];
+    }
+
+    return resObject;
+}
+
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
@@ -42,6 +63,8 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
+
+const VerifiedDrinkware = Drinkware.discriminator('Verified Drinkware', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     cover_acl: {
@@ -66,10 +89,12 @@ const userSchema = new mongoose.Schema({
     }
 });
 
+const UserDrinkware = Drinkware.discriminator('User Drinkware', userSchema);
+
 // Make Public Function
 
 module.exports = {
     Drinkware,
-    VerifiedDrinkware: Drinkware.discriminator('Verified Drinkware', verifiedSchema),
-    UserDrinkware: Drinkware.discriminator('User Drinkware', userSchema)
+    VerifiedDrinkware,
+    UserDrinkware
 };
