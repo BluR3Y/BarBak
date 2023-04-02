@@ -6,17 +6,18 @@ const s3Operations = require('../utils/aws-s3-operations');
 
 module.exports.create = async (req, res) => {
     try {
-        const { name, description, verified } = req.body;
+        const { name, description } = req.body;
+        const { drinkware_type = 'user' } = req.params;
 
-        if (!req.ability.can('create', subject('drinkware', { verified })))
-            return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drinkware' });
+        if (!req.ability.can('create', subject('drinkware', { subject_type: drinkware_type })))
+            return res.status(403).send({ path: 'drinkware_type', type: 'valid', message: 'Unauthorized to create drinkware' });
         else if (
-            (verified && await VerifiedDrinkware.exists({ name })) ||
-            (!verified && await UserDrinkware.exists({ user: req.user._id, name }))
+            (drinkware_type === 'verified' && await VerifiedDrinkware.exists({ name })) ||
+            (drinkware_type === 'user' && await UserDrinkware.exists({ user: req.user._id, name }))
         ) 
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
 
-        const createdDrinkware = ( verified ? new VerifiedDrinkware({
+        const createdDrinkware = ( drinkware_type === 'verified' ? new VerifiedDrinkware({
             name,
             description
         }) : new UserDrinkware({
@@ -28,13 +29,23 @@ module.exports.create = async (req, res) => {
         await createdDrinkware.save();
 
         const responseFields = [
-            'id',
-            'name',
-            'description',
-            'cover',
-            ...(createdDrinkware instanceof VerifiedDrinkware ? ['date_verified'] : ['date_created','public'])
+            { name: "_id", alias: "id" },
+            { name: "name" },
+            { name: "description"},
+            { name: "cover_url", alias: "cover" },
+            {
+                name: "date_verified",
+                condition: (document) => document instanceof VerifiedDrinkware
+            },
+            {
+                name: "date_created",
+                condition: (document) => document instanceof UserDrinkware
+            },
+            {
+                name: "public",
+                condition: (document) => document instanceof UserDrinkware
+            }
         ];
-
         res.status(201).send(createdDrinkware.responseObject(responseFields));
     } catch(err) {
         if (err.name === 'ValidationError')
@@ -52,7 +63,7 @@ module.exports.update = async (req, res) => {
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('update', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('update', subject('drinkware', { document: drinkwareInfo })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
             (drinkwareInfo instanceof UserDrinkware && await UserDrinkware.exists({ user: req.user._id, name, _id: { $ne: drinkware_id } })) ||
@@ -84,7 +95,7 @@ module.exports.delete = async (req, res) => {
         
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('delete', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('delete', subject('drinkware', { document: drinkwareInfo })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
         if (drinkwareInfo instanceof UserDrinkware && drinkwareInfo.cover_acl) {
@@ -109,7 +120,7 @@ module.exports.updatePrivacy = async (req, res) => {
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
 
         drinkwareInfo.public = !drinkwareInfo.public;
@@ -133,7 +144,7 @@ module.exports.uploadCover = async (req, res) => {
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         
         if (drinkwareInfo instanceof UserDrinkware) {
@@ -170,9 +181,7 @@ module.exports.uploadCover = async (req, res) => {
         }
         await drinkwareInfo.save();
         
-        res.status(200).send({
-            cover: drinkwareInfo.cover_url
-        });
+        res.status(200).send(drinkwareInfo.responseObject([{ name: 'cover_url', alias: 'cover' }]));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -191,7 +200,7 @@ module.exports.deleteCover = async (req, res) => {
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('patch', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (
             (drinkwareInfo instanceof UserDrinkware && !drinkwareInfo.cover_acl) ||
@@ -225,8 +234,8 @@ module.exports.copy = async (req, res) => {
         if (!drinkwareInfo) 
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (
-            (!req.ability.can('read', subject('drinkware', drinkwareInfo))) ||
-            (!req.ability.can('create', subject('drinkware', { verified: false })))
+            (!req.ability.can('read', subject('drinkware', { action_type: 'public', document: drinkwareInfo }))) ||
+            (!req.ability.can('create', subject('drinkware', { subject_type: 'user' })))
         )
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
@@ -266,7 +275,15 @@ module.exports.copy = async (req, res) => {
         }       
         await createdDrinkware.save();
 
-        res.status(201).send(createdDrinkware.responseObject(['id','name','description','cover','public','date_created']));
+        const responseFields = [
+            { name: '_id', alias: 'id' },
+            { name: 'name' },
+            { name: 'description' },
+            { name: 'cover_url', alias: 'cover' },
+            { name: 'public' },
+            { name: 'date_created' }
+        ];
+        res.status(201).send(createdDrinkware.responseObject(responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -275,17 +292,41 @@ module.exports.copy = async (req, res) => {
 
 module.exports.getDrinkware = async (req, res) => {
     try {
-        const { drinkware_id } = req.params;
+        const { drinkware_id, privacy_type = 'public' } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
-        else if (!req.ability.can('read', subject('drinkware', drinkwareInfo)))
+        else if (!req.ability.can('read', subject('drinkware', {
+            action_type: privacy_type,
+            document: drinkwareInfo
+        })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
-        
-        const response = drinkwareInfo.responseObject(['id','name','description','cover','verified','user']);
 
-        res.status(200).send(response);
+        const responseFields = [
+            { name: '_id', alias: 'id'},
+            { name: 'name' },
+            { name: 'description' },
+            { name: 'cover_url', alias: 'cover' },
+            { name: 'verified' },
+            {
+                name: 'date_verified',
+                condition: (document) => document instanceof VerifiedDrinkware && privacy_type === 'private'
+            },
+            {
+                name: 'user',
+                condition: (document) => document instanceof UserDrinkware
+            },
+            {
+                name: 'date_created',
+                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
+            },
+            {
+                name: 'public',
+                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
+            }
+        ];
+        res.status(200).send(drinkwareInfo.responseObject(responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -313,12 +354,10 @@ module.exports.search = async (req, res) => {
             .skip((page - 1) * page_size)
             .limit(page_size)
             .then(documents => documents.map(doc => doc.responseObject([
-                'id',
-                'name',
-                'description',
-                'cover',
-                'verified',
-                'user'
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'verified' }
             ])));
 
         const response = {
@@ -346,7 +385,13 @@ module.exports.clientDrinkware = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject(['id','name','description','cover','public','date_created'])));
+            .then(documents => documents.map(doc => doc.responseObject([
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'public' },
+                { name: 'date_created' }
+            ])));
 
         const response = {
             page,

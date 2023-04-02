@@ -19,40 +19,30 @@ const toolSchema = new mongoose.Schema({
     }
 },{ collection: 'tools', discriminatorKey: 'model' });
 
-// toolSchema.query.basicInfo = function() {
-//     return new Promise((resolve, reject) => {
-//         this.exec(function(err, documents) {
-//             if (err)
-//                 return reject(err);
-//             resolve(documents.map(doc => doc.extendedStripExcess()));
-//         });
-//     });
-// }
-
-// toolSchema.query.extendedInfo = function() {
-//     return new Promise((resolve, reject) => {
-//         this.exec(function(err, documents) {
-//             if (err)
-//                 return reject(err);
-//             resolve(documents.map(doc => doc.basicStripExcess()));
-//         });
-//     });
-// }
-
 toolSchema.query.categoryFilter = function(categories) {
     return categories.length ? this.where('category').in(categories) : this;
 }
 
+toolSchema.virtual('verified').get(function() {
+    return this instanceof VerifiedTool;
+});
+
+toolSchema.virtual('cover_url').get(function() {
+    const { HOSTNAME, PORT, NODE_ENV } = process.env;
+    const { verified } = this;
+    let filepath;
+
+    if (verified && this.cover) 
+        filepath = this.cover;
+    else if (!verified && this.cover_acl)
+        filepath = 'assets/private/' + this.cover_acl;
+    else 
+        filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
+
+    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+});
+
 toolSchema.statics = {
-    // formatCoverImage: function(filepath) {
-    //     const { HOSTNAME, PORT } = process.env;
-    //     if (!filepath) {
-    //         const defaultCover = fileOperations.findByName('static/default', 'barware_cover');
-    //         if (defaultCover.length)
-    //             filepath = 'assets/default/' + defaultCover;
-    //     }
-    //     return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : null;
-    // },
     getCategories: async function() {
         const categories = await executeSqlQuery('SELECT name FROM tool_categories');
         return (await categories.map(item => item.name));
@@ -85,20 +75,18 @@ toolSchema.methods.customValidate = async function() {
         throw error;
 }
 
-toolSchema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const verified = this.model === 'Verified Tool';
-    let filepath;
+toolSchema.methods.responseObject = function(fields) {
+    const resObject = {};
 
-    if (verified && this.cover) 
-        filepath = this.cover;
-    else if (!verified && this.cover_acl)
-        filepath = 'assets/private/' + this.cover_acl;
-    else 
-        filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
-
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
-});
+    for (const obj of fields) {
+        if (obj.condition && !obj.condition(this))
+            continue;
+    
+        if (obj.name in this)
+            resObject[obj.alias || obj.name] = this[obj.name];
+    }
+    return resObject;
+}
 
 const Tool = mongoose.model('Tool', toolSchema);
 
@@ -114,27 +102,7 @@ const verifiedSchema = new mongoose.Schema({
     }
 });
 
-// verifiedSchema.methods = {
-//     basicStripExcess: function() {
-//         return {
-//             _id: this._id,
-//             name: this.name,
-//             description: this.description,
-//             category: this.category,
-//             cover: this.constructor.formatCoverImage(this.cover),
-//             date_verified: this.date_verified
-//         }
-//     },
-//     extendedStripExcess: function() {
-//         return {
-//             _id: this._id,
-//             name: this.name,
-//             description: this.description,
-//             category: this.category,
-//             cover: this.constructor.formatCoverImage(this.cover)
-//         }
-//     }
-// }
+const VerifiedTool = Tool.discriminator('Verified Tool', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     cover_acl: {
@@ -159,35 +127,12 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// userSchema.methods = {
-//     basicStripExcess: function() {
-//         return {
-//             _id: this._id,
-//             // user: this.user,
-//             name: this.name,
-//             description: this.description,
-//             category: this.category,
-//             cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
-//             date_created: this.date_created,
-//             public: this.public
-//         }
-//     },
-//     extendedStripExcess: function() {
-//         return {
-//             _id: this._id,
-//             // user: this.user,
-//             name: this.name,
-//             description: this.description,
-//             category: this.category,
-//             cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
-//         }
-//     }
-// }
-
 // Make Public Function
+
+const UserTool = Tool.discriminator('User Tool', userSchema);
 
 module.exports = {
     Tool,
-    VerifiedTool: Tool.discriminator('Verified Tool', verifiedSchema),
-    UserTool: Tool.discriminator('User Tool', userSchema)
+    VerifiedTool,
+    UserTool
 };

@@ -30,6 +30,12 @@ const clientDrinkwareValidation = {
     })
 };
 
+const getDrinkwareValidation = {
+    params: idValidation.concat(Joi.object({
+        privacy: Joi.string()
+    }))
+}
+
 const searchValidation = {
     query: clientDrinkwareValidation.query.concat(Joi.object({
         query: querySchema.default('')
@@ -46,13 +52,13 @@ const updateValidation = {
 
 module.exports = {
     post: {
-        '/drinkware': createValidation,
+        '/drinkware/:drinkware_type?': createValidation,
         '/drinkware/copy/:drinkware_id': { params: idValidation }
     },
     get: {
         '/drinkware/@me': clientDrinkwareValidation,
         '/drinkware/search': searchValidation,
-        '/drinkware/:drinkware_id': { params: idValidation },
+        '/drinkware/:drinkware_id/:privacy?': getDrinkwareValidation,
     },
     patch: {
         '/drinkware/cover/upload/:drinkware_id': { params: idValidation },

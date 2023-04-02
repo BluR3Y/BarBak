@@ -14,11 +14,15 @@ const drinkwareSchema = new mongoose.Schema({
     },
 },{ collection: 'drinkware', discriminatorKey: 'model' });
 
+drinkwareSchema.virtual('verified').get(function() {
+    return this instanceof VerifiedDrinkware;
+});
+
 drinkwareSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const verified = this.model === 'Verified Drinkware';
+    const { verified } = this;
     let filepath;
-
+    
     if (verified && this.cover) 
         filepath = this.cover;
     else if (!verified && this.cover_acl)
@@ -29,24 +33,16 @@ drinkwareSchema.virtual('cover_url').get(function() {
     return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
 });
 
-drinkwareSchema.virtual('verified').get(function() {
-    return this instanceof VerifiedDrinkware;
-});
-
 drinkwareSchema.methods.responseObject = function(fields) {
-    const fieldMap = {
-        'id': '_id',
-        'cover': 'cover_url',
-    };
     const resObject = {};
 
-    for (const key of fields) {
-        const fieldName = fieldMap[key] || key;
-        
-        if (fieldName in this)
-            resObject[key] = this[fieldName];
+    for (const obj of fields) {
+        if (obj.condition && !obj.condition(this))
+            continue;
+    
+        if (obj.name in this)
+            resObject[obj.alias || obj.name] = this[obj.name];
     }
-
     return resObject;
 }
 
