@@ -44,8 +44,15 @@ function authenticationStrategyCallback(req, res, next) {
         req.logIn(user, function(err) {
             if (err)
                 return res.status(500).send('An error occured while processing your request');
-            const publicInfo = user.basicStripExcess();
-            res.status(200).send(publicInfo);
+            const responseFields = [
+                { name: '_id', alias: 'id' },
+                { name: 'username' },
+                { name: 'profile_image_url', alias: 'profile_image' },
+                { name: 'role' },
+                { name: 'public' },
+                { name: 'expertise_level' }
+            ];
+            res.status(200).send(user.responseObject(responseFields));
         })
     }
 }

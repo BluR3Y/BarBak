@@ -50,7 +50,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@editor_role_id, 'update', 'users', '{ "document._id": "USER_ID" }'),
 
     -- Drinkware Rules
-    (@editor_role_id, 'create', 'drinkware', '{ "action_type": "user" }'),
+    (@editor_role_id, 'create', 'drinkware', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'drinkware', '{
         "document.model": "User Drinkware",
         "document.user": "USER_ID"
@@ -65,7 +65,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Tool Rules
-    (@editor_role_id, 'create', 'tools', '{ "action_type": "user" }'),
+    (@editor_role_id, 'create', 'tools', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'tools', '{
         "document.model": "User Tool",
         "document.user": "USER_ID"
@@ -80,7 +80,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Ingredient Rules
-    (@editor_role_id, 'create', 'ingredients', '{ "action_type": "user" }'),
+    (@editor_role_id, 'create', 'ingredients', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'ingredients', '{
         "document.model": "User Ingredient",
         "document.user": "USER_ID"
@@ -95,7 +95,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Drink Rules
-    (@editor_role_id, 'create', 'drinks', '{ "action_type": "user" }'),
+    (@editor_role_id, 'create', 'drinks', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'drinks', '{
         "document.model": "User Drink",
         "document.user": "USER_ID"
@@ -111,7 +111,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
 
     -- Additional Rules
         -- Verified Drinkware Rules
-        (@editor_role_id, 'create', 'drinkware', '{ "action_type": "verified" }'),
+        (@editor_role_id, 'create', 'drinkware', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'drinkware', '{
             "action_type": "private", 
             "document.model": "Verified Drinkware" 
@@ -120,7 +120,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         (@editor_role_id, 'delete', 'drinkware', '{ "document.model": "Verified Drinkware" }'),
 
         -- Verified Tool Rules
-        (@editor_role_id, 'create', 'tools', '{ "action_type": "verified" }'),
+        (@editor_role_id, 'create', 'tools', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'tools', '{
             "action_type": "private", 
             "document.model": "Verified Tool"
@@ -129,7 +129,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         (@editor_role_id, 'delete', 'tools', '{ "document.model": "Verified Tool" }'),
 
         -- Verified Ingredient Rules
-        (@editor_role_id, 'create', 'ingredients', '{ "action_type": "verified" }'),
+        (@editor_role_id, 'create', 'ingredients', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'ingredients', '{
             "action_type": "private", 
             "document.model": "Verified Ingredient"
@@ -138,7 +138,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         (@editor_role_id, 'delete', 'ingredients', '{ "document.model": "Verified Ingredient" }'),
 
         -- Verified Drink Rules
-        (@editor_role_id, 'create', 'drinks', '{ "action_type": "verified" }'),
+        (@editor_role_id, 'create', 'drinks', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'drinks', '{ 
             "action_type": "private", 
             "document.model": "Verified Drink" 
@@ -218,7 +218,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     (@user_role_id, 'update', 'users', '{ "document._id": "USER_ID" }'),
 
     -- Drinkware Rules
-    (@user_role_id, 'create', 'drinkware', '{ "action_type": "user" }'),
+    (@user_role_id, 'create', 'drinkware', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'drinkware', '{
         "document.model": "User Drinkware",
         "document.user": "USER_ID"
@@ -233,7 +233,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Tool Rules
-    (@user_role_id, 'create', 'tools', '{ "action_type": "user" }'),
+    (@user_role_id, 'create', 'tools', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'tools', '{
         "document.model": "User Tool",
         "document.user": "USER_ID"
@@ -248,7 +248,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Ingredient Rules
-    (@user_role_id, 'create', 'ingredients', '{ "action_type": "user" }'),
+    (@user_role_id, 'create', 'ingredients', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'ingredients', '{
         "document.model": "User Ingredient",
         "document.user": "USER_ID"
@@ -263,7 +263,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
 
     -- Drink Rules
-    (@user_role_id, 'create', 'drinks', '{ "action_type": "user" }'),
+    (@user_role_id, 'create', 'drinks', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'drinks', '{
         "document.model": "User Drink",
         "document.user": "USER_ID"

@@ -9,7 +9,7 @@ module.exports.create = async (req, res) => {
         const { name, description } = req.body;
         const { drinkware_type = 'user' } = req.params;
 
-        if (!req.ability.can('create', subject('drinkware', { action_type: drinkware_type })))
+        if (!req.ability.can('create', subject('drinkware', { subject_type: drinkware_type })))
             return res.status(403).send({ path: 'drinkware_type', type: 'valid', message: 'Unauthorized to create drinkware' });
         else if (
             (drinkware_type === 'verified' && await VerifiedDrinkware.exists({ name })) ||
@@ -235,7 +235,7 @@ module.exports.copy = async (req, res) => {
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (
             (!req.ability.can('read', subject('drinkware', { action_type: 'public', document: drinkwareInfo }))) ||
-            (!req.ability.can('create', subject('drinkware', { action_type: 'user' })))
+            (!req.ability.can('create', subject('drinkware', { subject_type: 'user' })))
         )
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
@@ -292,13 +292,13 @@ module.exports.copy = async (req, res) => {
 
 module.exports.getDrinkware = async (req, res) => {
     try {
-        const { drinkware_id, privacy = 'public' } = req.params;
+        const { drinkware_id, privacy_type = 'public' } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
             return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
         else if (!req.ability.can('read', subject('drinkware', {
-            action_type: privacy,
+            action_type: privacy_type,
             document: drinkwareInfo
         })))
             return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
@@ -311,7 +311,7 @@ module.exports.getDrinkware = async (req, res) => {
             { name: 'verified' },
             {
                 name: 'date_verified',
-                condition: (document) => document instanceof VerifiedDrinkware && privacy === 'private'
+                condition: (document) => document instanceof VerifiedDrinkware && privacy_type === 'private'
             },
             {
                 name: 'user',
@@ -319,11 +319,11 @@ module.exports.getDrinkware = async (req, res) => {
             },
             {
                 name: 'date_created',
-                condition: (document) => document instanceof UserDrinkware && privacy === 'private'
+                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
             },
             {
                 name: 'public',
-                condition: (document) => document instanceof UserDrinkware && privacy === 'private'
+                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
             }
         ];
         res.status(200).send(drinkwareInfo.responseObject(responseFields));
