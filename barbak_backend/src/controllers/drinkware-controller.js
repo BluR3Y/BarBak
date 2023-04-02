@@ -34,16 +34,16 @@ module.exports.create = async (req, res) => {
             { name: "description"},
             { name: "cover_url", alias: "cover" },
             {
-                name: "date_verified",
-                condition: (document) => document instanceof VerifiedDrinkware
+                name: "public",
+                condition: (document) => document instanceof UserDrinkware
             },
             {
                 name: "date_created",
                 condition: (document) => document instanceof UserDrinkware
             },
             {
-                name: "public",
-                condition: (document) => document instanceof UserDrinkware
+                name: "date_verified",
+                condition: (document) => document instanceof VerifiedDrinkware
             }
         ];
         res.status(201).send(createdDrinkware.responseObject(responseFields));
