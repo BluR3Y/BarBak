@@ -181,7 +181,7 @@ module.exports.uploadCover = async (req, res) => {
         }
         await drinkwareInfo.save();
         
-        res.status(200).send(drinkwareInfo.responseObject([{ name: 'cover_url', alias: 'cover' }]));
+        res.status(204).send();
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -275,15 +275,7 @@ module.exports.copy = async (req, res) => {
         }       
         await createdDrinkware.save();
 
-        const responseFields = [
-            { name: '_id', alias: 'id' },
-            { name: 'name' },
-            { name: 'description' },
-            { name: 'cover_url', alias: 'cover' },
-            { name: 'public' },
-            { name: 'date_created' }
-        ];
-        res.status(201).send(createdDrinkware.responseObject(responseFields));
+        res.status(204).send();
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -311,7 +303,7 @@ module.exports.getDrinkware = async (req, res) => {
             { name: 'verified' },
             {
                 name: 'date_verified',
-                condition: (document) => document instanceof VerifiedDrinkware && privacy_type === 'private'
+                condition: (document) => privacy_type === 'private' && document instanceof VerifiedDrinkware
             },
             {
                 name: 'user',
@@ -319,11 +311,11 @@ module.exports.getDrinkware = async (req, res) => {
             },
             {
                 name: 'date_created',
-                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
+                condition: (document) => privacy_type === 'private' && document instanceof UserDrinkware
             },
             {
                 name: 'public',
-                condition: (document) => document instanceof UserDrinkware && privacy_type === 'private'
+                condition: (document) => privacy_type === 'private' && document instanceof UserDrinkware
             }
         ];
         res.status(200).send(drinkwareInfo.responseObject(responseFields));

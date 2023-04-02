@@ -9,7 +9,7 @@ module.exports.connect = function(router) {
 
     router.get('/ingredients/@me', auth.sessionAuthenticationRequired, joiValidator, ingredientController.clientIngredients);
     router.get('/ingredients/search', joiValidator, ingredientController.search);
-    router.get('/ingredients/:ingredient_id', joiValidator, ingredientController.getIngredient);
+    router.get('/ingredients/:ingredient_id/:privacy_type?', ingredientController.getIngredient);
 
     router.patch('/ingredients/cover/upload/:ingredient_id', imageUpload.single('ingredient_cover'), joiValidator, ingredientController.uploadCover);
     router.patch('/ingredients/cover/remove/:ingredient_id', joiValidator, ingredientController.deleteCover);

@@ -64,7 +64,7 @@ module.exports = {
     get: {
         '/ingredients/@me': { query: clientIngredientValidation },
         '/ingredients/search': { query: searchValidation },
-        '/ingredients/:ingredient_id': { params: idValidation }
+        '/ingredients/:ingredient_id/:privacy_type?': { params: idValidation }
     },
     patch: {
         '/ingredients/cover/upload/:ingredient_id': { params: idValidation },

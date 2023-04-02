@@ -7,6 +7,8 @@ const Schemas = {
     ingredients: require('./ingredient-schemas')
 };
 
+// **** Joi Validation needs major restructuring and debugging ****
+
 module.exports = (req, res, next) => {
         // Joi validation options
     const validationOptions = {

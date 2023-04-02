@@ -17,7 +17,7 @@
     },
     "default_covers": {
         "drinkware": "drinkware_cover.jpg",
-        "ingredient": "static/ingredient_cover.jpg",
+        "ingredient": "ingredient_cover.jpg",
         "tool": "barware_cover.jpg",
         "user": "profile_image.png",
         "drink": "drink_cover.jpg"

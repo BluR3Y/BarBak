@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const fileOperations = require('../utils/file-operations');
+const { default_covers } = require('../config/config.json');
 
 const ingredientSchema = new mongoose.Schema({
     name: {
@@ -23,25 +24,24 @@ const ingredientSchema = new mongoose.Schema({
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
-ingredientSchema.query.basicInfo = function() {
-    return new Promise((resolve, reject) => {
-        this.exec(function(err, documents) {
-            if (err)
-                return reject(err);
-            resolve(documents.map(doc => doc.extendedStripExcess()));
-        });
-    });
-}
+ingredientSchema.virtual('verified').get(function() {
+    return this instanceof VerifiedIngredient;
+});
 
-ingredientSchema.query.extendedInfo = function() {
-    return new Promise((resolve, reject) => {
-        this.exec(function(err, documents) {
-            if (err)
-                return reject(err);
-            resolve(documents.map(doc => doc.basicStripExcess()));
-        });
-    });
-}
+ingredientSchema.virtual('cover_url').get(function() {
+    const { HOSTNAME, PORT, NODE_ENV } = process.env;
+    const { verified } = this;
+    let filepath;
+    
+    if (verified && this.cover) 
+        filepath = this.cover;
+    else if (!verified && this.cover_acl)
+        filepath = 'assets/private/' + this.cover_acl;
+    else 
+        filepath = default_covers['ingredient'] ? 'assets/default/' + default_covers['ingredient'] : null;
+
+    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+});
 
 ingredientSchema.query.categoryFilter = function(filters) {
     const conditions = [];
@@ -54,7 +54,7 @@ ingredientSchema.query.categoryFilter = function(filters) {
             formatted.sub_category = { $in: filters[category] };
         conditions.push(formatted);
     }
-
+    
     return conditions.length ? this.where({ $or: conditions }) : this;
 }
 
@@ -130,6 +130,19 @@ ingredientSchema.methods.customValidate = async function() {
     }
 }
 
+ingredientSchema.methods.responseObject = function(fields) {
+    const resObject = {};
+
+    for (const obj of fields) {
+        if (obj.condition && !obj.condition(this))
+            continue;
+    
+        if (obj.name in this)
+            resObject[obj.alias || obj.name] = this[obj.name];
+    }
+    return resObject;
+}
+
 const Ingredient = mongoose.model('Ingredient', ingredientSchema);
 
 const verifiedSchema = new mongoose.Schema({
@@ -144,29 +157,7 @@ const verifiedSchema = new mongoose.Schema({
     }
 });
 
-verifiedSchema.methods = {
-    basicStripExcess: function() {
-        return {
-            _id: this._id,
-            name: this.name,
-            description: this.description,
-            category: this.category,
-            sub_category: this.sub_category,
-            cover: this.constructor.formatCoverImage(this.cover),
-            date_verified: this.date_verified
-        };
-    },
-    extendedStripExcess: function() {
-        return {
-            _id: this._id,
-            name: this.name,
-            description: this.description,
-            category: this.category,
-            sub_category: this.sub_category,
-            cover: this.constructor.formatCoverImage(this.cover),
-        };
-    }
-}
+const VerifiedIngredient = Ingredient.discriminator('Verified Ingredient', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     cover_acl: {
@@ -191,35 +182,10 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-userSchema.methods = {
-    basicStripExcess: function() {
-        return {
-            _id: this._id,
-            user: this.user,
-            name: this.name,
-            description: this.description,
-            category: this.category,
-            sub_category: this.sub_category,
-            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null),
-            date_created: this.date_created,
-            public: this.public
-        };
-    },
-    extendedStripExcess: function() {
-        return {
-            _id: this._id,
-            // user: this.user,
-            name: this.name,
-            description: this.description,
-            category: this.category,
-            sub_category: this.sub_category,
-            cover: this.constructor.formatCoverImage(this.cover_acl ? `assets/private/${this.cover_acl}` : null)
-        };
-    }
-}
+const UserIngredient = Ingredient.discriminator('User Ingredient', userSchema);
 
 module.exports = {
     Ingredient,
-    VerifiedIngredient: Ingredient.discriminator('Verified Ingredient', verifiedSchema),
-    UserIngredient: Ingredient.discriminator('User Ingredient', userSchema)
+    VerifiedIngredient,
+    UserIngredient
 };

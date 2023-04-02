@@ -83,26 +83,7 @@ module.exports.update = async (req, res) => {
         await toolInfo.customValidate();
         await toolInfo.save();
 
-        const responseFields = [
-            { name: '_id', alias: 'id' },
-            { name: 'name' },
-            { name: 'description' },
-            { name: 'category' },
-            { name: 'cover_url', alias: 'cover' },
-            {
-                name: 'public',
-                condition: (document) => document instanceof UserTool
-            },
-            {
-                name: 'date_created',
-                condition: (document) => document instanceof UserTool
-            },
-            {
-                name: 'date_verified',
-                condition: (document) => document instanceof VerifiedTool
-            }
-        ];
-        res.status(200).send(toolInfo.responseObject(responseFields));
+        res.status(204).send();
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -148,7 +129,8 @@ module.exports.updatePrivacy = async (req, res) => {
         
         toolInfo.public = !toolInfo.public;
         await toolInfo.save();
-        res.status(200).send(toolInfo)
+
+        res.status(204).send();
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -235,8 +217,8 @@ module.exports.deleteCover = async (req, res) => {
             await s3Operations.removeObject(toolInfo.cover);
             toolInfo.cover = null;
         }
-
         await toolInfo.save();
+        
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -358,18 +340,19 @@ module.exports.search = async (req, res) => {
                 { public: true }
             ]);
 
-            const totalDocuments = await Tool.countDocuments(searchQuery);
-            const responseDocuments = await Tool.find(searchQuery)
-                .sort(ordering)
-                .skip((page - 1) * page_size)
-                .limit(page_size)
-                .then(documents => documents.map(doc => doc.responseObject([
-                    { name: '_id', alias: 'id' },
-                    { name: 'name' },
-                    { name: 'category' },
-                    { name: 'cover_url', alias: 'cover' },
-                    { name: 'verified' }
-                ])));
+        const totalDocuments = await Tool.countDocuments(searchQuery);
+        const responseDocuments = await Tool
+            .find(searchQuery)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => documents.map(doc => doc.responseObject([
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'category' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'verified' }
+            ])));
 
         const response = {
             page,
