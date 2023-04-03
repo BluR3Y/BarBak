@@ -1,6 +1,7 @@
 const { subject } = require('@casl/ability');
 const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
 const responseObject = require('../utils/response-object');
+const _ = require('lodash');
 
 module.exports.create = async (req, res) => {
     try {
@@ -120,7 +121,7 @@ module.exports.getDrink = async (req, res) => {
         const { drink_id, privacy_type = 'public' } = req.params;
         const drinkInfo = await Drink
             .findOne({ _id: drink_id })
-            .populate('drinkwareInfo toolInfo')
+            .populate('drinkwareInfo toolInfo ingredientInfo');
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -129,24 +130,28 @@ module.exports.getDrink = async (req, res) => {
             { name: 'preparation_method' },
             { name: 'serving_style' },
             { name: 'preparation' },
-            { name: 'ingredients' },
-            { name: 'drinkwareInfo._id', alias: 'drinkware.id' },
-            {  } // Last here
+            { name: 'ingredientInfo', alias: 'ingredients', sub_fields: [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'description' },
+                { name: 'cover_url', alias: 'cover' }
+            ] },
+            { name: 'drinkwareInfo', alias: 'drinkware', sub_fields: [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'description' },
+                { name: 'cover_url', alias: 'cover' },
+            ] },
             { name: 'toolInfo', alias: 'tools', sub_fields: [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
                 { name: 'category' },
-                { name: 'cover_url' },
+                { name: 'cover_url' , alias: 'cover'},
             ] },
             { name: 'tags' },
         ];
-        // sub_fields: [
-        //     { name: '_id', alias: 'id' },
-        //     { name: 'name' },
-        //     { name: 'description' },
-        //     { name: 'cover_url', alias: 'cover' },
-        // ]
+        
         res.status(200).send(responseObject(drinkInfo, responseFields));
     } catch(err) {
         console.error(err);
