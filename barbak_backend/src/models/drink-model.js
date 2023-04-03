@@ -3,6 +3,7 @@ const { executeSqlQuery } = require('../config/database-config');
 const { Drinkware } = require('./drinkware-model');
 const { Ingredient } = require('./ingredient-model');
 const { Tool } = require('./tool-model');
+const _ = require('lodash');
 
 const ingredientSchema = {
     type: [{
@@ -150,23 +151,7 @@ const drinkSchema = new mongoose.Schema({
     }
 },{ collection: 'drinks', discriminatorKey: 'model' });
 
-drinkSchema.query.basicInfo = async function() {
-    const documents = await this.exec();
-    return (await Promise.all(documents.map(async doc => await doc.extendedStripExcess())));
-}
-
-drinkSchema.query.extendedInfo = async function() {
-    const documents = await this.exec();
-    return (await Promise.all(documents.map(async doc => await doc.basicStripExcess())));
-}
-
-// Filter Query
-
 drinkSchema.statics = {
-    formatDrinkImage: function(filepath) {
-        const { HOSTNAME, PORT } = process.env;
-
-    },
     getPreparationMethods: async function() {
         const preparationMethods = await executeSqlQuery(`SELECT name FROM drink_preparation_methods`);
         return (await preparationMethods.map(item => item.name));
@@ -206,6 +191,29 @@ drinkSchema.statics = {
         return { isValid: !Object.keys(errors).length, errors };
     },
 }
+
+drinkSchema.virtual('verified').get(function() {
+    return this instanceof VerifiedDrink;
+});
+
+drinkSchema.virtual('drinkwareInfo', {
+    ref: 'Drinkware',
+    localField: 'drinkware',
+    foreignField: '_id',
+    justOne: true
+});
+
+drinkSchema.virtual('ingredientInfo', {
+    ref: 'Ingredient',
+    localField: 'ingredients',
+    foreignField: '_id',
+});
+
+drinkSchema.virtual('toolInfo', {
+    ref: 'Tool',
+    localField: 'tools',
+    foreignField: '_id'
+});
 
 const Drink = mongoose.model('Drink', drinkSchema);
 
@@ -342,14 +350,10 @@ verifiedSchema.methods = {
 
         if (Object.keys(error.errors).length)
             throw error;
-    },
-    basicStripExcess: async function() {
-
-    },
-    extendedStripExcess: async function() {
-
     }
 }
+
+const VerifiedDrink = Drink.discriminator('Verified Drink', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     assets: {
@@ -501,63 +505,65 @@ userSchema.methods = {
         if (!servingStyleValidation.isValid)
             error.errors['serving_style'] = servingStyleValidation.errors[serving_style];
         if (!drinkwareValidation.isValid)
-            error.errors['drinkware'] = drinkwareValidation.errors[drinkware];
+            error.errors['drinkware'] = drinkwareValidation.errors[0];
         if (!ingredientValidtion.isValid)
             error.errors['ingredients'] = ingredientValidtion.errors;
         if (!toolValidation.isValid)
             error.errors['tools'] = toolValidation.errors;
-    
+
         if (Object.keys(error.errors).length)
             throw error;
     },
-    basicStripExcess: async function() {
-        const populatedDrink = await this
-            .populate([
-                { path: 'drinkware' }, 
-                { path: 'ingredients.ingredient_id' }, 
-                { path: 'ingredients.substitutes.ingredient_id' },
-                { path: 'tools' }
-            ]);
-        const formattedDrinkware = populatedDrink.drinkware.extendedStripExcess();
-        const formattedTools = populatedDrink.tools.map(tool => tool.extendedStripExcess());
-        const formattedIngredients = populatedDrink.ingredients.map(ingredient => {
-            return {
-                ingredient: ingredient.ingredient_id.extendedStripExcess(),
-                measure: ingredient.measure,
-                optional: ingredient.optional,
-                garnish: ingredient.garnish,
-                _id: ingredient._id,
-                substitutes: ingredient.substitutes.map(sub => {
-                    return {
-                        ingredient: sub.ingredient_id.extendedStripExcess(),
-                        measure: sub.measure,
-                        _id: sub._id
-                    }
-                })
-            }
-        });
-        // Stopped Here, working on Cover/Gallery
-        return {
-            name: this.name,
-            description: this.description,
-            preparation_method: this.preparation_method,
-            serving_style: this.serving_style,
-            drinkware: formattedDrinkware,
-            ingredients: formattedIngredients,
-            tools: formattedTools,
-            tags: this.tags,
-            // assets: {
-            //     cover: this.constructor.formatCoverImage(this.assets.cover_acl ? `assets/private/${this.assets.cover_acl}` : null)
-            // }
-        };
-    },
-    extendedStripExcess: async function() {
+    // basicStripExcess: async function() {
+    //     const populatedDrink = await this
+    //         .populate([
+    //             { path: 'drinkware' }, 
+    //             { path: 'ingredients.ingredient_id' }, 
+    //             { path: 'ingredients.substitutes.ingredient_id' },
+    //             { path: 'tools' }
+    //         ]);
+    //     const formattedDrinkware = populatedDrink.drinkware.extendedStripExcess();
+    //     const formattedTools = populatedDrink.tools.map(tool => tool.extendedStripExcess());
+    //     const formattedIngredients = populatedDrink.ingredients.map(ingredient => {
+    //         return {
+    //             ingredient: ingredient.ingredient_id.extendedStripExcess(),
+    //             measure: ingredient.measure,
+    //             optional: ingredient.optional,
+    //             garnish: ingredient.garnish,
+    //             _id: ingredient._id,
+    //             substitutes: ingredient.substitutes.map(sub => {
+    //                 return {
+    //                     ingredient: sub.ingredient_id.extendedStripExcess(),
+    //                     measure: sub.measure,
+    //                     _id: sub._id
+    //                 }
+    //             })
+    //         }
+    //     });
+    //     // Stopped Here, working on Cover/Gallery
+    //     return {
+    //         name: this.name,
+    //         description: this.description,
+    //         preparation_method: this.preparation_method,
+    //         serving_style: this.serving_style,
+    //         drinkware: formattedDrinkware,
+    //         ingredients: formattedIngredients,
+    //         tools: formattedTools,
+    //         tags: this.tags,
+    //         // assets: {
+    //         //     cover: this.constructor.formatCoverImage(this.assets.cover_acl ? `assets/private/${this.assets.cover_acl}` : null)
+    //         // }
+    //     };
+    // },
+    // extendedStripExcess: async function() {
         
-    }
+    // }
 }
+
+const UserDrink = Drink.discriminator('User Drink', userSchema);
 
 module.exports = {
     Drink,
-    VerifiedDrink: Drink.discriminator('Verified Drink', verifiedSchema),
-    UserDrink: Drink.discriminator('User Drink', userSchema)
+    VerifiedDrink,
+    UserDrink
 };

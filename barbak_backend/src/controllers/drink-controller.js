@@ -1,46 +1,34 @@
 const { subject } = require('@casl/ability');
 const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
-
+const responseObject = require('../utils/response-object');
 
 module.exports.create = async (req, res) => {
     try {
-        const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags, verified } = req.body;
-        
-        if (!req.ability.can('create', subject('drinks', { verified })))
+        const { drink_type = 'user' } = req.params;
+
+        if (!req.ability.can('create', subject('drinks', { subject_type: drink_type })))
             return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create drink' });
-        else if (
-            (verified && await VerifiedDrink.exists({ name })) ||
-            (!verified && await UserDrink.exists({ user: req.user._id, name }))
+        else if (drink_type === 'user' ?
+            await UserDrink.exists({ user: req.user._id, name: req.body.name }) :
+            await VerifiedDrink.exists({ name: req.body.name })
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drink with that name currently exists' });
+        
+        const createdDrink = (drink_type === 'user' ?
+            new UserDrink({ ...req.body, user: req.user._id }) :
+            new VerifiedDrink(req.body)
+        );
 
-        const createdDrink = ( verified ? new VerifiedDrink({
-            name,
-            description,
-            preparation_method,
-            serving_style,
-            drinkware,
-            preparation,
-            ingredients,
-            tools,
-            tags
-        }) : new UserDrink({
-            name,
-            description,
-            preparation_method,
-            serving_style,
-            drinkware,
-            preparation,
-            ingredients,
-            tools,
-            tags,
-            user: req.user._id
-        }) );
         await createdDrink.validate();
         await createdDrink.customValidate();
         await createdDrink.save();
-
-        res.status(204).send();
+        
+        const responseFields = [
+            { name: '_id', alias: 'id' },
+            { name: 'name' },
+            { name: 'verified' }
+        ];
+        res.status(201).send(createdDrink.responseObject(responseFields));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -89,17 +77,77 @@ module.exports.update = async (req, res) => {
     }
 }
 
+// module.exports.getDrink = async (req, res) => {
+//     try {
+//         const { drink_id, privacy_type = 'public' } = req.params;
+//         const drinkInfo = await Drink
+//             .findOne({ _id: drink_id })
+//             .populate('drinkwareInfo');
+
+//         if (!drinkInfo)
+//             return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+//         else if (!req.ability.can('read', subject('drinks', { action_type: privacy_type, document: drinkInfo })))
+//             return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+
+//         const responseFields = [
+//             { name: '_id', alias: 'id' },
+//             { name: 'name' },
+//             { name: 'description' },
+//             { name: 'preparation_method' },
+//             { name: 'serving_style' },
+//             { name: 'preparation' },
+//             { name: 'ingredients' },
+//             { name: 'tools' },
+//             { name: 'tags' },
+//             { name: 'assets' },
+//             { name: 'verified' },
+//             {
+//                 name: 'user',
+//                 condition: (document) => document instanceof UserDrink
+//             },
+//             { name: 'drinkwareInfo.cover_url', alias: 'drinkware.cover' },
+//             { name: 'ingredients.ingredient_id', array: true }
+//         ];
+//         res.status(200).send(drinkInfo.responseObject(responseFields));
+//     } catch(err) {
+//         console.error(err);
+//         res.status(500).send('Internal server error');
+//     }
+// }
+
 module.exports.getDrink = async (req, res) => {
     try {
-        const { drink_id } = req.params;
-        const drinkInfo = await Drink.findOne({ _id: drink_id });
+        const { drink_id, privacy_type = 'public' } = req.params;
+        const drinkInfo = await Drink
+            .findOne({ _id: drink_id })
+            .populate('drinkwareInfo toolInfo')
 
-        if (!drinkInfo)
-            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
-        else if (!req.ability.can('read', subject('drinks', drinkInfo)))
-            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
-
-        res.status(200).send(await drinkInfo.basicStripExcess());
+        const responseFields = [
+            { name: '_id', alias: 'id' },
+            { name: 'name' },
+            { name: 'description' },
+            { name: 'preparation_method' },
+            { name: 'serving_style' },
+            { name: 'preparation' },
+            { name: 'ingredients' },
+            { name: 'drinkwareInfo._id', alias: 'drinkware.id' },
+            {  } // Last here
+            { name: 'toolInfo', alias: 'tools', sub_fields: [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'description' },
+                { name: 'category' },
+                { name: 'cover_url' },
+            ] },
+            { name: 'tags' },
+        ];
+        // sub_fields: [
+        //     { name: '_id', alias: 'id' },
+        //     { name: 'name' },
+        //     { name: 'description' },
+        //     { name: 'cover_url', alias: 'cover' },
+        // ]
+        res.status(200).send(responseObject(drinkInfo, responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');

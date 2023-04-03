@@ -1,7 +1,7 @@
 const drinkController = require('../controllers/drink-controller');
 
 module.exports.connect = function(router) {
-    router.post('/drinks', drinkController.create);
+    router.post('/drinks/:drink_type?', drinkController.create);
 
     router.get('/drinks/@me', drinkController.clientDrinks);
     router.get('/drinks/:drink_id', drinkController.getDrink);

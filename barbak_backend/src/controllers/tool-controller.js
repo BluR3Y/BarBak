@@ -252,7 +252,6 @@ module.exports.copy = async (req, res) => {
         if (toolInfo instanceof UserTool && toolInfo.cover_acl) {
             const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
             const copyInfo = await s3Operations.copyObject(aclDocument.file_path);
-            
             const createdACL = new AppAccessControl({
                 file_name: copyInfo.filename,
                 file_size: aclDocument.file_size,
