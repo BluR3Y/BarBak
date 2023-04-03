@@ -78,50 +78,21 @@ module.exports.update = async (req, res) => {
     }
 }
 
-// module.exports.getDrink = async (req, res) => {
-//     try {
-//         const { drink_id, privacy_type = 'public' } = req.params;
-//         const drinkInfo = await Drink
-//             .findOne({ _id: drink_id })
-//             .populate('drinkwareInfo');
-
-//         if (!drinkInfo)
-//             return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
-//         else if (!req.ability.can('read', subject('drinks', { action_type: privacy_type, document: drinkInfo })))
-//             return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
-
-//         const responseFields = [
-//             { name: '_id', alias: 'id' },
-//             { name: 'name' },
-//             { name: 'description' },
-//             { name: 'preparation_method' },
-//             { name: 'serving_style' },
-//             { name: 'preparation' },
-//             { name: 'ingredients' },
-//             { name: 'tools' },
-//             { name: 'tags' },
-//             { name: 'assets' },
-//             { name: 'verified' },
-//             {
-//                 name: 'user',
-//                 condition: (document) => document instanceof UserDrink
-//             },
-//             { name: 'drinkwareInfo.cover_url', alias: 'drinkware.cover' },
-//             { name: 'ingredients.ingredient_id', array: true }
-//         ];
-//         res.status(200).send(drinkInfo.responseObject(responseFields));
-//     } catch(err) {
-//         console.error(err);
-//         res.status(500).send('Internal server error');
-//     }
-// }
-
 module.exports.getDrink = async (req, res) => {
     try {
         const { drink_id, privacy_type = 'public' } = req.params;
         const drinkInfo = await Drink
             .findOne({ _id: drink_id })
-            .populate('drinkwareInfo toolInfo ingredientInfo');
+            .populate([
+                { path: 'ingredients.ingredient_id' },
+                { path: 'drinkwareInfo' },
+                { path: 'toolInfo' }
+            ]);
+
+        if (!drinkInfo) 
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('read', subject('drinks', { action_type: privacy_type, document: drinkInfo })))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -130,11 +101,18 @@ module.exports.getDrink = async (req, res) => {
             { name: 'preparation_method' },
             { name: 'serving_style' },
             { name: 'preparation' },
-            { name: 'ingredientInfo', alias: 'ingredients', sub_fields: [
-                { name: '_id', alias: 'id' },
-                { name: 'name' },
-                { name: 'description' },
-                { name: 'cover_url', alias: 'cover' }
+            { name: 'ingredients', sub_fields: [
+                { name: 'ingredient_id', alias: 'ingredient_info', sub_fields: [
+                    { name: '_id', alias: 'id' },
+                    { name: 'name' },
+                    { name: 'description' },
+                    { name: 'category' },
+                    { name: 'sub_category' },
+                    { name: 'cover_url', alias: 'cover' }
+                ] },
+                { name: 'measure' },
+                { name: 'optional' },
+                { name: 'garnish' }
             ] },
             { name: 'drinkwareInfo', alias: 'drinkware', sub_fields: [
                 { name: '_id', alias: 'id' },
@@ -150,6 +128,23 @@ module.exports.getDrink = async (req, res) => {
                 { name: 'cover_url' , alias: 'cover'},
             ] },
             { name: 'tags' },
+            { name: 'verified' },
+            {
+                name: 'user',
+                condition: (document) => document instanceof UserDrink
+            },
+            {
+                name: 'public',
+                condition: (document) => document instanceof UserDrink && privacy_type === 'private'
+            },
+            {
+                name: 'date_created',
+                condition: (document) => document instanceof UserDrink && privacy_type === 'private'
+            },
+            {
+                name: 'date_verified',
+                condition: (document) => document instanceof VerifiedDrink && privacy_type === 'private'
+            }
         ];
         
         res.status(200).send(responseObject(drinkInfo, responseFields));

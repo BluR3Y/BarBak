@@ -206,7 +206,7 @@ drinkSchema.virtual('drinkwareInfo', {
 drinkSchema.virtual('ingredientInfo', {
     ref: 'Ingredient',
     localField: 'ingredients.ingredient_id',
-    foreignField: '_id',
+    foreignField: '_id'
 });
 
 drinkSchema.virtual('toolInfo', {
