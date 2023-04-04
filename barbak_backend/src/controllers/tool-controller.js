@@ -3,6 +3,7 @@ const { AppAccessControl } = require('../models/access-control-model');
 const { subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
+const responseObject = require('../utils/response-object');
 
 module.exports.create = async (req, res) => {
     try {
@@ -50,7 +51,7 @@ module.exports.create = async (req, res) => {
                 condition: (document) => document instanceof VerifiedTool
             }
         ];
-        res.status(201).send(createdTool.responseObject(responseFields));
+        res.status(201).send(responseObject(createdTool, responseFields));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -313,7 +314,7 @@ module.exports.getTool = async (req, res) => {
                 condition: (document) => privacy_type === 'private' && document instanceof VerifiedTool
             }
         ];
-        res.status(200).send(toolInfo.responseObject(responseFields));
+        res.status(200).send(responseObject(toolInfo, responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -345,7 +346,7 @@ module.exports.search = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category' },
@@ -385,7 +386,7 @@ module.exports.clientTools = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category' },

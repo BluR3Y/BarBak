@@ -75,19 +75,6 @@ toolSchema.methods.customValidate = async function() {
         throw error;
 }
 
-toolSchema.methods.responseObject = function(fields) {
-    const resObject = {};
-
-    for (const obj of fields) {
-        if (obj.condition && !obj.condition(this))
-            continue;
-    
-        if (obj.name in this)
-            resObject[obj.alias || obj.name] = this[obj.name];
-    }
-    return resObject;
-}
-
 const Tool = mongoose.model('Tool', toolSchema);
 
 const verifiedSchema = new mongoose.Schema({

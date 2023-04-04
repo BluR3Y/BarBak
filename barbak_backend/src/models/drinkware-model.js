@@ -33,19 +33,6 @@ drinkwareSchema.virtual('cover_url').get(function() {
     return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
 });
 
-drinkwareSchema.methods.responseObject = function(fields) {
-    const resObject = {};
-
-    for (const obj of fields) {
-        if (obj.condition && !obj.condition(this))
-            continue;
-    
-        if (obj.name in this)
-            resObject[obj.alias || obj.name] = this[obj.name];
-    }
-    return resObject;
-}
-
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({

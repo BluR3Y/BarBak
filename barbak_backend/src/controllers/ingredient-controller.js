@@ -3,6 +3,7 @@ const { Ingredient, VerifiedIngredient, UserIngredient } = require('../models/in
 const { AppAccessControl } = require('../models/access-control-model');
 const s3Operations = require('../utils/aws-s3-operations');
 const fileOperations = require('../utils/file-operations');
+const responseObject = require('../utils/response-object');
 
 module.exports.create = async (req, res) => {
     try {
@@ -53,7 +54,7 @@ module.exports.create = async (req, res) => {
                 condition: (document) => document instanceof VerifiedIngredient
             }
         ];
-        res.status(201).send(createdIngredient.responseObject(responseFields));
+        res.status(201).send(responseObject(createdIngredient, responseFields));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -116,6 +117,7 @@ module.exports.delete = async (req, res) => {
             await s3Operations.removeObject(ingredientInfo.cover);
 
         await ingredientInfo.remove();
+
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -135,6 +137,7 @@ module.exports.updatePrivacy = async (req, res) => {
 
         ingredientInfo.public = !ingredientInfo.public;
         await ingredientInfo.save();
+
         res.status(200).send(ingredientInfo);
     } catch(err) {
         console.error(err);
@@ -187,8 +190,8 @@ module.exports.uploadCover = async (req, res) => {
                 await s3Operations.removeObject(ingredientInfo.cover);
             ingredientInfo.cover = uploadInfo.filepath;
         }
-
         await ingredientInfo.save();
+
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -225,6 +228,7 @@ module.exports.deleteCover = async (req, res) => {
             ingredientInfo.cover = null;
         }
         await ingredientInfo.save();
+
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -286,6 +290,7 @@ module.exports.copy = async (req, res) => {
             createdIngredient.cover_acl = createdACL._id;
         }
         await createdIngredient.save();
+
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -324,7 +329,7 @@ module.exports.getIngredient = async (req, res) => {
                 condition: (document) => privacy_type === 'private' && document instanceof VerifiedIngredient
             }
         ];
-        res.status(200).send(ingredientInfo.responseObject(responseFields));
+        res.status(200).send(responseObject( ingredientInfo, responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -357,7 +362,7 @@ module.exports.search = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category' },
@@ -398,7 +403,7 @@ module.exports.clientIngredients = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category' },

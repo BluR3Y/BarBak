@@ -130,19 +130,6 @@ ingredientSchema.methods.customValidate = async function() {
     }
 }
 
-ingredientSchema.methods.responseObject = function(fields) {
-    const resObject = {};
-
-    for (const obj of fields) {
-        if (obj.condition && !obj.condition(this))
-            continue;
-    
-        if (obj.name in this)
-            resObject[obj.alias || obj.name] = this[obj.name];
-    }
-    return resObject;
-}
-
 const Ingredient = mongoose.model('Ingredient', ingredientSchema);
 
 const verifiedSchema = new mongoose.Schema({

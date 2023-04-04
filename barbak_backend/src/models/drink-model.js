@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
-const { Drinkware } = require('./drinkware-model');
-const { Ingredient } = require('./ingredient-model');
-const { Tool } = require('./tool-model');
-const _ = require('lodash');
+const { default_covers } = require('../config/config.json');
+const { Drinkware, UserDrinkware, VerifiedDrinkware } = require('./drinkware-model');
+const { Ingredient, UserIngredient } = require('./ingredient-model');
+const { Tool, UserTool } = require('./tool-model');
 
 const ingredientSchema = {
     type: [{
@@ -196,6 +196,29 @@ drinkSchema.virtual('verified').get(function() {
     return this instanceof VerifiedDrink;
 });
 
+drinkSchema.virtual('cover_url').get(function() {
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+    const { verified, gallery } = this;
+    const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
+    
+    if (gallery.length && verified)
+        return basePath + gallery[0];
+    else if (gallery.length && !verified)
+        return basePath + 'assets/private/' + gallery[0];
+    else if (typeof default_covers['drink'] !== 'undefined')
+        return basePath + 'assets/default/' + default_covers['drink'];
+    else
+        return null;
+});
+
+drinkSchema.virtual('gallery_urls').get(function() {
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+    const { verified, gallery } = this;
+    const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
+
+    return gallery.map(imagePath => basePath + (verified ? imagePath : 'assets/private/' + imagePath));
+});
+
 drinkSchema.virtual('drinkwareInfo', {
     ref: 'Drinkware',
     localField: 'drinkware',
@@ -218,23 +241,15 @@ drinkSchema.virtual('toolInfo', {
 const Drink = mongoose.model('Drink', drinkSchema);
 
 const verifiedSchema = new mongoose.Schema({
-    assets: {
-        type: {
-            cover: {
-                type: String,
-                default: null
+    gallery: {
+        type: [String],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 10;
             },
-            gallery: {
-                type: [String],
-                validate: {
-                    validator: function(items) {
-                        return items && items.length <= 10;
-                    },
-                    message: 'Cannot exceed limit of 10 images'
-                },
-                default: null
-            }
-        }
+            message: 'Cannot exceed limit of 10 images'
+        },
+        default: []
     },
     date_verified: {
         type: Date,
@@ -255,7 +270,7 @@ verifiedSchema.statics = {
 
             if (!drinkwareInfo)
                 errors[index] = { type: 'exist', message: 'Drinkware does not exist' };
-            else if (drinkwareInfo.model !== 'Verified Drinkware')
+            else if (drinkwareInfo instanceof UserDrinkware)
                 errors[index] = { type: 'valid', message: 'Unauthorized to use drinkware' };
         }));
         return { isValid: !Object.keys(errors).length, errors };
@@ -272,7 +287,7 @@ verifiedSchema.statics = {
 
             if (!ingredientInfo)
                 ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
-            else if (ingredientInfo.model !== 'Verified Ingredient')
+            else if (ingredientInfo instanceof UserIngredient)
                 ingredientErrors.ingredient_id = { type: 'valid', message: 'Unauthorized to use ingredient' };
             else {
                 const [data] = await executeSqlQuery(`
@@ -316,7 +331,7 @@ verifiedSchema.statics = {
 
             if (!toolInfo)
                 errors[index] = { type: 'exist', message: 'Tool does not exist' };
-            else if (toolInfo.model !== 'Verified Tool')
+            else if (toolInfo instanceof UserTool)
                 errors[index] = { type: 'valid', message: 'Unauthorized to use tool' };
         }));
 
@@ -356,29 +371,18 @@ verifiedSchema.methods = {
 const VerifiedDrink = Drink.discriminator('Verified Drink', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
-    assets: {
-        type: {
-            cover_acl: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'App Access Control',
-                default: null
+    gallery: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'App Access Control'
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 10;
             },
-            gallery_acl: {
-                type: [{
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'App Access Control',
-                }],
-                validate: {
-                    validator: function(items) {
-                        return items && items.length <= 10;
-                    },
-                    message: 'Cannot exceed limit of 10 images'
-                },
-                default: null
-            },
+            message: 'Cannot exceed limit of 10 images'
         },
-        default: Object,
-        _id: false
+        default: []
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -409,9 +413,9 @@ userSchema.statics = {
 
             if (!drinkwareInfo)
                 errors[index] = { type: 'exist', message: 'Drinkware does not exist' };
-            else if (
-                (publicUse && (drinkwareInfo.model === 'User Drinkware' && !(drinkwareInfo.user.equals(user) && drinkwareInfo.public))) ||
-                (!publicUse && (drinkwareInfo.mode === 'User Drinkware' && !drinkwareInfo.user.equals(user)))
+            else if (publicUse ?
+                drinkwareInfo instanceof UserDrinkware && !(drinkwareInfo.user.equals(user) && drinkwareInfo.public) :
+                drinkwareInfo instanceof UserDrinkware && !drinkwareInfo.user.equals(user)    
             )
                 errors[index] = { type: 'valid', message: 'Unauthorized to use drinkware' };
         }));
@@ -429,9 +433,9 @@ userSchema.statics = {
 
             if (!ingredientInfo) {
                 ingredientErrors.ingredient_id = { type: 'exist', message: 'Ingredient does not exist' };
-            } else if (
-                (publicUse && (ingredientInfo.model === 'User Ingredient' && !(ingredientInfo.user.equals(user) && ingredientInfo.public))) ||
-                (!publicUse && (ingredientInfo.model === 'User Ingredient' && !ingredientInfo.user.equals(user)))
+            } else if (publicUse ?
+                ingredientInfo instanceof UserIngredient && !(ingredientInfo.user.equals(user) && ingredientInfo.public) :
+                ingredientInfo instanceof UserIngredient && !ingredientInfo.user.equals(user)    
             ) {
                 ingredientErrors.ingredient_id = { type: 'valid', message: 'Unauthorized to use ingredient' };
             } else {
@@ -476,9 +480,9 @@ userSchema.statics = {
 
             if (!toolInfo) {
                 errors[index] = { type: 'exist', message: 'Tool does not exist' };
-            } else if (
-                (publicUse && (toolInfo.model === 'User Tool' && !(toolInfo.user.equals(user) && toolInfo.public))) ||
-                (!publicUse && (toolInfo.model === 'User Tool' && !toolInfo.user.equals(user)))
+            } else if (publicUse ? 
+                toolInfo instanceof UserTool && !(toolInfo.user.equals(user) && toolInfo.public) :
+                toolInfo instanceof UserTool && !toolInfo.user.equals(user)    
             )
                 errors[index] = { type: 'valid', message: 'Unauthorized to use tool' };
         }));
@@ -513,51 +517,7 @@ userSchema.methods = {
 
         if (Object.keys(error.errors).length)
             throw error;
-    },
-    // basicStripExcess: async function() {
-    //     const populatedDrink = await this
-    //         .populate([
-    //             { path: 'drinkware' }, 
-    //             { path: 'ingredients.ingredient_id' }, 
-    //             { path: 'ingredients.substitutes.ingredient_id' },
-    //             { path: 'tools' }
-    //         ]);
-    //     const formattedDrinkware = populatedDrink.drinkware.extendedStripExcess();
-    //     const formattedTools = populatedDrink.tools.map(tool => tool.extendedStripExcess());
-    //     const formattedIngredients = populatedDrink.ingredients.map(ingredient => {
-    //         return {
-    //             ingredient: ingredient.ingredient_id.extendedStripExcess(),
-    //             measure: ingredient.measure,
-    //             optional: ingredient.optional,
-    //             garnish: ingredient.garnish,
-    //             _id: ingredient._id,
-    //             substitutes: ingredient.substitutes.map(sub => {
-    //                 return {
-    //                     ingredient: sub.ingredient_id.extendedStripExcess(),
-    //                     measure: sub.measure,
-    //                     _id: sub._id
-    //                 }
-    //             })
-    //         }
-    //     });
-    //     // Stopped Here, working on Cover/Gallery
-    //     return {
-    //         name: this.name,
-    //         description: this.description,
-    //         preparation_method: this.preparation_method,
-    //         serving_style: this.serving_style,
-    //         drinkware: formattedDrinkware,
-    //         ingredients: formattedIngredients,
-    //         tools: formattedTools,
-    //         tags: this.tags,
-    //         // assets: {
-    //         //     cover: this.constructor.formatCoverImage(this.assets.cover_acl ? `assets/private/${this.assets.cover_acl}` : null)
-    //         // }
-    //     };
-    // },
-    // extendedStripExcess: async function() {
-        
-    // }
+    }
 }
 
 const UserDrink = Drink.discriminator('User Drink', userSchema);

@@ -1,7 +1,9 @@
 const { subject } = require('@casl/ability');
 const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
 const responseObject = require('../utils/response-object');
-const _ = require('lodash');
+const fileOperations = require('../utils/file-operations');
+const s3Operations = require('../utils/aws-s3-operations');
+const { AppAccessControl } = require('../models/access-control-model');
 
 module.exports.create = async (req, res) => {
     try {
@@ -27,9 +29,9 @@ module.exports.create = async (req, res) => {
         const responseFields = [
             { name: '_id', alias: 'id' },
             { name: 'name' },
-            { name: 'verified' }
+            { name: 'verified' },
         ];
-        res.status(201).send(createdDrink.responseObject(responseFields));
+        res.status(201).send(responseObject(createdDrink, responseFields));
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
@@ -40,31 +42,20 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
     try {
-        const { name, description, preparation_method, serving_style, drinkware, preparation, ingredients, tools, tags } = req.body;
         const { drink_id } = req.params;
         const drinkInfo = await Drink.findOne({ _id: drink_id });
 
         if (!drinkInfo)
             return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
-        else if (!req.ability.can('update', subject('drinks', drinkInfo)))
+        else if (!req.ability.can('update', subject('drinks', { document: drinkInfo })))
             return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
-        else if (
-            (drinkInfo.model === 'User Drink' && await UserDrink.exists({ user: req.user._id, name, _id: { $ne: drink_id } })) ||
-            (drinkInfo.model === 'Verified Drink' && await VerifiedDrink.exists({ name, _id: { $ne: drink_id } }))
+        else if (drinkInfo instanceof UserDrink ?
+            await UserDrink.exists({ user: req.user._id, name: req.body.name, _id: { $ne: drink_id } }) :
+            await VerifiedDrink.exists({ name: req.body.name, _id: { $ne: drink_id } })
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drink with that name currently exists' });
 
-        drinkInfo.set({
-            name,
-            description,
-            preparation_method,
-            serving_style,
-            drinkware,
-            preparation,
-            ingredients,
-            tools,
-            tags
-        });
+        drinkInfo.set(req.body);
         await drinkInfo.validate();
         await drinkInfo.customValidate();
         await drinkInfo.save();
@@ -77,6 +68,112 @@ module.exports.update = async (req, res) => {
         res.status(500).send('Internal server error');
     }
 }
+
+module.exports.delete = async (req, res) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('delete', subject('drinks', { document: drinkInfo })))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+
+        if (drinkInfo instanceof UserDrink && drinkInfo.gallery.length) {
+            await Promise.all(drinkInfo.gallery.map(async acl_id => {
+                const aclDocument = await AppAccessControl.findOne({ _id: acl_id });
+                await s3Operations.removeObject(aclDocument.file_path);
+                await aclDocument.remove();
+            }));
+        } else if (drinkInfo instanceof VerifiedDrink && drinkInfo.gallery.length) {
+            await Promise.all(drinkInfo.gallery.map(async imagePath => {
+                await s3Operations.removeObject(imagePath);
+            }));
+        }
+
+        await drinkInfo.remove();
+        res.status(204).send();
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+}
+
+module.exports.updatePrivacy = async (req, res) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+
+        drinkInfo.public = !drinkInfo.public;
+        await drinkInfo.save();
+
+        res.status(204).send();
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+}
+
+module.exports.uploadGallery = async (req, res) => {
+    try {
+        const { drink_id } = req.params;
+        const galleryUploads = req.files;
+
+        if (!galleryUploads)
+            return res.status(400).send({ path: 'images', type: 'exist', message: 'No images were uploaded' });
+
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
+            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+        else if (galleryUploads.length + drinkInfo.gallery.length > 10)
+            return res.status(400).send({ path: 'images', type: 'valid', message: 'Adding uploads to drink gallery exceeds limit' });
+
+        if (drinkInfo instanceof UserDrink) {
+            const uploadInfo = await Promise.all(galleryUploads.map(async galleryImage => {
+                const imageUpload = await s3Operations.createObject(galleryImage, 'assets/private/images');
+                const createdACL = new AppAccessControl({
+                    file_name: imageUpload.filename,
+                    file_size: galleryImage.size,
+                    mime_type: galleryImage.mimetype,
+                    file_path: imageUpload.filepath,
+                    user: req.user._id,
+                    referenced_document: drinkInfo._id,
+                    referenced_model: 'Drink'
+                });
+                await createdACL.save();
+                return createdACL._id;
+            }));
+            drinkInfo.gallery.push(...uploadInfo);
+        } else {
+            const uploadInfo = await Promise.all(galleryUploads.map(async galleryImage => {
+                const imageUpload = await s3Operations.createObject(galleryImage, 'assets/public/images');
+                return imageUpload.filename;
+            }));
+            drinkInfo.gallery.push(...uploadInfo);
+        }
+        await drinkInfo.save();
+
+        res.status(204).send();
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    } finally {
+        if (req.files) {
+            Promise.all(req.files.map(async upload => await fileOperations.deleteSingle(upload.path)))
+            .catch(err => console.error(err));
+        }
+    }
+}
+
+// Delete Gallery Images 
+// Copy Drin
 
 module.exports.getDrink = async (req, res) => {
     try {
@@ -127,6 +224,7 @@ module.exports.getDrink = async (req, res) => {
                 { name: 'category' },
                 { name: 'cover_url' , alias: 'cover'},
             ] },
+            { name: 'gallery_urls', alias: 'gallery' },
             { name: 'tags' },
             { name: 'verified' },
             {
@@ -154,22 +252,68 @@ module.exports.getDrink = async (req, res) => {
     }
 }
 
-module.exports.clientDrinks = async (req, res) => {
+module.exports.search = async (req, res) => {
     try {
+        const { query, page = 1, page_size = 10, ordering, category_filter } = req.query;
 
-        // .categoryFilter(category_filter)
-        // .sort(ordering)
-        // .skip((page - 1) * page_size)
-        // .limit(page_size)
-        // .extendedInfo();
+        // Missing Filters
+
+        const searchQuery = Drink
+            .where({ name: { $regex: query } })
+            .or([
+                { model: 'Verified Drink' },
+                { model: 'User Drink', public: true },
+                (req.user ? { model: 'User Drink', user: req.user._id } : {})
+            ]);
+
+        const totalDocuments = await Drink.countDocuments(searchQuery);
+        const responseDocuments = await Drink
+            .find(searchQuery)
+            .select('name tags gallery')
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => documents.map(doc => responseObject(doc, [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'tags' },
+                { name: 'verified' },
+                { name: 'cover_url', alias: 'cover' }
+            ])));
         
-        const userDocuments = await Drink
-            .find({ user: req.user._id })
-            .extendedInfo();
-            
-        res.status(200).send(userDocuments);
+        const response = {
+            page,
+            page_size,
+            total_pages: Math.ceil(totalDocuments / page_size),
+            total_results: totalDocuments,
+            data: responseDocuments
+        };
+        res.status(200).send(response);
     } catch(err) {
-        console.error(err);
+        console.log(err);
         res.status(500).send('Internal server error');
     }
+}
+
+module.exports.clientDrinks = async (req, res) => {
+    // try {
+    //     const { page, page_size, ordering } = req.query;
+    //     const searchQuery = Drink.where({ name: req.user._id });
+
+    //     const totalDocuments = await Drink.countDocuments(searchQuery);
+    //     const responseDocuments = await Drink
+    //         .find(searchQuery);
+        
+    //     const response = {
+    //         page,
+    //         page_size,
+    //         total_pages: Math.ceil(totalDocuments / page_size),
+    //         total_results: totalDocuments,
+    //         data: responseDocuments
+    //     };
+    //     res.status(200).send(response);
+    // } catch(err) {
+    //     console.error(err);
+    //     res.status(500).send('Internal server error');
+    // }
 }

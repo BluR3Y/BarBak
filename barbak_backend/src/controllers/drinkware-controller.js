@@ -3,6 +3,7 @@ const { AppAccessControl } = require('../models/access-control-model');
 const { subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
+const responseObject = require('../utils/response-object');
 
 module.exports.create = async (req, res) => {
     try {
@@ -46,7 +47,7 @@ module.exports.create = async (req, res) => {
                 condition: (document) => document instanceof VerifiedDrinkware
             }
         ];
-        res.status(201).send(createdDrinkware.responseObject(responseFields));
+        res.status(201).send(responseObject(createdDrinkware, responseFields));
     } catch(err) {
         if (err.name === 'ValidationError')
             return res.status(400).send(err);
@@ -318,7 +319,7 @@ module.exports.getDrinkware = async (req, res) => {
                 condition: (document) => privacy_type === 'private' && document instanceof UserDrinkware
             }
         ];
-        res.status(200).send(drinkwareInfo.responseObject(responseFields));
+        res.status(200).send(responseObject(drinkwareInfo, responseFields));
     } catch(err) {
         console.error(err);
         res.status(500).send('Internal server error');
@@ -341,11 +342,12 @@ module.exports.search = async (req, res) => {
             ]);
 
         const totalDocuments = await Drinkware.countDocuments(searchQuery);
-        const responseDocuments = await Drinkware.find(searchQuery)
+        const responseDocuments = await Drinkware
+            .find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
@@ -377,7 +379,7 @@ module.exports.clientDrinkware = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => doc.responseObject([
+            .then(documents => documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
