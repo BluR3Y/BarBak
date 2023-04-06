@@ -2,6 +2,29 @@ const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const { subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
+const FileAccessControl = require('../models/file-access-control-model');
+
+module.exports.tester = async (req, res) => {
+    try {
+        const tester = new FileAccessControl({
+            file_name: 'tester.png',
+            file_size: 1000,
+            mime_type: 'image/png',
+            file_path: 'assets/private/images',
+            permissions: [
+                { action: 'manage', conditions: { 'user._id': req.user._id } }
+            ]
+        });
+        await tester.validate();
+
+        console.log(tester.authorize('read', { user: req.user }));
+
+        res.status(200).send('lolz')
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+}
 
 module.exports.getUser = async (req, res) => {
     try {

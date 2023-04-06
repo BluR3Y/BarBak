@@ -16,6 +16,11 @@ const toolSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
+    },
+    cover: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File Access Control',
+        default: null
     }
 },{ collection: 'tools', discriminatorKey: 'model' });
 
@@ -28,18 +33,14 @@ toolSchema.virtual('verified').get(function() {
 });
 
 toolSchema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const { verified } = this;
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
+    if (this.cover) 
+        filepath = 'assets/' + this.cover;
+    else
+        filepath = default_covers['tools'] ? 'assets/default/' + default_covers['tools'] : null;
 
-    if (verified && this.cover) 
-        filepath = this.cover;
-    else if (!verified && this.cover_acl)
-        filepath = 'assets/private/' + this.cover_acl;
-    else 
-        filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
-
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
 toolSchema.statics = {
@@ -78,10 +79,6 @@ toolSchema.methods.customValidate = async function() {
 const Tool = mongoose.model('Tool', toolSchema);
 
 const verifiedSchema = new mongoose.Schema({
-    cover: {
-        type: String,
-        default: null
-    },
     date_verified: {
         type: Date,
         immutable: true,
@@ -92,11 +89,6 @@ const verifiedSchema = new mongoose.Schema({
 const VerifiedTool = Tool.discriminator('Verified Tool', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
-    cover_acl: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App Access Control',
-        default: null
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

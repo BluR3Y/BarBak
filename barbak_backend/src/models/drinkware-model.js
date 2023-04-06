@@ -12,6 +12,11 @@ const drinkwareSchema = new mongoose.Schema({
         type: String,
         maxlength: 600,
     },
+    cover: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File Access Control',
+        default: null
+    }
 },{ collection: 'drinkware', discriminatorKey: 'model' });
 
 drinkwareSchema.virtual('verified').get(function() {
@@ -19,27 +24,19 @@ drinkwareSchema.virtual('verified').get(function() {
 });
 
 drinkwareSchema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const { verified } = this;
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
-    
-    if (verified && this.cover) 
-        filepath = this.cover;
-    else if (!verified && this.cover_acl)
-        filepath = 'assets/private/' + this.cover_acl;
-    else 
-        filepath = default_covers['drinkware'] ? 'assets/default/' + default_covers['drinkware'] : null;
+    if (this.cover) 
+        filepath = 'assets/' + this.cover;
+    else
+        filepath = default_covers['tools'] ? 'assets/default/' + default_covers['tools'] : null;
 
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema({
-    cover: {
-        type: String,
-        default: null
-    },
     date_verified: {
         type: Date,
         immutable: true,
@@ -50,11 +47,6 @@ const verifiedSchema = new mongoose.Schema({
 const VerifiedDrinkware = Drinkware.discriminator('Verified Drinkware', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
-    cover_acl: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App Access Control',
-        default: null
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

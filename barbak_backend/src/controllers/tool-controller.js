@@ -1,5 +1,5 @@
 const { Tool, VerifiedTool, UserTool } = require('../models/tool-model');
-const { AppAccessControl } = require('../models/access-control-model');
+const FileAccessControl = require('../models/file-access-control-model');
 const { subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
@@ -8,26 +8,22 @@ const responseObject = require('../utils/response-object');
 module.exports.create = async (req, res) => {
     try {
         const { tool_type = 'user' } = req.params;
-        const { name, description, category } = req.body;
 
         if (!req.ability.can('create', subject('tools', { subject_type: tool_type })))
             return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create tool' });
         else if (tool_type === 'user' ? 
-            await UserTool.exists({ user: req.user._id, name }) :
-            await VerifiedTool.exists({ name })
+            await UserTool.exists({ user: req.user._id, name: req.body.name }) :
+            await VerifiedTool.exists({ name: req.body.name })
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
 
-        const createdTool = tool_type === 'user' ? new UserTool({
-            name,
-            description,
-            category,
-            user: req.user._id
-        }) : new VerifiedTool({
-            name,
-            description,
-            category
-        });
+        const createdTool = tool_type === 'user' ? 
+            new UserTool({ 
+                ...req.body, 
+                user: req.user._id 
+            }) :
+            new VerifiedTool(req.body)
+        ;
         await createdTool.validate();
         await createdTool.customValidate();
         await createdTool.save();
@@ -62,7 +58,6 @@ module.exports.create = async (req, res) => {
 
 module.exports.update = async (req, res) => {
     try {
-        const { name, description, category } = req.body;
         const { tool_id } = req.params;
         const toolInfo = await Tool.findOne({ _id: tool_id });
 
@@ -71,15 +66,14 @@ module.exports.update = async (req, res) => {
         else if (!req.ability.can('update', subject('tools', { document: toolInfo })))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
         else if (toolInfo instanceof UserTool ?
-            await UserTool.exists({ user: req.user._id, name, _id: { $ne: tool_id } }) :
-            await VerifiedTool.exists({ name, _id: { $ne: tool_id } })
+            await UserTool.exists({ user: req.user._id, name: req.body.name, _id: { $ne: tool_id } }) :
+            await VerifiedTool.exists({ name: req.body.name, _id: { $ne: tool_id } })
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
         
-        toolInfo.name = name;
-        toolInfo.description = description;
-        toolInfo.category = category;
-        
+        toolInfo.set({
+            ...req.body
+        });
         await toolInfo.validate();
         await toolInfo.customValidate();
         await toolInfo.save();
@@ -103,13 +97,16 @@ module.exports.delete = async (req, res) => {
         else if (!req.ability.can('delete', subject('tools', { document: toolInfo })))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
 
-        if (toolInfo instanceof UserTool  && toolInfo.cover_acl) {
-            const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
+        if (toolInfo.cover) {
+            const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
+            if (!aclDocument)
+                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
+            else if (!aclDocument.authorize('delete', { user: req.user }))
+                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
+
             await s3Operations.removeObject(aclDocument.file_path);
             await aclDocument.remove();
-        } else if (toolInfo instanceof VerifiedTool && toolInfo.cover)
-            await s3Operations.removeObject(toolInfo.cover);
-
+        }
         await toolInfo.remove();
         res.status(204).send();
     } catch(err) {
@@ -127,10 +124,23 @@ module.exports.updatePrivacy = async (req, res) => {
             return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (!req.ability.can('update', subject('tools', { document: toolInfo })))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unaunthorized request' });
-        
-        toolInfo.public = !toolInfo.public;
-        await toolInfo.save();
 
+        toolInfo.public = !toolInfo.public;
+        if (toolInfo.cover) {
+            const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
+
+            if (!aclDocument)
+                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
+            else if (!aclDocument.authorize('update', { user: req.user }))
+                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
+
+            aclDocument.permissions = [
+                { action: 'manage', conditions: { 'user._id': req.user._id } },
+                ...(toolInfo.public ? { action: 'read' } : {})
+            ];
+            await aclDocument.save();
+        }
+        await toolInfo.save();
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -145,46 +155,56 @@ module.exports.uploadCover = async (req, res) => {
 
         if (!toolCover)
             return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
-        
+
         const toolInfo = await Tool.findOne({ _id: tool_id });
         if (!toolInfo)
             return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (!req.ability.can('patch', subject('tools', { document: toolInfo })))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
 
-        const uploadInfo = await s3Operations.createObject(toolCover, `assets/${ toolInfo instanceof UserTool ? 'private' : 'public' }/images`);
-        if (toolInfo instanceof UserTool) {
-            if (toolInfo.cover_acl) {
-                const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
-                await s3Operations.removeObject(aclDocument.file_path);
+        if (toolInfo.cover) {
+            const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
+            if (!aclDocument)
+                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
+            else if (!aclDocument.authorize('update', { user: req.user }))
+                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
 
-                aclDocument.set({
-                    file_name: uploadInfo.filename,
-                    file_size: toolCover.size,
-                    mime_type: toolCover.mimetype,
-                    file_path: uploadInfo.filepath
-                });
-                await aclDocument.save();
-            } else {
-                const createdACL = new AppAccessControl({
-                    file_name: uploadInfo.filename,
-                    file_size: toolCover.size,
-                    mime_type: toolCover.mimetype,
-                    file_path: uploadInfo.filepath,
-                    user: req.user._id,
-                    referenced_document: toolInfo._id,
-                    referenced_model: 'Tool'
-                });
-                await createdACL.save();
-                toolInfo.cover_acl = createdACL._id;
-            }
+            const [,uploadInfo] = await Promise.all([
+                s3Operations.removeObject(aclDocument.file_path),
+                s3Operations.createObject(toolCover, 'assets/tools/images')
+            ]);
+
+            aclDocument.set({
+                file_name: uploadInfo.filename,
+                file_size: toolCover.size,
+                mime_type: toolCover.mimetype,
+                file_path: uploadInfo.filepath
+            });
+            await aclDocument.save();
         } else {
-            if (toolInfo.cover)
-                await s3Operations.removeObject(toolInfo.cover);
-            toolInfo.cover = uploadInfo.filepath;
+            const uploadInfo = await s3Operations.createObject(toolCover, 'assets/tools/images');
+            const createdACL = new FileAccessControl({
+                file_name: uploadInfo.filename,
+                file_size: toolCover.size,
+                mime_type: toolCover.mimetype,
+                file_path: uploadInfo.filepath,
+                permissions: (toolInfo instanceof UserTool ?
+                    [
+                        { action: 'manage', condition: { 'user._id': req.user._id } },
+                        ...(toolInfo.public ? { action: 'read' } : {})
+                    ] : [
+                        { action: 'read' },
+                        { action: 'manage', conditions: { 'user.role': 'admin' } },
+                        { action: 'manage', conditions: { 'user.role': 'editor' } }
+                    ]
+                )
+            });
+
+            await createdACL.save();
+            toolInfo.cover = createdACL._id;
         }
-        await toolInfo.save();
         
+        await toolInfo.save();
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -206,20 +226,21 @@ module.exports.deleteCover = async (req, res) => {
             return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
         else if (!req.ability.can('patch', subject('tools', { document: toolInfo })))
             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
-        else if (toolInfo instanceof UserTool ? !toolInfo.cover_acl : !toolInfo.cover)
+        else if (!toolInfo.cover)
             return res.status(404).send({ path: 'image', type: 'exist', message: 'Tool does not have a cover image' });
 
-        if (toolInfo instanceof UserTool) {
-            const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
-            await s3Operations.removeObject(aclDocument.file_path);
-            await aclDocument.remove();
-            toolInfo.cover_acl = null;
-        } else {
-            await s3Operations.removeObject(toolInfo.cover);
-            toolInfo.cover = null;
-        }
-        await toolInfo.save();
+        const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
+        if (!aclDocument)
+            return res.status(404).send({ path: 'cover', type: 'exist', message: 'Tool cover image not found' });
+        else if (!aclDocument.authorize('delete', { user: req.user }))
+            return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
+
+        await s3Operations.removeObject(aclDocument.file_path);
+        await aclDocument.remove();
         
+        toolInfo.cover = null;
+        await toolInfo.save();
+
         res.status(204).send();
     } catch(err) {
         console.error(err);
@@ -249,37 +270,27 @@ module.exports.copy = async (req, res) => {
             category,
             user: req.user._id
         });
-        
-        if (toolInfo instanceof UserTool && toolInfo.cover_acl) {
-            const aclDocument = await AppAccessControl.findOne({ _id: toolInfo.cover_acl });
+
+        if (toolInfo.cover) {
+            const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
+            if (!aclDocument)
+                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Tool cover image not found' });
+            else if (!aclDocument.authorize('read', { user: req.user }))
+                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to view cover image' });
+
             const copyInfo = await s3Operations.copyObject(aclDocument.file_path);
-            const createdACL = new AppAccessControl({
+            const createdACL = FileAccessControl({
                 file_name: copyInfo.filename,
                 file_size: aclDocument.file_size,
                 mime_type: aclDocument.mime_type,
                 file_path: copyInfo.filepath,
-                user: req.user._id,
-                referenced_document: createdTool._id,
-                referenced_model: 'Tool'
+                permissions: [
+                    { action: 'manage', conditions: { 'user._id': req.user._id } }
+                ]
             });
             await createdACL.save();
-            createdTool.cover_acl = createdACL._id;
-        } else if (toolInfo instanceof VerifiedTool && toolInfo.cover) {
-            const copyInfo = await s3Operations.copyObject(toolInfo.cover);
-            const copyMetadata = await s3Operations.objectMetadata(copyInfo.filepath);
-            const createdACL = new AppAccessControl({
-                file_name: copyInfo.filename,
-                file_size: copyMetadata.ContentLength,
-                mime_type: copyMetadata.ContentType,
-                file_path: copyInfo.filepath,
-                user: req.user._id,
-                referenced_document: createdTool._id,
-                referenced_model: 'Tool'
-            });
-            await createdACL.save();
-            createdTool.cover_acl = createdACL._id;
+            createdTool.cover = createdACL._id;
         }
-
         await createdTool.save();
         res.status(204).send();
     } catch(err) {

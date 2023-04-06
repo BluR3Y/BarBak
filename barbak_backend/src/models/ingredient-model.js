@@ -21,6 +21,11 @@ const ingredientSchema = new mongoose.Schema({
     sub_category: {
         type: String,
         required: true
+    },
+    cover: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File Access Control',
+        default: null
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
@@ -29,18 +34,14 @@ ingredientSchema.virtual('verified').get(function() {
 });
 
 ingredientSchema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const { verified } = this;
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
-    
-    if (verified && this.cover) 
-        filepath = this.cover;
-    else if (!verified && this.cover_acl)
-        filepath = 'assets/private/' + this.cover_acl;
-    else 
+    if (this.cover) 
+        filepath = 'assets/' + this.cover;
+    else
         filepath = default_covers['ingredient'] ? 'assets/default/' + default_covers['ingredient'] : null;
-
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    
+    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
 ingredientSchema.query.categoryFilter = function(filters) {
@@ -59,15 +60,6 @@ ingredientSchema.query.categoryFilter = function(filters) {
 }
 
 ingredientSchema.statics = {
-    formatCoverImage: function(filepath) {
-        const { HOSTNAME, PORT } = process.env;
-        if (!filepath) {
-            const defaultCover = fileOperations.findByName('static/default', 'barware_cover');
-            if (defaultCover.length)
-                filepath = `assets/default/${defaultCover}`;
-        }
-        return filepath ? `http://${HOSTNAME}:${PORT}/${filepath}` : filepath;
-    },
     getCategories: async function() {
         const categories = await executeSqlQuery('SELECT name FROM ingredient_categories');
         return (await categories.map(item => item.name));
@@ -133,10 +125,6 @@ ingredientSchema.methods.customValidate = async function() {
 const Ingredient = mongoose.model('Ingredient', ingredientSchema);
 
 const verifiedSchema = new mongoose.Schema({
-    cover: {
-        type: String,
-        default: null
-    },
     date_verified: {
         type: Date,
         immutable: true,
@@ -147,11 +135,6 @@ const verifiedSchema = new mongoose.Schema({
 const VerifiedIngredient = Ingredient.discriminator('Verified Ingredient', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
-    cover_acl: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App Access Control',
-        default: null
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

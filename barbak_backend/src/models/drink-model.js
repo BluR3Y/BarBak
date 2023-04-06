@@ -148,6 +148,25 @@ const drinkSchema = new mongoose.Schema({
             },
             message: 'Number of tags cannot be greater than 10'
         }
+    },
+    assets: {
+        type: {
+            gallery: {
+                type: [{
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'File Access Control',
+                    required: true
+                }],
+                validate: {
+                    validator: function(items) {
+                        return items && items <= 10;
+                    },
+                    message: 'Maximum of 10 images per drink'
+                },
+                default: Array
+            }
+        },
+        default: Object
     }
 },{ collection: 'drinks', discriminatorKey: 'model' });
 
@@ -198,13 +217,11 @@ drinkSchema.virtual('verified').get(function() {
 
 drinkSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { verified, gallery } = this;
+    const { gallery } = this;
     const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
     
-    if (gallery.length && verified)
-        return basePath + gallery[0];
-    else if (gallery.length && !verified)
-        return basePath + 'assets/private/' + gallery[0];
+    if (gallery.length)
+        return basePath + 'assets/' + gallery[0];
     else if (typeof default_covers['drink'] !== 'undefined')
         return basePath + 'assets/default/' + default_covers['drink'];
     else
@@ -241,16 +258,6 @@ drinkSchema.virtual('toolInfo', {
 const Drink = mongoose.model('Drink', drinkSchema);
 
 const verifiedSchema = new mongoose.Schema({
-    gallery: {
-        type: [String],
-        validate: {
-            validator: function(items) {
-                return items && items.length <= 10;
-            },
-            message: 'Cannot exceed limit of 10 images'
-        },
-        default: []
-    },
     date_verified: {
         type: Date,
         immutable: true,
@@ -371,19 +378,6 @@ verifiedSchema.methods = {
 const VerifiedDrink = Drink.discriminator('Verified Drink', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
-    gallery: {
-        type: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'App Access Control'
-        }],
-        validate: {
-            validator: function(items) {
-                return items && items.length <= 10;
-            },
-            message: 'Cannot exceed limit of 10 images'
-        },
-        default: []
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

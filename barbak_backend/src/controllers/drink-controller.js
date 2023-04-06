@@ -3,7 +3,7 @@ const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
 const responseObject = require('../utils/response-object');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
-const { AppAccessControl } = require('../models/access-control-model');
+const FileAccessControl = require('../models/file-access-control-model');
 
 module.exports.create = async (req, res) => {
     try {
@@ -30,6 +30,7 @@ module.exports.create = async (req, res) => {
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'verified' },
+            { name: 'cover_url', alias: 'cover' }
         ];
         res.status(201).send(responseObject(createdDrink, responseFields));
     } catch(err) {
@@ -79,16 +80,36 @@ module.exports.delete = async (req, res) => {
         else if (!req.ability.can('delete', subject('drinks', { document: drinkInfo })))
             return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
 
-        if (drinkInfo instanceof UserDrink && drinkInfo.gallery.length) {
-            await Promise.all(drinkInfo.gallery.map(async acl_id => {
-                const aclDocument = await AppAccessControl.findOne({ _id: acl_id });
-                await s3Operations.removeObject(aclDocument.file_path);
-                await aclDocument.remove();
+        // if (drinkInfo instanceof UserDrink && drinkInfo.gallery.length) {
+        //     await Promise.all(drinkInfo.gallery.map(async acl_id => {
+        //         const aclDocument = await AppAccessControl.findOne({ _id: acl_id });
+        //         await s3Operations.removeObject(aclDocument.file_path);
+        //         await aclDocument.remove();
+        //     }));
+        // } else if (drinkInfo instanceof VerifiedDrink && drinkInfo.gallery.length) {
+        //     await Promise.all(drinkInfo.gallery.map(async imagePath => {
+        //         await s3Operations.removeObject(imagePath);
+        //     }));
+        // }
+
+        if (drinkInfo.gallery.length) {
+            const galleryACLDocuments = await Promise.all(drinkInfo.gallery.map(async acl_id => {
+                const aclDocument = await FileAccessControl.findOne({ _id: acl_id });
+                if (!aclDocument) {
+                    return({
+                        type: 'exist',
+                        message: 'Image not found'
+                    });
+                }else if (!aclDocument.authorize('delete', { user: req.user._id })) {
+                    return({
+                        type: 'valid',
+                        message: 'Unauthorized to delete image'
+                    });
+                };
+                return aclDocument;
+                // Last Here
             }));
-        } else if (drinkInfo instanceof VerifiedDrink && drinkInfo.gallery.length) {
-            await Promise.all(drinkInfo.gallery.map(async imagePath => {
-                await s3Operations.removeObject(imagePath);
-            }));
+            const unauthorizedErrors = galleryACLDocuments.filter(aclDocument => aclDocument)
         }
 
         await drinkInfo.remove();
