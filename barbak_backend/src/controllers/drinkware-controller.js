@@ -130,7 +130,7 @@ module.exports.updatePrivacy = async (req, res) => {
 
             aclDocument.permissions = [
                 { action: 'manage', conditions: { 'user._id': req.user._id } },
-                ...(drinkwareInfo.public ? { action: 'read' } : {})
+                ...(drinkwareInfo.public ? [{ action: 'read' }] : [])
             ];
             await aclDocument.save();
         }
@@ -185,7 +185,7 @@ module.exports.uploadCover = async (req, res) => {
                 permissions: (drinkwareInfo instanceof UserDrinkware ?
                     [
                         { action: 'manage', condition: { 'user._id': req.user._id } },
-                        ...(drinkwareInfo.public ? { action: 'read' } : {})
+                        ...(drinkwareInfo.public ? [{ action: 'read' }] : [])
                     ] : [
                         { action: 'read' },
                         { action: 'manage', conditions: { 'user.role': 'admin' } },

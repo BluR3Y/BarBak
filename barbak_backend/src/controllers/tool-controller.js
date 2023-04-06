@@ -136,7 +136,7 @@ module.exports.updatePrivacy = async (req, res) => {
 
             aclDocument.permissions = [
                 { action: 'manage', conditions: { 'user._id': req.user._id } },
-                ...(toolInfo.public ? { action: 'read' } : {})
+                ...(toolInfo.public ?[ { action: 'read' }] : [])
             ];
             await aclDocument.save();
         }
@@ -191,7 +191,7 @@ module.exports.uploadCover = async (req, res) => {
                 permissions: (toolInfo instanceof UserTool ?
                     [
                         { action: 'manage', condition: { 'user._id': req.user._id } },
-                        ...(toolInfo.public ? { action: 'read' } : {})
+                        ...(toolInfo.public ? [{ action: 'read' }] : [])
                     ] : [
                         { action: 'read' },
                         { action: 'manage', conditions: { 'user.role': 'admin' } },

@@ -26,10 +26,11 @@ drinkwareSchema.virtual('verified').get(function() {
 drinkwareSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
+    console.log(this)
     if (this.cover) 
         filepath = 'assets/' + this.cover;
     else
-        filepath = default_covers['tools'] ? 'assets/default/' + default_covers['tools'] : null;
+        filepath = default_covers['drinkware'] ? 'assets/default/' + default_covers['drinkware'] : null;
 
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });

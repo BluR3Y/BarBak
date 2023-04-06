@@ -3,6 +3,7 @@ const { imageUpload } = require('../config/multer-config');
 
 module.exports.connect = function(router) {
     router.post('/drinks/:drink_type?', drinkController.create);
+    router.post('/drinks/copy/:drink_id', drinkController.copy);
 
     router.get('/drinks/@me', drinkController.clientDrinks);
     router.get('/drinks/search', drinkController.search);

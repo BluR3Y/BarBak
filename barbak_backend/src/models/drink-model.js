@@ -159,12 +159,13 @@ const drinkSchema = new mongoose.Schema({
                 }],
                 validate: {
                     validator: function(items) {
-                        return items && items <= 10;
+                        return items && items.length <= 10;
                     },
                     message: 'Maximum of 10 images per drink'
                 },
-                default: Array
-            }
+                default: Array,
+            },
+            _id: false
         },
         default: Object
     }
@@ -217,11 +218,11 @@ drinkSchema.virtual('verified').get(function() {
 
 drinkSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { gallery } = this;
+    const { assets } = this;
     const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
-    
-    if (gallery.length)
-        return basePath + 'assets/' + gallery[0];
+
+    if (assets?.gallery.length)
+        return basePath + 'assets/' + assets.gallery[0];
     else if (typeof default_covers['drink'] !== 'undefined')
         return basePath + 'assets/default/' + default_covers['drink'];
     else
@@ -230,10 +231,9 @@ drinkSchema.virtual('cover_url').get(function() {
 
 drinkSchema.virtual('gallery_urls').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { verified, gallery } = this;
-    const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
+    const { assets } = this;
 
-    return gallery.map(imagePath => basePath + (verified ? imagePath : 'assets/private/' + imagePath));
+    return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
 });
 
 drinkSchema.virtual('drinkwareInfo', {
@@ -304,7 +304,7 @@ verifiedSchema.statics = {
                     JOIN measure ON ingredient_sub_categories.measure_state = 'all' OR (ingredient_sub_categories.measure_state = measure.measure_use OR measure.measure_use = 'miscellaneous')
                     WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? AND measure.name = ? LIMIT 1;
                 `, [ingredientInfo.category, ingredientInfo.sub_category, ingredientObj.measure.unit]);
-
+                
                 if (!data) {
                     ingredientErrors.measure = { type: 'valid', message: 'Invalid ingredient measure unit' };
                 } else if (data && data.is_standardized) {
