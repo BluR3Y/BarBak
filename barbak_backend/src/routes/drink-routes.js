@@ -13,7 +13,7 @@ module.exports.connect = function(router) {
 
     router.patch('/drinks/privacy/:drink_id', drinkController.updatePrivacy);
     router.patch('/drinks/gallery/upload/:drink_id', imageUpload.array('gallery_image', 10), drinkController.uploadGallery);
-    // router.patch('/drinks/cover/upload/:drink_id', drinkController.uploadCover);
+    router.patch('/drinks/gallery/remove/:drink_id', drinkController.removeGallery);
 
     router.delete('/drinks/:drink_id', drinkController.delete);
 }

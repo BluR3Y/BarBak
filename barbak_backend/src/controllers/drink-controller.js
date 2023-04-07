@@ -1,4 +1,5 @@
 const { subject } = require('@casl/ability');
+const mongoose = require('mongoose');
 const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
 const responseObject = require('../utils/response-object');
 const fileOperations = require('../utils/file-operations');
@@ -18,7 +19,10 @@ module.exports.create = async (req, res) => {
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A drink with that name currently exists' });
         
         const createdDrink = (drink_type === 'user' ?
-            new UserDrink({ ...req.body, user: req.user._id }) :
+            new UserDrink({ 
+                ...req.body, 
+                user: req.user._id 
+            }) :
             new VerifiedDrink(req.body)
         );
 
@@ -121,58 +125,55 @@ module.exports.delete = async (req, res) => {
 }
 
 module.exports.updatePrivacy = async (req, res) => {
-    try {
-        const { drink_id } = req.params;
-        const drinkInfo = await UserDrink.findOne({ _id: drink_id });
+    // try {
+    //     const { drink_id } = req.params;
+    //     const drinkInfo = await UserDrink.findOne({ _id: drink_id });
 
-        if (!drinkInfo)
-            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
-        else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
-            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+    //     if (!drinkInfo)
+    //         return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+    //     else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
+    //         return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
 
-        drinkInfo.public = !drinkInfo.public;
-        if (drinkInfo.assets.gallery.length) {
-            const galleryACLDocuments = await Promise.allSettled(drinkInfo.assets.gallery.map(async (imageACL, index) => {
-                const aclDocument = await FileAccessControl.findOne({ _id: imageACL });
-                if (!aclDocument) {
-                    throw ({
-                        path: index,
-                        type: 'exist',
-                        message: 'Image not found'
-                    });
-                } else if (!aclDocument.authorize('update', { user: req.user })) {
-                    throw ({
-                        path: index,
-                        type: 'valid',
-                        message: 'Unauthorized to delete image'
-                    });
-                } else
-                    return aclDocument;
-            }));
-            
-            const rejectedOperations = galleryACLDocuments.filter(aclDocument => aclDocument.status === 'rejected');
-            if (rejectedOperations.length) {
-                const rejectedError = {};
-                for (const err of rejectedOperations)
-                    rejectedError[err.reason.path] = { type: err.reason.type, message: err.reason.message };
-                return res.status(400).send({ gallery: rejectedError });
-            }
+    //     drinkInfo.public = !drinkInfo.public;
+    //     if (drinkInfo.assets.gallery.length) {
+    //         const galleryACLDocuments = await Promise.allSettled(drinkInfo.assets.gallery.map(async (imageACL) => {
+    //             const aclDocument = await FileAccessControl.findOne({ _id: imageACL });
+    //             if (!aclDocument)
+    //                 throw { key: imageACL, type: 'exist', message: 'Image not found' };
+    //             else if (!aclDocument.authorize('update', { user: req.user }))
+    //                 throw { key: imageACL, type: 'valid' , message: 'Unauthorized to modify image'};
+    //             return aclDocument;
+    //         }));
 
-            await Promise.all(galleryACLDocuments.map(async ({value}) => {
-                value.permissions = [
-                    { action: 'manage', conditions: { 'user._id': req.user._id } },
-                    ...(drinkInfo.public ? [{ action: 'read' }] : [])
-                ];
-                await value.save();
-            }));
-        }
-        await drinkInfo.save();
+    //         const rejectedOperations = galleryACLDocuments
+    //             .filter(aclDocument => aclDocument.status === 'rejected')
+    //             .map(aclDocument => aclDocument.reason)
+    //             .reduce((accumulator, current) => {
+    //                 accumulator[current.key] = {
+    //                     type: current.type,
+    //                     message: current.message
+    //                 };
+    //                 return accumulator;
+    //             }, {});
 
-        res.status(204).send();
-    } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
-    }
+    //         if (Object.keys(rejectedOperations).length)
+    //             return res.status(400).send({ path: 'gallery', errors: rejectedOperations });
+
+    //         await Promise.all(galleryACLDocuments.map(async ({value}) => {
+    //             value.permissions = [
+    //                 { action: 'manage', conditions: { 'user._id': req.user._id } },
+    //                 ...(drinkInfo.public ? [{ action: 'read' }] : [])
+    //             ];
+    //             await value.save();
+    //         }));
+    //     }
+    //     await drinkInfo.save();
+
+    //     res.status(204).send();
+    // } catch(err) {
+    //     console.error(err);
+    //     res.status(500).send('Internal server error');
+    // }
 }
 
 module.exports.uploadGallery = async (req, res) => {
@@ -229,7 +230,56 @@ module.exports.uploadGallery = async (req, res) => {
     }
 }
 
-// Delete Gallery Images 
+module.exports.removeGallery = async (req, res) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findOne({ _id: drink_id });
+
+        if (!drinkInfo)
+            return res.status(404).send({ path: 'drink_id', type: 'exist', message: 'Drink does not exist' });
+        else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
+            return res.status(403).send({ path: 'drink_id', type: 'valid', message: 'Unauthorized request' });
+
+        const selectedImages = req.body.gallery_ids;
+        const selectedImagesACL = await Promise.allSettled(selectedImages.map(async (image_id) => {
+            if (!drinkInfo.assets.gallery.includes(image_id))
+                throw { key: image_id, type: 'exist', message: 'Image does not exist in gallery' };
+            
+            const aclDocument = await FileAccessControl.findOne({ _id: image_id });
+            if (!aclDocument)
+                throw { key: image_id, type: 'exist', message: 'Image was not found' };
+            else if (!aclDocument.authorize('delete', { user: req.user }))
+                throw { key: image_id, type: 'valid', message: 'Unauthorized to modify image' };
+
+            return aclDocument;
+        }));
+
+        const rejectedOperations = selectedImagesACL
+            .filter(image_acl => image_acl.status === 'rejected')
+            .map(image_acl => image_acl.reason)
+            .reduce((accumulator, current) => {
+                accumulator[current.key] = {
+                    type: current.type,
+                    message: current.message
+                };
+                return accumulator;
+            }, {});
+        if (Object.keys(rejectedOperations).length)
+            return res.status(400).send({ path: 'gallery_ids', errors: rejectedOperations });
+
+        await Promise.all(selectedImagesACL.map(async ({value}) => {
+            const imageIndex = drinkInfo.assets.gallery.indexOf(value._id);
+            await s3Operations.removeObject(value.file_path);
+            await value.remove();
+            drinkInfo.assets.gallery.splice(imageIndex, 1);
+        }));
+        await drinkInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        console.error(err);
+        res.status(500).send('Internal server error');
+    }
+}
 
 module.exports.copy = async (req, res) => {
     try {

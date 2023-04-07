@@ -15,7 +15,8 @@ module.exports.create = async (req, res) => {
             await UserDrinkware.exists({ user: req.user._id, name: req.body.name }) :
             await VerifiedDrinkware.exists({ name: req.body.name })
         ) 
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+            return res.status(400).send({ name: { type: 'exist', message: 'A drinkware with that name currently exists' } });
+        // return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
 
         const createdDrinkware = drinkware_type === 'user' ?
             new UserDrinkware({

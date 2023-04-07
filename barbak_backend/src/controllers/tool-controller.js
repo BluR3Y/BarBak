@@ -71,9 +71,7 @@ module.exports.update = async (req, res) => {
         )
             return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
         
-        toolInfo.set({
-            ...req.body
-        });
+        toolInfo.set(req.body);
         await toolInfo.validate();
         await toolInfo.customValidate();
         await toolInfo.save();
