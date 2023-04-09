@@ -1,5 +1,5 @@
 const toolController = require('../controllers/tool-controller');
-const joiValidator = require('../middlewares/joi_validator');
+const joiValidator = require('../middleware/joi_validator');
 const { imageUpload } = require('../config/multer-config');
 const auth = require('../lib/auth');
 

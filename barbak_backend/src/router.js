@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authorize = require('./middlewares/authorize');
+const authorize = require('./middleware/authorize');
 
 router.use(authorize);
 

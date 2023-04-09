@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
+const AppError = require('../utils/app-error');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -48,32 +49,21 @@ toolSchema.statics = {
         const categories = await executeSqlQuery('SELECT name FROM tool_categories');
         return (await categories.map(item => item.name));
     },
-    validateCategories: async function(categories) {
-        const errors = {};
-        if (!Array.isArray(categories))
-            categories = [categories];
-
-        await Promise.all(categories.map(async category => {
-            const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
-            if (!categoryCount)
-                errors[category] = { type: 'valid', message: 'Invalid tool category' };
-        }));
-
-        return { isValid: !Object.keys(errors).length, errors };
+    validateCategory: async function(category) {
+        const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
+        return !!categoryCount;
     }
 }
 
 toolSchema.methods.customValidate = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
-
-    const categoryValidation = await this.constructor.validateCategories(this.category);
-    if (!categoryValidation.isValid)
-        error.errors['category'] = categoryValidation.errors[0];
-    
-    if (Object.keys(error.errors).length)
+    const categoryValidation = await this.constructor.validateCategory(this.category);
+    if (!categoryValidation) {
+        const error = new mongoose.Error.ValidationError();
+        error.errors = {
+            category: { message: 'Invalid category value' }
+        }
         throw error;
+    }
 }
 
 const Tool = mongoose.model('Tool', toolSchema);

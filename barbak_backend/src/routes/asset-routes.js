@@ -1,7 +1,7 @@
 const express = require('express');
 const FileAccessControl = require('../models/file-access-control-model');
 const s3Operations = require('../utils/aws-s3-operations');
-const joiValidator = require('../middlewares/joi_validator');
+const joiValidator = require('../middleware/joi_validator');
 
 module.exports.connect = function(router) {
     router.use('/assets/default', express.static('static/default'));
