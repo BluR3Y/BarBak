@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
-const fileOperations = require('../utils/file-operations');
 const { default_covers } = require('../config/config.json');
 
 const ingredientSchema = new mongoose.Schema({
@@ -28,6 +27,29 @@ const ingredientSchema = new mongoose.Schema({
         default: null
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
+
+ingredientSchema.path('category').validate(async function(category) {
+    const { sub_category } = this;
+    const [{ categoryId }] = await executeSqlQuery(`
+        SELECT id AS categoryId
+        FROM ingredient_categories
+        WHERE name = ? LIMIT 1;
+    `, category);
+
+    if (categoryId) {
+        const [{ subCount }] = await executeSqlQuery(`
+            SELECT COUNT(*) AS subCount
+            FROM ingredient_sub_categories
+            WHERE category_id = ? AND name = ? LIMIT 1;
+        `, [categoryId, sub_category]);
+        
+        if (!subCount)
+            this.invalidate('sub_category', 'Invalid sub_category value');
+    } else
+        this.invalidate('category', 'Invalid category value');
+
+    return true;
+});
 
 ingredientSchema.virtual('verified').get(function() {
     return this instanceof VerifiedIngredient;
@@ -73,40 +95,54 @@ ingredientSchema.statics = {
         `, [category]);
         return (await subCategories.map(item => item.name));
     },
-    validateCategories: async function(categories) {
-        const errors = {};
+    // validateCategories: async function(categories) {
+    //     const errors = {};
         
-        if (typeof categories !== 'object')
-            categories = { [categories]: [] };
+    //     if (typeof categories !== 'object')
+    //         categories = { [categories]: [] };
 
-        for (const key in categories) {
-            const [{ categoryCount }] = await executeSqlQuery(`
-                SELECT COUNT(*) AS categoryCount
-                FROM ingredient_categories
-                WHERE name = ? LIMIT 1;
-            `, [key]);
-            if (!categoryCount) {
-                errors[key] = { category: { type: 'valid', message: 'Invalid ingredient category' } };
-                continue;
-            }
+    //     for (const key in categories) {
+    //         const [{ categoryCount }] = await executeSqlQuery(`
+    //             SELECT COUNT(*) AS categoryCount
+    //             FROM ingredient_categories
+    //             WHERE name = ? LIMIT 1;
+    //         `, [key]);
+    //         if (!categoryCount) {
+    //             errors[key] = { category: { type: 'valid', message: 'Invalid ingredient category' } };
+    //             continue;
+    //         }
 
-            const values = Array.isArray(categories[key]) ? categories[key] : [categories[key]];
-            await Promise.all(values.map(async subCategory => {
-                const [{ subCount }] = await executeSqlQuery(`
-                    SELECT COUNT(*) AS subCount
-                    FROM ingredient_categories
-                    JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
-                    WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? LIMIT 1;
-                `, [key, subCategory]);
-                if (!subCount) {
-                    if (!errors[key]?.['sub_categories'])
-                        errors[key] = { sub_categories: {} };
-                    errors[key].sub_categories[subCategory] = { type: 'valid', message: 'Invalid ingredient sub-category' };
-                }
-            }));
+    //         const values = Array.isArray(categories[key]) ? categories[key] : [categories[key]];
+    //         await Promise.all(values.map(async subCategory => {
+    //             const [{ subCount }] = await executeSqlQuery(`
+    //                 SELECT COUNT(*) AS subCount
+    //                 FROM ingredient_categories
+    //                 JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+    //                 WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? LIMIT 1;
+    //             `, [key, subCategory]);
+    //             if (!subCount) {
+    //                 if (!errors[key]?.['sub_categories'])
+    //                     errors[key] = { sub_categories: {} };
+    //                 errors[key].sub_categories[subCategory] = { type: 'valid', message: 'Invalid ingredient sub-category' };
+    //             }
+    //         }));
+    //     }
+
+    //     return { isValid: !Object.keys(errors).length, errors };
+    // }
+    validateCategorySubCategory: async function(category, subCategories) {
+        const errors = {};
+
+        const isCategoryValid = await executeSqlQuery(`
+            SELECT COUNT(*) AS categoryCount
+            FROM ingredient_categories 
+            WHERE name = ? LIMIT 1;
+        `, [category]);
+        if (!isCategoryValid) {
+            console.log('marker')
         }
 
-        return { isValid: !Object.keys(errors).length, errors };
+        console.log(Object.values(categoryObj)[0])
     }
 }
 

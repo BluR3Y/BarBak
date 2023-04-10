@@ -1,33 +1,31 @@
 const { subject } = require('@casl/ability');
 const { Ingredient, VerifiedIngredient, UserIngredient } = require('../models/ingredient-model');
-// const { AppAccessControl } = require('../models/access-control-model');
 const FileAccessControl = require('../models/file-access-control-model');
 const s3Operations = require('../utils/aws-s3-operations');
 const fileOperations = require('../utils/file-operations');
 const responseObject = require('../utils/response-object');
+const AppError = require('../utils/app-error');
 
-module.exports.create = async (req, res) => {
+module.exports.create = async (req, res, next) => {
     try {
         const { ingredient_type = 'user' } = req.params;
 
         if (!req.ability.can('create', subject('ingredients', { subject_type: ingredient_type })))
-            return res.status(403).send({ path: 'verified', type: 'valid', message: 'Unauthorized to create ingredient' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to create Ingredient');
         else if (ingredient_type === 'user' ?
             await UserIngredient.exists({ user: req.user._id, name: req.body.name }) :
             await VerifiedIngredient.exists({ name: req.body.name })   
         )
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
+            throw new AppError(409, 'ALREADY_EXIST', 'An ingredient with that name currently exists');
 
         const createdIngredient = ingredient_type === 'user' ?
             new UserIngredient({
                 ...req.body,
                 user: req.user._id
             }) :
-            new VerifiedIngredient(req.body)
-        ;
+            new VerifiedIngredient(req.body);
         await createdIngredient.validate();
-        await createdIngredient.customValidate();
-        await createdIngredient.save();
+        // await createdIngredient.save();
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -51,58 +49,49 @@ module.exports.create = async (req, res) => {
         ];
         res.status(201).send(responseObject(createdIngredient, responseFields));
     } catch(err) {
-        if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
-            return res.status(400).send(err);
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.update = async (req, res) => {
+module.exports.update = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('patch', subject('ingredients', { document: ingredientInfo })))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient');
         else if (ingredientInfo instanceof UserIngredient ? 
             await UserIngredient.exists({ user: req.user._id, name: req.body.name, _id: { $ne: ingredient_id } }) :
             await VerifiedIngredient.exists({ name: req.body.name, _id: { $ne: ingredient_id } })
         )
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
+            throw new AppError(409, 'ALREADY_EXIST', 'An ingredient with that name currently exists');
         
         ingredientInfo.set(req.body);
         await ingredientInfo.validate();
-        await ingredientInfo.customValidate();
         await ingredientInfo.save();
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
-            return res.status(400).send(err);
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.delete = async (req, res) => {
+module.exports.delete = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('delete', subject('ingredients', { document: ingredientInfo })))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
         if (ingredientInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: ingredientInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('delete', { user: req.user }))
-                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
+            if (!aclDocument.authorize('delete', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
             await s3Operations.removeObject(aclDocument.file_path);
             await aclDocument.remove();
@@ -110,63 +99,59 @@ module.exports.delete = async (req, res) => {
         await ingredientInfo.remove();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.updatePrivacy = async (req, res) => {
+module.exports.updatePrivacy = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
-        const ingredientInfo = await UserIngredient.findOne({ _id: ingredient_id });
+        const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
+        else if (!ingredientInfo instanceof UserIngredient)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Privacy change is only allowed on non-verified ingredients');
         else if(!req.ability.can('patch', subject('ingredients', ingredientInfo)))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient');
 
         ingredientInfo.public = !ingredientInfo.public;
         if (ingredientInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: ingredientInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('update', { user: req.user }))
-                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
+            if (!aclDocument.authorize('update', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
             aclDocument.permissions = [
                 { action: 'manage', conditions: { 'user._id': req.user._id } },
-                ...(ingredientInfo.public ? [{ action: 'read' }] : [])
+                ...(ingredientInfo.public ? { action: 'read' } : {})
             ];
             await aclDocument.save();
         }
         await ingredientInfo.save();
         res.status(200).send(ingredientInfo);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.uploadCover = async (req, res) => {
+module.exports.uploadCover = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientCover = req.file;
 
         if (!ingredientCover)
-            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
+            throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
 
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('patch', subject('ingredients', { document: ingredientInfo })))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient');
 
         if (ingredientInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: ingredientInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('update', { user: req.user }))
-                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
+            if (!aclDocument.authorize('update', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
             const [,uploadInfo] = await Promise.all([
                 s3Operations.removeObject(aclDocument.file_path),
@@ -190,7 +175,7 @@ module.exports.uploadCover = async (req, res) => {
                 permissions: (ingredientInfo instanceof UserIngredient ?
                     [
                         { action: 'manage', condition: { 'user._id': req.user._id } },
-                        ...(ingredientInfo.public ? [{ action: 'read' }] : [])
+                        ...(ingredientInfo.public ? { action: 'read' } : {})
                     ] : [
                         { action: 'read' },
                         { action: 'manage', conditions: { 'user.role': 'admin' } },
@@ -204,32 +189,31 @@ module.exports.uploadCover = async (req, res) => {
         await ingredientInfo.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     } finally {
-        if (req.file)
-            await fileOperations.deleteSingle(req.file.path)
-            .catch(err => console.error(err));
+        try {
+            await fileOperations.deleteSingle(req.file.path);
+        } catch(err) {
+            console.error(err);
+        }
     }
 }
 
-module.exports.deleteCover = async (req, res) => {
+module.exports.deleteCover = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('patch', subject('ingredients', { document: ingredientInfo })))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient');
         else if (!ingredientInfo.cover)
-            return res.status(404).send({ path: 'image', type: 'exist', message: 'Ingredient does not have a cover image' });
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Ingredient does not have a cover image');
 
         const aclDocument = await FileAccessControl.findOne({ _id: ingredientInfo.cover });
-        if (!aclDocument)
-            return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-        else if (!aclDocument.authorize('delete', { user: req.user }))
-            return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
+        if (!aclDocument.authorize('delete', { user: req.user }))
+            throw new AppError(404, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
         
         await s3Operations.removeObject(aclDocument.file_path);
         await aclDocument.remove();
@@ -239,25 +223,24 @@ module.exports.deleteCover = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.copy = async (req, res) => {
+module.exports.copy = async (req, res, next) => {
     try {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
         
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (
             !req.ability.can('read', subject('ingredients', { action_type: 'public', document: ingredientInfo })) ||
             !req.ability.can('create', subject('ingredients', { subject_type: 'user' }))
         )
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         else if (await UserIngredient.exists({ user: req.user._id, name: ingredientInfo.name }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'An ingredient with that name currently exists' });
+            throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with an ingredient');
 
         const { name, description, category, sub_category } = ingredientInfo;
         const createdIngredient = new UserIngredient({
@@ -270,10 +253,8 @@ module.exports.copy = async (req, res) => {
 
         if (ingredientInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: ingredientInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Ingredient cover image not found' });
-            else if (!aclDocument.authorize('read', { user: req.user }))
-                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to view cover image' });
+            if (!aclDocument.authorize('read', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view ingredient cover image');
 
             const copyInfo = await s3Operations.copyObject(aclDocument.file_path);
             const createdACL = FileAccessControl({
@@ -291,20 +272,19 @@ module.exports.copy = async (req, res) => {
         await createdIngredient.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.getIngredient = async (req, res) => {
+module.exports.getIngredient = async (req, res, next) => {
     try {
         const { ingredient_id, privacy_type = 'public' } = req.params;
         const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
-            return res.status(404).send({ path: 'ingredient_id', type: 'exist', message: 'Ingredient does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('read', subject('ingredients', { action_type: privacy_type, document: ingredientInfo })))
-            return res.status(403).send({ path: 'ingredient_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view ingredient');
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -329,8 +309,7 @@ module.exports.getIngredient = async (req, res) => {
         ];
         res.status(200).send(responseObject( ingredientInfo, responseFields));
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
@@ -368,7 +347,7 @@ module.exports.search = async (req, res) => {
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ])));
-
+            // Last Here
         const response = {
             page,
             page_size,

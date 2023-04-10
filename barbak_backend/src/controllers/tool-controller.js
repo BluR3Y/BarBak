@@ -25,7 +25,6 @@ module.exports.create = async (req, res, next) => {
             }) :
             new VerifiedTool(req.body);
         await createdTool.validate();
-        await createdTool.customValidate();
         await createdTool.save();
 
         const responseFields = [
@@ -70,7 +69,6 @@ module.exports.update = async (req, res, next) => {
 
         toolInfo.set(req.body);
         await toolInfo.validate();
-        await toolInfo.customValidate();
         await toolInfo.save();
 
         res.status(204).send();
@@ -201,44 +199,13 @@ module.exports.uploadCover = async (req, res, next) => {
     }
 }
 
-// module.exports.deleteCover = async (req, res) => {
-//     try {
-//         const { tool_id } = req.params;
-//         const toolInfo = await Tool.findOne({ _id: tool_id });
-
-//         if (!toolInfo)
-//             return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
-//         else if (!req.ability.can('patch', subject('tools', { document: toolInfo })))
-//             return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
-//         else if (!toolInfo.cover)
-//             return res.status(404).send({ path: 'image', type: 'exist', message: 'Tool does not have a cover image' });
-
-//         const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
-//         if (!aclDocument)
-//             return res.status(404).send({ path: 'cover', type: 'exist', message: 'Tool cover image not found' });
-//         else if (!aclDocument.authorize('delete', { user: req.user }))
-//             return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
-
-//         await s3Operations.removeObject(aclDocument.file_path);
-//         await aclDocument.remove();
-        
-//         toolInfo.cover = null;
-//         await toolInfo.save();
-
-//         res.status(204).send();
-//     } catch(err) {
-//         console.error(err);
-//         res.status(500).send('Internal server error');
-//     }
-// }
-
 module.exports.deleteCover = async (req, res, next) => {
     try {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findOne({ _id: tool_id });
 
         if (!toolInfo)
-            throw new AppError(404, 'NOT_FOUND', 'Tool does not exist')
+            throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
         else if (!req.ability.can('patch', subject('tools', { document: toolInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify tool');
         else if (!toolInfo.cover)
@@ -246,28 +213,35 @@ module.exports.deleteCover = async (req, res, next) => {
 
         const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
         if (!aclDocument.authorize('delete', { user: req.user }))
-            throw new AppError(404, '')
-            // Last Here
+            throw new AppError(404, 'FORBIDDEN', 'Unauthorized to modify tool cover image');
+
+        await s3Operations.removeObject(aclDocument.file_path);
+        await aclDocument.remove();
+        
+        toolInfo.cover = null;
+        await toolInfo.save();
+
+        res.status(204).send();
     } catch(err) {
         next(err);
     }
 }
 
-module.exports.copy = async (req, res) => {
+module.exports.copy = async (req, res, next) => {
     try {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findOne({ _id: tool_id });
 
         if (!toolInfo)
-            return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Too does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
         else if (
             !req.ability.can('read', subject('tools', { action_type: 'public', document: toolInfo })) ||
             !req.ability.can('create', subject('tools', { subject_type: 'user' }))
         )
-            return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         else if (await UserTool.exists({ user: req.user._id, name: toolInfo.name }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A tool with that name currently exists' });
-        
+            throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with a tool');
+
         const { name, description, category } = toolInfo;
         const createdTool = new UserTool({
             name,
@@ -278,10 +252,8 @@ module.exports.copy = async (req, res) => {
 
         if (toolInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: toolInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Tool cover image not found' });
-            else if (!aclDocument.authorize('read', { user: req.user }))
-                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to view cover image' });
+            if (!aclDocument.authorize('read', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view tool cover image');
 
             const copyInfo = await s3Operations.copyObject(aclDocument.file_path);
             const createdACL = FileAccessControl({
@@ -299,20 +271,19 @@ module.exports.copy = async (req, res) => {
         await createdTool.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.getTool = async (req, res) => {
+module.exports.getTool = async (req, res, next) => {
     try {
         const { tool_id, privacy_type = 'public' } = req.params;
         const toolInfo = await Tool.findOne({ _id: tool_id });
 
         if (!toolInfo)
-            return res.status(404).send({ path: 'tool_id', type: 'exist', message: 'Tool does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
         else if (!req.ability.can('read', subject('tools', { action_type: privacy_type, document: toolInfo })))
-            return res.status(403).send({ path: 'tool_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view tool');
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -332,18 +303,24 @@ module.exports.getTool = async (req, res) => {
         ];
         res.status(200).send(responseObject(toolInfo, responseFields));
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.search = async (req, res) => {
+module.exports.search = async (req, res, next) => {
     try {
-        const { query, page, page_size, ordering, category_filter } = req.query;
-        const { isValid, errors } = await Tool.validateCategories(category_filter);
-        
-        if (!isValid)
-            return res.status(400).send({ categories: errors });
+        var { query, page, page_size, ordering, category_filter } = req.query;
+
+        const filterValidation = await Promise.all(category_filter.map(async (category) => {
+            return (await Tool.validateCategory(category));
+        }));
+        const errorCategories = filterValidation.reduce((accumulator, current, index) => {
+            if (!current)
+                accumulator.push(category_filter[index]);
+            return accumulator;
+        }, []);
+        if (errorCategories.length)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
 
         const searchQuery = Tool
             .where({ name: { $regex: query } })
@@ -379,18 +356,24 @@ module.exports.search = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.log(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.clientTools = async (req, res) => {
+module.exports.clientTools = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-        const { isValid, errors } = await Tool.validateCategories(category_filter);
-        
-        if (!isValid)
-            return res.status(400).send({ categories: errors });
+
+        const filterValidation = await Promise.all(category_filter.map(async (category) => {
+            return (await Tool.validateCategory(category));
+        }));
+        const errorCategories = filterValidation.reduce((accumulator, current, index) => {
+            if (!current)
+                accumulator.push(category_filter[index]);
+            return accumulator;
+        }, []);
+        if (errorCategories.length)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
 
         const searchQuery = Tool
             .where({ user: req.user._id })
@@ -420,7 +403,6 @@ module.exports.clientTools = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }

@@ -11,7 +11,7 @@ module.exports = (err, req, res, next) => {
             const validationErrors = {};
             for (const field in err.errors)
                 validationErrors[field] = err.errors[field].message;
-            console.log(err.errors)
+
             const validationErrorInstance = new AppError(400, 'INVALID_ARGUMENT', 'Invalid field values', validationErrors);
             return res.status(400).send(validationErrorInstance.errorResponse());
             

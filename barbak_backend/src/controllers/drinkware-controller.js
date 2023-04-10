@@ -238,7 +238,7 @@ module.exports.copy = async (req, res, next) => {
         )
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
-            throw new AppError(409, 'ALREADY_EXIST', 'A drinkware is already associated with that name');
+            throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with a drinkware');
         
         const { name, description } = drinkwareInfo;
         const createdDrinkware = new UserDrinkware({

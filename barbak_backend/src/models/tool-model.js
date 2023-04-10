@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
-const AppError = require('../utils/app-error');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -24,6 +23,21 @@ const toolSchema = new mongoose.Schema({
         default: null
     }
 },{ collection: 'tools', discriminatorKey: 'model' });
+
+toolSchema.path('category').validate(async function(category) {
+    const isValid = await this.constructor.validateCategory(category);
+    if (!isValid) {
+        const error = new mongoose.Error.ValidatorError({
+            message: 'Invalid category value',
+            path: 'category',
+            type: 'idk',
+            value: category,
+            kind: 'exist'
+        });
+        throw error;
+    }
+    return true;
+});
 
 toolSchema.query.categoryFilter = function(categories) {
     return categories.length ? this.where('category').in(categories) : this;
@@ -52,17 +66,6 @@ toolSchema.statics = {
     validateCategory: async function(category) {
         const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
         return !!categoryCount;
-    }
-}
-
-toolSchema.methods.customValidate = async function() {
-    const categoryValidation = await this.constructor.validateCategory(this.category);
-    if (!categoryValidation) {
-        const error = new mongoose.Error.ValidationError();
-        error.errors = {
-            category: { message: 'Invalid category value' }
-        }
-        throw error;
     }
 }
 
