@@ -30,23 +30,12 @@ const ingredientSchema = new mongoose.Schema({
 
 ingredientSchema.path('category').validate(async function(category) {
     const { sub_category } = this;
-    const [{ categoryId }] = await executeSqlQuery(`
-        SELECT id AS categoryId
-        FROM ingredient_categories
-        WHERE name = ? LIMIT 1;
-    `, category);
-
-    if (categoryId) {
-        const [{ subCount }] = await executeSqlQuery(`
-            SELECT COUNT(*) AS subCount
-            FROM ingredient_sub_categories
-            WHERE category_id = ? AND name = ? LIMIT 1;
-        `, [categoryId, sub_category]);
-        
-        if (!subCount)
-            this.invalidate('sub_category', 'Invalid sub_category value');
-    } else
-        this.invalidate('category', 'Invalid category value');
+    const { isValid, reason } = await this.constructor.validateCategory(category, sub_category);
+ 
+    if (!isValid && reason === 'invalid_category')
+        return this.invalidate('category', 'Invalid category value', category, 'exist');
+    else if (!isValid && reason === 'invalid_sub_categories')
+        return this.invalidate('sub_category', 'Invalid sub-category value', this.sub_category, 'exist');
 
     return true;
 });
@@ -95,66 +84,36 @@ ingredientSchema.statics = {
         `, [category]);
         return (await subCategories.map(item => item.name));
     },
-    // validateCategories: async function(categories) {
-    //     const errors = {};
-        
-    //     if (typeof categories !== 'object')
-    //         categories = { [categories]: [] };
+    validateCategory: async function(category, subCategories = []) {
+        if (!Array.isArray(subCategories))
+            subCategories = [subCategories];
 
-    //     for (const key in categories) {
-    //         const [{ categoryCount }] = await executeSqlQuery(`
-    //             SELECT COUNT(*) AS categoryCount
-    //             FROM ingredient_categories
-    //             WHERE name = ? LIMIT 1;
-    //         `, [key]);
-    //         if (!categoryCount) {
-    //             errors[key] = { category: { type: 'valid', message: 'Invalid ingredient category' } };
-    //             continue;
-    //         }
-
-    //         const values = Array.isArray(categories[key]) ? categories[key] : [categories[key]];
-    //         await Promise.all(values.map(async subCategory => {
-    //             const [{ subCount }] = await executeSqlQuery(`
-    //                 SELECT COUNT(*) AS subCount
-    //                 FROM ingredient_categories
-    //                 JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
-    //                 WHERE ingredient_categories.name = ? AND ingredient_sub_categories.name = ? LIMIT 1;
-    //             `, [key, subCategory]);
-    //             if (!subCount) {
-    //                 if (!errors[key]?.['sub_categories'])
-    //                     errors[key] = { sub_categories: {} };
-    //                 errors[key].sub_categories[subCategory] = { type: 'valid', message: 'Invalid ingredient sub-category' };
-    //             }
-    //         }));
-    //     }
-
-    //     return { isValid: !Object.keys(errors).length, errors };
-    // }
-    validateCategorySubCategory: async function(category, subCategories) {
-        const errors = {};
-
-        const isCategoryValid = await executeSqlQuery(`
-            SELECT COUNT(*) AS categoryCount
-            FROM ingredient_categories 
+        const [{ categoryId } = {}] = await executeSqlQuery(`
+            SELECT id AS categoryId
+            FROM ingredient_categories
             WHERE name = ? LIMIT 1;
         `, [category]);
-        if (!isCategoryValid) {
-            console.log('marker')
+
+        if (categoryId) {
+            const invalidSubCategories = [];
+
+            await Promise.all(subCategories.map(async (sub) => {
+                const [{ subCount }] = await executeSqlQuery(`
+                    SELECT COUNT(*) AS subCount
+                    FROM ingredient_sub_categories
+                    WHERE category_id = ? AND name = ? LIMIT 1;
+                `, [categoryId, sub]);
+
+                if (!subCount)
+                    invalidSubCategories.push(sub);
+            }));
+
+            if (invalidSubCategories.length)
+                return { isValid: false, reason: 'invalid_sub_categories', errors: invalidSubCategories };
+        } else {
+            return { isValid: false, reason: 'invalid_category' };
         }
-
-        console.log(Object.values(categoryObj)[0])
-    }
-}
-
-ingredientSchema.methods.customValidate = async function() {
-    const { category, sub_category } = this;
-    const { isValid, errors } = await this.constructor.validateCategories({ [category]: sub_category });
-
-    if (!isValid) {
-        const error = new Error();
-        error.name = 'CustomValidationError';
-        error.errors = errors[category];
-        throw error;
+        return { isValid: true };
     }
 }
 

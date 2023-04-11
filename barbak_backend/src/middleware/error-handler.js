@@ -3,6 +3,7 @@ const AppError = require('../utils/app-error');
 const mongooseError = require('mongoose').Error;
 
 module.exports = (err, req, res, next) => {
+    // console.log(err.errors)
     switch(true) {
         case err instanceof AppError:
             return res.status(err.statusCode).send(err.errorResponse());

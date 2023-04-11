@@ -25,7 +25,7 @@ module.exports.create = async (req, res, next) => {
             }) :
             new VerifiedIngredient(req.body);
         await createdIngredient.validate();
-        // await createdIngredient.save();
+        await createdIngredient.save();
 
         const responseFields = [
             { name: '_id', alias: 'id' },
@@ -313,14 +313,29 @@ module.exports.getIngredient = async (req, res, next) => {
     }
 }
 
-module.exports.search = async (req, res) => {
+module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering, category_filter } = req.query;
-        const { isValid, errors } = await Ingredient.validateCategories(category_filter);
+        const categoryFilterErrors = {};
 
-        if (!isValid)
-            return res.status(400).send({ category_filter: errors });
+        for (const [category, subCategories] of Object.entries(category_filter)) {
+            const { isValid, reason, errors } = await Ingredient.validateCategory(category, subCategories);
 
+            if (!isValid && reason === 'invalid_category') {
+                categoryFilterErrors[category] = { category: 'Invalid category value' };
+            } else if (!isValid && reason === 'invalid_sub_categories') {
+                categoryFilterErrors[category] = { sub_categories: errors.reduce((accumulator, current) => {
+                    return {
+                        ...accumulator,
+                        [current]: 'Invalid sub-category value'
+                    }
+                }, {}) }
+            }
+        }
+        
+        if (Object.keys(categoryFilterErrors).length)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', categoryFilterErrors);
+        // Last Here
         const searchQuery = Ingredient
             .where({ name: { $regex: query } })
             .or(req.user ? [
@@ -347,7 +362,7 @@ module.exports.search = async (req, res) => {
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ])));
-            // Last Here
+
         const response = {
             page,
             page_size,
@@ -357,18 +372,17 @@ module.exports.search = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.clientIngredients = async (req, res) => {
+module.exports.clientIngredients = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-        const { isValid, errors } = await Ingredient.validateCategories(category_filter);
+        const categoryFilterValidation = await Ingredient.validateCategoryFilters(category_filter);
 
-        if (!isValid)
-            return res.status(400).send({ category_filter: errors });
+        if (!categoryFilterValidation.isValid)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', categoryFilterValidation.errors);
 
         const searchQuery = Ingredient
             .find({ user: req.user._id })
@@ -399,7 +413,6 @@ module.exports.clientIngredients = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
