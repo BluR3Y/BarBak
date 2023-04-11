@@ -25,17 +25,9 @@ const toolSchema = new mongoose.Schema({
 },{ collection: 'tools', discriminatorKey: 'model' });
 
 toolSchema.path('category').validate(async function(category) {
-    const isValid = await this.constructor.validateCategory(category);
-    if (!isValid) {
-        const error = new mongoose.Error.ValidatorError({
-            message: 'Invalid category value',
-            path: 'category',
-            type: 'idk',
-            value: category,
-            kind: 'exist'
-        });
-        throw error;
-    }
+    if (!await this.constructor.validateCategory(category))
+        return this.invalidate('category', 'Invalid category value', category, 'exist');
+
     return true;
 });
 
