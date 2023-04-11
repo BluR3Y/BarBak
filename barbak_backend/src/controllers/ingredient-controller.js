@@ -316,26 +316,29 @@ module.exports.getIngredient = async (req, res, next) => {
 module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterErrors = {};
 
-        for (const [category, subCategories] of Object.entries(category_filter)) {
-            const { isValid, reason, errors } = await Ingredient.validateCategory(category, subCategories);
+        const categoryFilterValidations = await Promise.all(Object.entries(category_filter).map(async ([category, subCategories]) => {
+            return (await Ingredient.validateCategory(category, subCategories));
+        }));
+        const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
+            return {
+                ...accumulator,
+                ...(!isValid ? {
+                    [Object.keys(category_filter)[index]]: (reason === 'invalid_category' ?
+                        { category: 'Invalid category value' } :
+                        { sub_categories: errors.reduce((subAccumulator, subCurrent) => {
+                            return {
+                                ...subAccumulator,
+                                [subCurrent]: 'Invalid sub-category value'
+                            };
+                        }, {}) }
+                    )
+                } : {})
+            };
+        }, {});
+        if (Object.keys(invalidCategoryFilters).length)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
 
-            if (!isValid && reason === 'invalid_category') {
-                categoryFilterErrors[category] = { category: 'Invalid category value' };
-            } else if (!isValid && reason === 'invalid_sub_categories') {
-                categoryFilterErrors[category] = { sub_categories: errors.reduce((accumulator, current) => {
-                    return {
-                        ...accumulator,
-                        [current]: 'Invalid sub-category value'
-                    }
-                }, {}) }
-            }
-        }
-        
-        if (Object.keys(categoryFilterErrors).length)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', categoryFilterErrors);
-        // Last Here
         const searchQuery = Ingredient
             .where({ name: { $regex: query } })
             .or(req.user ? [
@@ -379,10 +382,27 @@ module.exports.search = async (req, res, next) => {
 module.exports.clientIngredients = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidation = await Ingredient.validateCategoryFilters(category_filter);
-
-        if (!categoryFilterValidation.isValid)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', categoryFilterValidation.errors);
+        const categoryFilterValidations = await Promise.all(Object.entries(category_filter).map(async ([category, subCategories]) => {
+            return (await Ingredient.validateCategory(category, subCategories));
+        }));
+        const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
+            return {
+                ...accumulator,
+                ...(!isValid ? {
+                    [Object.keys(category_filter)[index]]: (reason === 'invalid_category' ?
+                        { category: 'Invalid category value' } :
+                        { sub_categories: errors.reduce((subAccumulator, subCurrent) => {
+                            return {
+                                ...subAccumulator,
+                                [subCurrent]: 'Invalid sub-category value'
+                            };
+                        }, {}) }
+                    )
+                } : {})
+            };
+        }, {});
+        if (Object.keys(invalidCategoryFilters).length)
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
 
         const searchQuery = Ingredient
             .find({ user: req.user._id })

@@ -85,34 +85,32 @@ ingredientSchema.statics = {
         return (await subCategories.map(item => item.name));
     },
     validateCategory: async function(category, subCategories = []) {
-        if (!Array.isArray(subCategories))
+        if (typeof category !== 'string')
+            throw new Error('Category must be a string value');
+        else if (!Array.isArray(subCategories) && typeof subCategories === 'string')
             subCategories = [subCategories];
+        else if (!Array.isArray(subCategories))
+            throw new Error('Sub-Categories must be in an array');
 
         const [{ categoryId } = {}] = await executeSqlQuery(`
             SELECT id AS categoryId
             FROM ingredient_categories
             WHERE name = ? LIMIT 1;
         `, [category]);
-
-        if (categoryId) {
-            const invalidSubCategories = [];
-
-            await Promise.all(subCategories.map(async (sub) => {
-                const [{ subCount }] = await executeSqlQuery(`
-                    SELECT COUNT(*) AS subCount
-                    FROM ingredient_sub_categories
-                    WHERE category_id = ? AND name = ? LIMIT 1;
-                `, [categoryId, sub]);
-
-                if (!subCount)
-                    invalidSubCategories.push(sub);
-            }));
-
-            if (invalidSubCategories.length)
-                return { isValid: false, reason: 'invalid_sub_categories', errors: invalidSubCategories };
-        } else {
+        if (!categoryId)
             return { isValid: false, reason: 'invalid_category' };
-        }
+
+        const validSubCategories = await executeSqlQuery(`
+            SELECT name FROM 
+            ingredient_sub_categories
+            WHERE category_id = ? AND name IN (?)
+        `, [categoryId, subCategories]);
+        const invalidSubCategories = subCategories.filter(sub => {
+            return !validSubCategories.find(row => row.name === sub);
+        })
+        if (invalidSubCategories.length)
+            return { isValid: false, reason: 'invalid_sub_categories', errors: invalidSubCategories };
+
         return { isValid: true };
     }
 }
