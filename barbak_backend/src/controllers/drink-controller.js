@@ -27,8 +27,8 @@ module.exports.create = async (req, res) => {
         );
 
         await createdDrink.validate();
-        await createdDrink.customValidate();
-        await createdDrink.save();
+        // await createdDrink.customValidate();
+        // await createdDrink.save();
         
         const responseFields = [
             { name: '_id', alias: 'id' },
