@@ -314,19 +314,19 @@ module.exports.getIngredient = async (req, res, next) => {
 module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(({ category_id, sub_category_ids }) => {
-            return Ingredient.validateCategory(category_id, sub_category_ids);
+        const categoryFilterValidations = await Promise.all(category_filter.map(({ category, sub_categories }) => {
+            return Ingredient.validateCategory(category, sub_categories);
         }));
         const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
             return [
                 ...accumulator,
                 ...(!isValid ? [{
-                    category_id: category_filter[index].category_id,
+                    category: category_filter[index].category,
                     reason,
                     ...(reason === 'invalid_sub_categories' ? {
                         errors: errors.map(subId => {
                             return {
-                                sub_category_id: subId,
+                                sub_category: subId,
                                 message: 'Invalid sub-category value'
                             }
                         })
@@ -382,19 +382,19 @@ module.exports.search = async (req, res, next) => {
 module.exports.clientIngredients = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(({ category_id, sub_category_ids }) => {
-            return Ingredient.validateCategory(category_id, sub_category_ids);
+        const categoryFilterValidations = await Promise.all(category_filter.map(({ category, sub_categories }) => {
+            return Ingredient.validateCategory(category, sub_categories);
         }));
         const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
             return [
                 ...accumulator,
                 ...(!isValid ? [{
-                    category_id: category_filter[index].category_id,
+                    category: category_filter[index].category,
                     reason,
                     ...(reason === 'invalid_sub_categories' ? {
                         errors: errors.map(subId => {
                             return {
-                                sub_category_id: subId,
+                                sub_category: subId,
                                 message: 'Invalid sub-category value'
                             }
                         })

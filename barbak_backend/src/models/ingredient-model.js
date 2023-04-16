@@ -15,11 +15,11 @@ const ingredientSchema = new mongoose.Schema({
     },
     classification: {
         type: {
-            category_id: {
+            category: {
                 type: Number,
                 required: true
             },
-            sub_category_id: {
+            sub_category: {
                 type: Number,
                 required: true
             }
@@ -34,14 +34,14 @@ const ingredientSchema = new mongoose.Schema({
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
-ingredientSchema.path('classification').validate(async function({ category_id, sub_category_id }) {
-    const { isValid, reason } = await this.constructor.validateCategory(category_id, sub_category_id);
-    
-    if (!isValid && reason === 'invalid_category')
-        return this.invalidate('category', 'Invalid category value', category, 'exist');
-    else if (!isValid && reason === 'invalid_sub_categories')
-        return this.invalidate('sub_category', 'Invalid sub-category value', this.sub_category, 'exist');
+ingredientSchema.path('classification').validate(async function({ category, sub_category }) {
+    const { isValid, reason } = await this.constructor.validateCategory(category, sub_category);
 
+    if (!isValid && reason === 'invalid_category')
+        return this.invalidate('classification.category', 'Invalid category value', category, 'exist');
+    else if (!isValid && reason === 'invalid_sub_categories')
+        return this.invalidate('classification.sub_category', 'Invalid sub-category value', sub_category, 'exist');
+    
     return true;
 });
 
@@ -50,7 +50,7 @@ ingredientSchema.virtual('verified').get(function() {
 });
 
 ingredientSchema.virtual('classificationInfo').get(async function() {
-    const { category_id, sub_category_id } = this.classification;
+    const { category, sub_category } = this.classification;
     const [{ categoryName, subName }] = await executeSqlQuery(`
         SELECT
             ingredient_categories.name AS categoryName,
@@ -59,15 +59,15 @@ ingredientSchema.virtual('classificationInfo').get(async function() {
         JOIN ingredient_sub_categories ON
         ingredient_categories.id = ingredient_sub_categories.category_id
         WHERE ingredient_categories.id = ? AND ingredient_sub_categories.id = ? LIMIT 1;    
-    `, [category_id, sub_category_id]);
+    `, [category, sub_category]);
 
     return {
         category: {
-            id: category_id,
+            id: category,
             name: categoryName
         },
         sub_category: {
-            id: sub_category_id,
+            id: sub_category,
             name: subName
         }
     };
@@ -85,11 +85,11 @@ ingredientSchema.virtual('cover_url').get(function() {
 });
 
 ingredientSchema.query.categoryFilter = function(categories) {
-    const conditions = categories.map(({ category_id, sub_category_ids }) => {
+    const conditions = categories.map(({ category, sub_categories }) => {
         return {
-            'classification.category_id': category_id,
-            ...(sub_category_ids ? {
-                'classification.sub_category_id': { $in: sub_category_ids }
+            'classification.category': category,
+            ...(sub_categories ? {
+                'classification.sub_category': { $in: sub_categories }
             } : {})
         }
     });
@@ -128,7 +128,7 @@ ingredientSchema.statics = {
                 COUNT(*) AS categoryCount
             FROM ingredient_categories
             WHERE id = ? LIMIT 1;
-        `, category);
+        `, [category]);
         
         if (categoryCount && subCategories.length) {
             const ingredientSubCategories = await executeSqlQuery(`
