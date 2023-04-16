@@ -25,18 +25,16 @@ module.exports.create = async (req, res) => {
             }) :
             new VerifiedDrink(req.body)
         );
-
         await createdDrink.validate();
-        // await createdDrink.customValidate();
         // await createdDrink.save();
         
-        const responseFields = [
+        const response = await responseObject(createdDrink, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'verified' },
             { name: 'cover_url', alias: 'cover' }
-        ];
-        res.status(201).send(responseObject(createdDrink, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
         if (err.name === 'ValidationError' || err.name === 'CustomValidationError')
             return res.status(400).send(err);
