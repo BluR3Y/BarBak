@@ -8,7 +8,8 @@ module.exports.connect = function(router) {
     router.post('/tools/copy/:tool_id', toolController.copy);
 
     router.get('/tools/search', toolController.search);
-    router.get('/tools/@me', joiValidator, auth.sessionAuthenticationRequired, toolController.clientTools);
+    router.get('/tools/@me', auth.sessionAuthenticationRequired, toolController.clientTools);
+    router.get('/tools/categories', toolController.getCategories);
     router.get('/tools/:tool_id/:privacy_type?', toolController.getTool);
 
     router.patch('/tools/privacy/:tool_id', toolController.updatePrivacy);

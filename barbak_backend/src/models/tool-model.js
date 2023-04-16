@@ -14,7 +14,7 @@ const toolSchema = new mongoose.Schema({
         maxlength: 600,
     },
     category: {
-        type: String,
+        type: Number,
         required: true,
     },
     cover: {
@@ -39,6 +39,18 @@ toolSchema.virtual('verified').get(function() {
     return this instanceof VerifiedTool;
 });
 
+toolSchema.virtual('category_info').get(async function() {
+    const [{ categoryName }] = await executeSqlQuery(`
+        SELECT name AS categoryName
+        FROM tool_categories
+        WHERE id = ? LIMIT 1;
+    `, [this.category]);
+    return {
+        id: this.category,
+        name: categoryName
+    };
+});
+
 toolSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
@@ -52,11 +64,24 @@ toolSchema.virtual('cover_url').get(function() {
 
 toolSchema.statics = {
     getCategories: async function() {
-        const categories = await executeSqlQuery('SELECT name FROM tool_categories');
-        return (await categories.map(item => item.name));
+        const categories = await executeSqlQuery(`
+            SELECT *
+            FROM tool_categories
+        `);
+        return (await categories.map(item => {
+            return {
+                id: item.id,
+                name: item.name
+            }
+        }));
     },
-    validateCategory: async function(category) {
-        const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
+    validateCategory: async function(categoryId) {
+        const [{ categoryCount }] = await executeSqlQuery(`
+            SELECT
+                COUNT(*) AS categoryCount
+            FROM tool_categories 
+            WHERE id = ? LIMIT 1;
+        `, [categoryId]);
         return !!categoryCount;
     }
 }

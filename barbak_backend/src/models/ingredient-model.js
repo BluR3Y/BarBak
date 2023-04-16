@@ -13,13 +13,19 @@ const ingredientSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
-    category: {
-        type: String,
-        required: true
-    },
-    sub_category: {
-        type: String,
-        required: true
+    classification: {
+        type: {
+            category_id: {
+                type: Number,
+                required: true
+            },
+            sub_category_id: {
+                type: Number,
+                required: true
+            }
+        },
+        required: true,
+        _id: false
     },
     cover: {
         type: mongoose.Schema.Types.ObjectId,
@@ -28,10 +34,9 @@ const ingredientSchema = new mongoose.Schema({
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
-ingredientSchema.path('category').validate(async function(category) {
-    const { sub_category } = this;
-    const { isValid, reason } = await this.constructor.validateCategory(category, sub_category);
- 
+ingredientSchema.path('classification').validate(async function({ category_id, sub_category_id }) {
+    const { isValid, reason } = await this.constructor.validateCategory(category_id, sub_category_id);
+    
     if (!isValid && reason === 'invalid_category')
         return this.invalidate('category', 'Invalid category value', category, 'exist');
     else if (!isValid && reason === 'invalid_sub_categories')
@@ -42,6 +47,30 @@ ingredientSchema.path('category').validate(async function(category) {
 
 ingredientSchema.virtual('verified').get(function() {
     return this instanceof VerifiedIngredient;
+});
+
+ingredientSchema.virtual('classificationInfo').get(async function() {
+    const { category_id, sub_category_id } = this.classification;
+    const [{ categoryName, subName }] = await executeSqlQuery(`
+        SELECT
+            ingredient_categories.name AS categoryName,
+            ingredient_sub_categories.name AS subName
+        FROM ingredient_categories
+        JOIN ingredient_sub_categories ON
+        ingredient_categories.id = ingredient_sub_categories.category_id
+        WHERE ingredient_categories.id = ? AND ingredient_sub_categories.id = ? LIMIT 1;    
+    `, [category_id, sub_category_id]);
+
+    return {
+        category: {
+            id: category_id,
+            name: categoryName
+        },
+        sub_category: {
+            id: sub_category_id,
+            name: subName
+        }
+    };
 });
 
 ingredientSchema.virtual('cover_url').get(function() {
@@ -55,62 +84,76 @@ ingredientSchema.virtual('cover_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-ingredientSchema.query.categoryFilter = function(filters) {
-    const conditions = [];
-
-    for (const category in filters) {
-        const formatted = { category };
-        const sub_category = filters[category];
-
-        if (sub_category.length)
-            formatted.sub_category = { $in: filters[category] };
-        conditions.push(formatted);
-    }
-    
+ingredientSchema.query.categoryFilter = function(categories) {
+    const conditions = categories.map(({ category_id, sub_category_ids }) => {
+        return {
+            'classification.category_id': category_id,
+            ...(sub_category_ids ? {
+                'classification.sub_category_id': { $in: sub_category_ids }
+            } : {})
+        }
+    });
     return conditions.length ? this.where({ $or: conditions }) : this;
 }
 
 ingredientSchema.statics = {
     getCategories: async function() {
-        const categories = await executeSqlQuery('SELECT name FROM ingredient_categories');
-        return (await categories.map(item => item.name));
-    },
-    getSubCategories: async function(category) {
-        const subCategories = await executeSqlQuery(`
-            SELECT ingredient_sub_categories.name
-            FROM ingredient_categories 
-            JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id 
-            WHERE ingredient_categories.name = ?;
-        `, [category]);
-        return (await subCategories.map(item => item.name));
+        const data = await executeSqlQuery(`
+            SELECT
+                ingredient_categories.id AS category_id,
+                ingredient_categories.name AS category_name,
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'sub_category_id',ingredient_sub_categories.id,
+                    'sub_category_name', ingredient_sub_categories.name
+                )) AS sub_categories
+            FROM ingredient_categories
+            JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
+            GROUP BY ingredient_categories.id
+        `);
+        const categories = data.map(item => {
+            return {
+                category_id: item.category_id,
+                category_name: item.category_name,
+                sub_categories: JSON.parse(item.sub_categories)
+            };
+        });
+        return categories;
     },
     validateCategory: async function(category, subCategories = []) {
-        if (typeof category !== 'string')
-            throw new Error('Category must be a string value');
-        else if (!Array.isArray(subCategories) && typeof subCategories === 'string')
+        if (!Array.isArray(subCategories))
             subCategories = [subCategories];
-        else if (!Array.isArray(subCategories))
-            throw new Error('Sub-Categories must be in an array');
 
-        const [{ categoryId } = {}] = await executeSqlQuery(`
-            SELECT id AS categoryId
+        const [{ categoryCount }] = await executeSqlQuery(`
+            SELECT
+                COUNT(*) AS categoryCount
             FROM ingredient_categories
-            WHERE name = ? LIMIT 1;
-        `, [category]);
-        if (!categoryId)
-            return { isValid: false, reason: 'invalid_category' };
-
-        const validSubCategories = await executeSqlQuery(`
-            SELECT name FROM 
-            ingredient_sub_categories
-            WHERE category_id = ? AND name IN (?)
-        `, [categoryId, subCategories]);
-        const invalidSubCategories = subCategories.filter(sub => {
-            return !validSubCategories.find(row => row.name === sub);
-        })
-        if (invalidSubCategories.length)
-            return { isValid: false, reason: 'invalid_sub_categories', errors: invalidSubCategories };
-
+            WHERE id = ? LIMIT 1;
+        `, category);
+        
+        if (categoryCount && subCategories.length) {
+            const ingredientSubCategories = await executeSqlQuery(`
+                SELECT
+                    id
+                FROM ingredient_sub_categories
+                WHERE category_id = ? AND id IN (?)
+            `, [category, subCategories.length ? subCategories : 'NULL']);
+            const invalidSubCategories = subCategories.filter(sub => {
+                return !ingredientSubCategories.find(row => row.id === sub);
+            });
+            if (invalidSubCategories.length) {
+                return {
+                    isValid: false,
+                    reason: 'invalid_sub_categories',
+                    errors: invalidSubCategories
+                }
+            }
+        } else if (!categoryCount) {
+            return {
+                isValid: false,
+                reason: 'invalid_category'
+            };
+        }
+        
         return { isValid: true };
     }
 }

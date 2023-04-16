@@ -27,12 +27,11 @@ module.exports.create = async (req, res, next) => {
         await createdIngredient.validate();
         await createdIngredient.save();
 
-        const responseFields = [
+        const response = await responseObject(createdIngredient, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'category' },
-            { name: 'sub_category' },
+            { name: 'classificationInfo', alias: 'classification' },
             { name: 'cover_url', alias: 'cover' },
             {
                 name: 'public',
@@ -46,8 +45,8 @@ module.exports.create = async (req, res, next) => {
                 name: 'date_verified',
                 condition: (document) => document instanceof VerifiedIngredient
             }
-        ];
-        res.status(201).send(responseObject(createdIngredient, responseFields));
+        ]);
+        res.status(201).send(response);
     } catch(err) {
         next(err);
     }
@@ -242,12 +241,11 @@ module.exports.copy = async (req, res, next) => {
         else if (await UserIngredient.exists({ user: req.user._id, name: ingredientInfo.name }))
             throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with an ingredient');
 
-        const { name, description, category, sub_category } = ingredientInfo;
+        const { name, description, classification } = ingredientInfo;
         const createdIngredient = new UserIngredient({
             name,
             description,
-            category,
-            sub_category,
+            classification,
             user: req.user._id
         });
 
@@ -279,19 +277,19 @@ module.exports.copy = async (req, res, next) => {
 module.exports.getIngredient = async (req, res, next) => {
     try {
         const { ingredient_id, privacy_type = 'public' } = req.params;
-        const ingredientInfo = await Ingredient.findOne({ _id: ingredient_id });
+        const ingredientInfo = await Ingredient
+            .findOne({ _id: ingredient_id });
 
         if (!ingredientInfo)
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
         else if (!req.ability.can('read', subject('ingredients', { action_type: privacy_type, document: ingredientInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view ingredient');
 
-        const responseFields = [
+        const response = await responseObject(ingredientInfo, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'category' },
-            { name: 'sub_category' },
+            { name: 'classificationInfo', alias: 'classification' },
             { name: 'cover_url', alias: 'cover' },
             { name: 'verified' },
             {
@@ -306,8 +304,8 @@ module.exports.getIngredient = async (req, res, next) => {
                 name: 'date_verified',
                 condition: (document) => privacy_type === 'private' && document instanceof VerifiedIngredient
             }
-        ];
-        res.status(200).send(responseObject( ingredientInfo, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -316,27 +314,29 @@ module.exports.getIngredient = async (req, res, next) => {
 module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering, category_filter } = req.query;
-
-        const categoryFilterValidations = await Promise.all(Object.entries(category_filter).map(async ([category, subCategories]) => {
-            return (await Ingredient.validateCategory(category, subCategories));
+        const categoryFilterValidations = await Promise.all(category_filter.map(({ category_id, sub_category_ids }) => {
+            return Ingredient.validateCategory(category_id, sub_category_ids);
         }));
         const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
-            return {
+            return [
                 ...accumulator,
-                ...(!isValid ? {
-                    [Object.keys(category_filter)[index]]: (reason === 'invalid_category' ?
-                        { category: 'Invalid category value' } :
-                        { sub_categories: errors.reduce((subAccumulator, subCurrent) => {
+                ...(!isValid ? [{
+                    category_id: category_filter[index].category_id,
+                    reason,
+                    ...(reason === 'invalid_sub_categories' ? {
+                        errors: errors.map(subId => {
                             return {
-                                ...subAccumulator,
-                                [subCurrent]: 'Invalid sub-category value'
-                            };
-                        }, {}) }
-                    )
-                } : {})
-            };
-        }, {});
-        if (Object.keys(invalidCategoryFilters).length)
+                                sub_category_id: subId,
+                                message: 'Invalid sub-category value'
+                            }
+                        })
+                    } : {
+                        message: 'Invalid category value'
+                    })
+                }] : [])
+            ];
+        }, []);
+        if (invalidCategoryFilters.length)
             throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
 
         const searchQuery = Ingredient
@@ -357,14 +357,14 @@ module.exports.search = async (req, res, next) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
-                { name: 'category' },
-                { name: 'sub_category' },
+                { name: 'description' },
+                { name: 'classificationInfo', alias: 'classification' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
-            ])));
+            ]))));
 
         const response = {
             page,
@@ -382,26 +382,29 @@ module.exports.search = async (req, res, next) => {
 module.exports.clientIngredients = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(Object.entries(category_filter).map(async ([category, subCategories]) => {
-            return (await Ingredient.validateCategory(category, subCategories));
+        const categoryFilterValidations = await Promise.all(category_filter.map(({ category_id, sub_category_ids }) => {
+            return Ingredient.validateCategory(category_id, sub_category_ids);
         }));
         const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
-            return {
+            return [
                 ...accumulator,
-                ...(!isValid ? {
-                    [Object.keys(category_filter)[index]]: (reason === 'invalid_category' ?
-                        { category: 'Invalid category value' } :
-                        { sub_categories: errors.reduce((subAccumulator, subCurrent) => {
+                ...(!isValid ? [{
+                    category_id: category_filter[index].category_id,
+                    reason,
+                    ...(reason === 'invalid_sub_categories' ? {
+                        errors: errors.map(subId => {
                             return {
-                                ...subAccumulator,
-                                [subCurrent]: 'Invalid sub-category value'
-                            };
-                        }, {}) }
-                    )
-                } : {})
-            };
-        }, {});
-        if (Object.keys(invalidCategoryFilters).length)
+                                sub_category_id: subId,
+                                message: 'Invalid sub-category value'
+                            }
+                        })
+                    } : {
+                        message: 'Invalid category value'
+                    })
+                }] : [])
+            ];
+        }, []);
+        if (invalidCategoryFilters.length)
             throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
 
         const searchQuery = Ingredient
@@ -414,16 +417,15 @@ module.exports.clientIngredients = async (req, res, next) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
-                { name: 'category' },
-                { name: 'sub_category' },
+                { name: 'description' },
+                { name: 'classificationInfo', alias: 'classification' },
                 { name: 'cover_url', alias: 'cover' },
-                { name: 'public' },
-                { name: 'date_created' }
-            ])));
-
+                { name: 'verified' }
+            ]))));
+            
         const response = {
             page,
             page_size,
@@ -432,6 +434,15 @@ module.exports.clientIngredients = async (req, res, next) => {
             data: responseDocuments
         };
         res.status(200).send(response);
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.getCategories = async (req, res, next) => {
+    try {
+        const ingredientCategories = await Ingredient.getCategories();
+        res.status(200).send(ingredientCategories);
     } catch(err) {
         next(err);
     }

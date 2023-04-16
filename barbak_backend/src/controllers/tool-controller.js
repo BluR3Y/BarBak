@@ -27,11 +27,11 @@ module.exports.create = async (req, res, next) => {
         await createdTool.validate();
         await createdTool.save();
 
-        const responseFields = [
+        const response = await responseObject(createdTool, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'category' },
+            { name: 'category_info', alias: 'category' },
             { name: 'cover_url', alias: 'cover' },
             {
                 name: 'public',
@@ -45,8 +45,8 @@ module.exports.create = async (req, res, next) => {
                 name: 'date_verified',
                 condition: (document) => document instanceof VerifiedTool
             }
-        ];
-        res.status(201).send(responseObject(createdTool, responseFields));
+        ]);
+        res.status(201).send(response);
     } catch(err) {
         next(err);
     }
@@ -285,11 +285,11 @@ module.exports.getTool = async (req, res, next) => {
         else if (!req.ability.can('read', subject('tools', { action_type: privacy_type, document: toolInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view tool');
 
-        const responseFields = [
+        const response = await responseObject(toolInfo, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'category' },
+            { name: 'category_info', alias: 'category' },
             { name: 'cover_url', alias: 'cover' },
             { name: 'verified' },
             {
@@ -300,8 +300,8 @@ module.exports.getTool = async (req, res, next) => {
                 name: 'date_verified',
                 condition: (document) => privacy_type === 'private' && document instanceof VerifiedTool
             }
-        ];
-        res.status(200).send(responseObject(toolInfo, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -309,17 +309,14 @@ module.exports.getTool = async (req, res, next) => {
 
 module.exports.search = async (req, res, next) => {
     try {
-        var { query, page, page_size, ordering, category_filter } = req.query;
-
-        const filterValidation = await Promise.all(category_filter.map(async (category) => {
-            return (await Tool.validateCategory(category));
-        }));
-        const errorCategories = filterValidation.reduce((accumulator, current, index) => {
+        const { query, page, page_size, ordering, category_filter } = req.query;
+        const categoryFilterValidations = await Promise.all(category_filter.map(category => Tool.validateCategory(category)));
+        const errorCategories = categoryFilterValidations.reduce((accumulator, current, index) => {
             if (!current)
-                accumulator.push(category_filter[index]);
+                accumulator[category_filter[index]] = 'Invalid category filter';
             return accumulator;
-        }, []);
-        if (errorCategories.length)
+        }, {});
+        if (Object.keys(errorCategories).length)
             throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
 
         const searchQuery = Tool
@@ -331,7 +328,8 @@ module.exports.search = async (req, res, next) => {
             ] : [
                 { model: 'Verified Tool' },
                 { public: true }
-            ]);
+            ])
+            .categoryFilter(category_filter);
 
         const totalDocuments = await Tool.countDocuments(searchQuery);
         const responseDocuments = await Tool
@@ -339,13 +337,13 @@ module.exports.search = async (req, res, next) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
-                { name: 'category' },
+                { name: 'category_info', alias: 'category' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
-            ])));
+            ]))))
 
         const response = {
             page,
@@ -363,16 +361,13 @@ module.exports.search = async (req, res, next) => {
 module.exports.clientTools = async (req, res, next) => {
     try {
         const { page, page_size, ordering, category_filter } = req.query;
-
-        const filterValidation = await Promise.all(category_filter.map(async (category) => {
-            return (await Tool.validateCategory(category));
-        }));
-        const errorCategories = filterValidation.reduce((accumulator, current, index) => {
+        const categoryFilterValidations = await Promise.all(category_filter.map(category => Tool.validateCategory(category)));
+        const errorCategories = categoryFilterValidations.reduce((accumulator, current, index) => {
             if (!current)
-                accumulator.push(category_filter[index]);
+                accumulator[category_filter[index]] = 'Invalid category filter';
             return accumulator;
-        }, []);
-        if (errorCategories.length)
+        }, {});
+        if (Object.keys(errorCategories).length)
             throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
 
         const searchQuery = Tool
@@ -385,14 +380,14 @@ module.exports.clientTools = async (req, res, next) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'public' },
                 { name: 'date_created' }
-            ])));
+            ]))));
 
         const response = {
             page,
@@ -402,6 +397,15 @@ module.exports.clientTools = async (req, res, next) => {
             data: responseDocuments
         };
         res.status(200).send(response);
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.getCategories = async (req, res, next) => {
+    try {
+        const toolCategories = await Tool.getCategories();
+        res.status(200).send(toolCategories);
     } catch(err) {
         next(err);
     }

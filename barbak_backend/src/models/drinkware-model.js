@@ -26,7 +26,7 @@ drinkwareSchema.virtual('verified').get(function() {
 drinkwareSchema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
-    console.log(this)
+
     if (this.cover) 
         filepath = 'assets/' + this.cover;
     else
