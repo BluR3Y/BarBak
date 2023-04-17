@@ -189,11 +189,8 @@ module.exports.uploadCover = async (req, res, next) => {
     } catch(err) {
         next(err);
     } finally {
-        try {
-            await fileOperations.deleteSingle(req.file.path);
-        } catch(err) {
-            console.error(err);
-        }
+        fileOperations.deleteSingle(req.file.path)
+        .catch(err => console.error(err));
     }
 }
 
