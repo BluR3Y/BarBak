@@ -7,6 +7,8 @@ module.exports.connect = function(router) {
 
     router.get('/drinks/@me', drinkController.clientDrinks);
     router.get('/drinks/search', drinkController.search);
+    router.get('/drinks/preparation-methods', drinkController.getPreparationMethods);
+    router.get('/drinks/serving-styles', drinkController.getServingStyles);
     router.get('/drinks/:drink_id/:privacy_type?', drinkController.getDrink);
 
     router.put('/drinks/:drink_id', drinkController.update);

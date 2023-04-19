@@ -296,12 +296,18 @@ drinkSchema.path('tools').validate(async function(tools) {
 
 drinkSchema.statics = {
     getPreparationMethods: async function() {
-        const preparationMethods = await executeSqlQuery(`SELECT name FROM drink_preparation_methods`);
-        return (await preparationMethods.map(item => item.name));
+        const preparationMethods = await executeSqlQuery(`SELECT * FROM drink_preparation_methods`);
+        return (await preparationMethods.map(method => ({
+            id: method.id,
+            name: method.name
+        })));
     },
     getServingStyles: async function() {
-        const servingStyles = await executeSqlQuery(`SELECT name FROM drink_serving_styles`);
-        return (await servingStyles.map(item => item.name));
+        const servingStyles = await executeSqlQuery(`SELECT * FROM drink_serving_styles`);
+        return (await servingStyles.map(style => ({
+            id: style.id,
+            name: style.name
+        })));
     },
     validatePreparationMethod: async function(method) {
         const [{ methodCount }] = await executeSqlQuery(`
@@ -353,12 +359,6 @@ drinkSchema.virtual('drinkware_info', {
     foreignField: '_id',
     justOne: true
 });
-
-// drinkSchema.virtual('ingredients.ingredient_info', {
-//     ref: 'Ingredient',
-//     localField: 'ingredients.ingredient',
-//     foreignField: '_id'
-// });
 
 drinkSchema.virtual('tool_info', {
     ref: 'Tool',

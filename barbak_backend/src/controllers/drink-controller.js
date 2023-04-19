@@ -145,7 +145,7 @@ module.exports.uploadGallery = async (req, res, next) => {
         else if (!req.ability.can('patch', subject('drinks', { document: drinkInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drink');
         else if (galleryUploads.length + drinkInfo.assets.gallery.length > 10)
-            throw new AppError(409, 'CONFLICT', 'Adding uploads to drink gallery exceeds limit');   // correct code
+            throw new AppError(409, 'CONFLICT', 'Adding uploads to drink gallery exceeds limit');
 
         const uploadInfo = await Promise.all(galleryUploads.map(async galleryImage => {
             const imageUpload = await s3Operations.createObject(galleryImage, 'assets/drinks/images');
@@ -372,46 +372,46 @@ module.exports.getDrink = async (req, res, next) => {
 }
 
 module.exports.search = async (req, res) => {
-    try {
-        const { query, page = 1, page_size = 10, ordering, category_filter } = req.query;
+    // try {
+    //     const { query, page = 1, page_size = 10, ordering, category_filter } = req.query;
 
-        // Missing Filters
+    //     // Missing Filters
 
-        const searchQuery = Drink
-            .where({ name: { $regex: query } })
-            .or([
-                { model: 'Verified Drink' },
-                { model: 'User Drink', public: true },
-                (req.user ? { model: 'User Drink', user: req.user._id } : {})
-            ]);
+    //     const searchQuery = Drink
+    //         .where({ name: { $regex: query } })
+    //         .or([
+    //             { model: 'Verified Drink' },
+    //             { model: 'User Drink', public: true },
+    //             (req.user ? { model: 'User Drink', user: req.user._id } : {})
+    //         ]);
 
-        const totalDocuments = await Drink.countDocuments(searchQuery);
-        const responseDocuments = await Drink
-            .find(searchQuery)
-            .select('name tags assets')
-            .sort(ordering)
-            .skip((page - 1) * page_size)
-            .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
-                { name: '_id', alias: 'id' },
-                { name: 'name' },
-                { name: 'tags' },
-                { name: 'verified' },
-                { name: 'cover_url', alias: 'cover' }
-            ])));
+    //     const totalDocuments = await Drink.countDocuments(searchQuery);
+    //     const responseDocuments = await Drink
+    //         .find(searchQuery)
+    //         .select('name tags assets')
+    //         .sort(ordering)
+    //         .skip((page - 1) * page_size)
+    //         .limit(page_size)
+    //         .then(documents => documents.map(doc => responseObject(doc, [
+    //             { name: '_id', alias: 'id' },
+    //             { name: 'name' },
+    //             { name: 'tags' },
+    //             { name: 'verified' },
+    //             { name: 'cover_url', alias: 'cover' }
+    //         ])));
         
-        const response = {
-            page,
-            page_size,
-            total_pages: Math.ceil(totalDocuments / page_size),
-            total_results: totalDocuments,
-            data: responseDocuments
-        };
-        res.status(200).send(response);
-    } catch(err) {
-        console.log(err);
-        res.status(500).send('Internal server error');
-    }
+    //     const response = {
+    //         page,
+    //         page_size,
+    //         total_pages: Math.ceil(totalDocuments / page_size),
+    //         total_results: totalDocuments,
+    //         data: responseDocuments
+    //     };
+    //     res.status(200).send(response);
+    // } catch(err) {
+    //     console.log(err);
+    //     res.status(500).send('Internal server error');
+    // }
 }
 
 module.exports.clientDrinks = async (req, res) => {
@@ -435,4 +435,22 @@ module.exports.clientDrinks = async (req, res) => {
     //     console.error(err);
     //     res.status(500).send('Internal server error');
     // }
+}
+
+module.exports.getPreparationMethods = async (req, res, next) => {
+    try {
+        const drinkPreparationMethods = await Drink.getPreparationMethods();
+        res.status(200).send(drinkPreparationMethods);
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.getServingStyles = async (req, res, next) => {
+    try {
+        const drinkServingStyles = await Drink.getServingStyles();
+        res.status(200).send(drinkServingStyles);
+    } catch(err) {
+        next(err);
+    }
 }

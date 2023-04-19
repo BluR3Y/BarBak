@@ -68,12 +68,10 @@ toolSchema.statics = {
             SELECT *
             FROM tool_categories
         `);
-        return (await categories.map(item => {
-            return {
-                id: item.id,
-                name: item.name
-            }
-        }));
+        return (await categories.map(item => ({
+            id: item.id,
+            name: item.name
+        })));
     },
     validateCategory: async function(categoryId) {
         const [{ categoryCount }] = await executeSqlQuery(`

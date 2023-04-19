@@ -110,14 +110,11 @@ ingredientSchema.statics = {
             JOIN ingredient_sub_categories ON ingredient_categories.id = ingredient_sub_categories.category_id
             GROUP BY ingredient_categories.id
         `);
-        const categories = data.map(item => {
-            return {
-                category_id: item.category_id,
-                category_name: item.category_name,
-                sub_categories: JSON.parse(item.sub_categories)
-            };
-        });
-        return categories;
+        return (await data.map(item => ({
+            category_id: item.category_id,
+            category_name: item.category_name,
+            sub_categories: JSON.parse(item.sub_categories)
+        })));
     },
     validateCategory: async function(category, subCategories = []) {
         if (!Array.isArray(subCategories))
