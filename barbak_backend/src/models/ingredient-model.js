@@ -49,7 +49,7 @@ ingredientSchema.virtual('verified').get(function() {
     return this instanceof VerifiedIngredient;
 });
 
-ingredientSchema.virtual('classificationInfo').get(async function() {
+ingredientSchema.virtual('classification_info').get(async function() {
     const { category, sub_category } = this.classification;
     const [{ categoryName, subName }] = await executeSqlQuery(`
         SELECT

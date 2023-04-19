@@ -110,7 +110,7 @@ module.exports.updatePrivacy = async (req, res, next) => {
 
         if (!toolInfo)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-        else if (!toolInfo instanceof UserTool)
+        else if (!(toolInfo instanceof UserTool))
             throw new AppError(400, 'INVALID_ARGUMENT', 'Privacy change is only allowed on non-verified tools');
         else if (!req.ability.can('patch', subject('tools', { document: toolInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify tool');

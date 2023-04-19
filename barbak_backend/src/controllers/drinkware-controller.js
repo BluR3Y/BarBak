@@ -108,7 +108,7 @@ module.exports.updatePrivacy = async (req, res, next) => {
 
         if (!drinkwareInfo)
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
-        else if (!drinkwareInfo instanceof UserDrinkware)
+        else if (!(drinkwareInfo instanceof UserDrinkware))
             throw new AppError(400, 'INVALID_ARGUMENT', 'Privacy change is only allowed on non-verified drinkware');
         else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');

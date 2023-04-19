@@ -31,7 +31,7 @@ module.exports.create = async (req, res, next) => {
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'classificationInfo', alias: 'classification' },
+            { name: 'classification_info', alias: 'classification' },
             { name: 'cover_url', alias: 'cover' },
             {
                 name: 'public',
@@ -109,7 +109,7 @@ module.exports.updatePrivacy = async (req, res, next) => {
 
         if (!ingredientInfo)
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
-        else if (!ingredientInfo instanceof UserIngredient)
+        else if (!(ingredientInfo instanceof UserIngredient))
             throw new AppError(400, 'INVALID_ARGUMENT', 'Privacy change is only allowed on non-verified ingredients');
         else if(!req.ability.can('patch', subject('ingredients', ingredientInfo)))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient');
@@ -286,7 +286,7 @@ module.exports.getIngredient = async (req, res, next) => {
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'classificationInfo', alias: 'classification' },
+            { name: 'classification_info', alias: 'classification' },
             { name: 'cover_url', alias: 'cover' },
             { name: 'verified' },
             {
@@ -358,7 +358,7 @@ module.exports.search = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
-                { name: 'classificationInfo', alias: 'classification' },
+                { name: 'classification_info', alias: 'classification' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ]))));
@@ -418,7 +418,7 @@ module.exports.clientIngredients = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
-                { name: 'classificationInfo', alias: 'classification' },
+                { name: 'classification_info', alias: 'classification' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ]))));

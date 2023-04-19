@@ -29,51 +29,17 @@ const ingredientSchema = new mongoose.Schema({
         },
         required: true,
         _id: false
-    },
-    substitutes: {
-        type: [{
-            ingredient: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Ingredient',
-                required: true
-            },
-            measure: {
-                type: {
-                    unit: {
-                        type: Number,
-                        required: true
-                    },
-                    quantity: {
-                        type: Number,
-                        required: true,
-                        min: 0.1,
-                        max: Number.MAX_SAFE_INTEGER,
-                        get: val => parseFloat(val).toFixed(2),
-                        set: val => parseFloat(val).toFixed(2)
-                    }
-                },
-                required: true,
-            },
-            _id: false
-        }]
-    },
-    optional: {
-        type: Boolean,
-        default: false
-    },
-    garnish: {
-        type: Boolean,
-        default: false
     }
 });
 
 ingredientSchema.path('ingredient').validate(async function(ingredient) {
     const { ingredientInfo } = this;
-    const parentDocument = this.$parent();
-    const { user, public } = parentDocument;
-    if (parentDocument instanceof VerifiedDrink && ingredientInfo instanceof UserIngredient)
+    const baseDocument = this.ownerDocument();
+    const { user, public } = baseDocument;
+
+    if (baseDocument instanceof VerifiedDrink && ingredientInfo instanceof UserIngredient)
         return this.invalidate('ingredient', 'Verified drinks must contain verified ingredients', ingredient, 'valid');
-    else if (parentDocument instanceof UserDrink && ingredientInfo instanceof UserIngredient) {
+    else if (baseDocument instanceof UserDrink && ingredientInfo instanceof UserIngredient) {
         if (!ingredientInfo.user.equals(user))
             return this.invalidate('ingredient', 'Drink must contain ingredients that are verified or yours', ingredient, 'valid');
         else if (public && !ingredientInfo.public)
@@ -112,62 +78,6 @@ ingredientSchema.path('measure').validate(async function({ unit, quantity }) {
     return true;
 });
 
-ingredientSchema.path('substitutes').validate(async function(substitutes) {
-    if (substitutes.length > 5)
-        return this.invalidate('substitutes', 'Each ingredient is only permitted 5 substitutes', substitutes, 'valid');
-
-    const substituteIds = new Set(substitutes.map(item => item.ingredient.toString()));
-    if (substituteIds.size !== substitutes.length)
-        return this.invalidate('substitutes', 'Each ingredient in a substitute list must be unique', substitutes, 'valid');
-    else if (substituteIds.has(this.ingredient.toString()))
-        return this.invalidate('substitutes', 'Ingredient can not be in substitutes list');
-
-    const parentDocument = this.$parent();
-    await Promise.all(substitutes.map(async ({ ingredient, measure }, subIndex) => {
-        const subInfo = await Ingredient.findOne({ _id: ingredient });
-        if (!subInfo)
-            return this.invalidate(`substitutes.${subIndex}.ingredient`, 'Ingredient does not exist', ingredient, 'exist');
-        
-        if (parentDocument instanceof VerifiedDrink && subInfo instanceof UserIngredient)
-            return this.invalidate(`substitutes.${subIndex}.ingredient`, 'Verified drinks must contain verified ingredients', ingredient, 'valid');
-        else if (parentDocument instanceof UserDrink && subInfo instanceof UserIngredient) {
-            if (!subInfo.user.equals(user))
-                return this.invalidate(`substitutes.${subIndex}.ingredient`, 'Drink must contain ingredients that are verified or yours', ingredient, 'valid');
-            else if (public && !subInfo.public)
-                return this.invalidate(`substitutes.${subIndex}.ingredient`, 'Public drinks must contain ingredients that are public', ingredient, 'valid');
-        }
-
-        const { classification } = subInfo;
-        const [data] = await executeSqlQuery(`
-            SELECT
-                measure.is_standardized,
-                measure.measure_use,
-                measure.ounce_equivalence
-            FROM ingredient_categories
-            JOIN ingredient_sub_categories
-                ON ingredient_categories.id = ingredient_sub_categories.category_id
-            JOIN measure
-                ON ingredient_sub_categories.measure_state = 'all'
-                OR (ingredient_sub_categories.measure_state = measure.measure_use
-                    OR measure.measure_use = 'miscellaneous'
-                )
-            WHERE ingredient_categories.id = ? AND ingredient_sub_categories.id = ? AND measure.id = ?
-            LIMIT 1;
-        `, [classification.category, classification.sub_category, measure.unit]);
-    
-        if (!data) {
-            return this.invalidate(`substitutes.${subIndex}.measure.unit`, 'Ingredient unit of measure is not valid', unit, 'valid');
-        } else if (data && data.is_standardized) {
-            this.substitutes[subIndex].measure = {
-                unit: data.measure_use === 'volume' ? 2 : 1,
-                quantity: measure.quantity * data.ounce_equivalence
-            }
-        }
-    }));
-
-    return true;
-});
-
 // Created a 'Pre' middleware to get ingredient info
 // and avoid repeating in each path validation
 ingredientSchema.pre('validate', async function(next) {
@@ -179,6 +89,59 @@ ingredientSchema.pre('validate', async function(next) {
         this.ingredientInfo = ingredientInfo;
     }
     next();
+});
+
+ingredientSchema.virtual('ingredient_info', {
+    ref: 'Ingredient',
+    localField: 'ingredient',
+    foreignField: '_id'
+});
+
+ingredientSchema.virtual('measure_info').get(async function() {
+    const { unit, quantity } = this.measure;
+    const [{ id, singular_name, plural_name, abbriviation }] = await executeSqlQuery(`
+        SELECT *
+        FROM measure
+        WHERE id = ?
+        LIMIT 1;
+    `, [unit]);
+    return {
+        unit: {
+            id,
+            singular_name,
+            plural_name,
+            abbriviation
+        },
+        quantity
+    };
+});
+
+const drinkIngredientSchema = ingredientSchema.add({
+    substitutes: {
+        type: [ingredientSchema],
+        _id: false
+    },
+    optional: {
+        type: Boolean,
+        default: false
+    },
+    garnish: {
+        type: Boolean,
+        default: false
+    }
+});
+
+drinkIngredientSchema.path('substitutes').validate(async function(substitutes) {
+    if (substitutes.length > 5)
+        return this.invalidate('substitutes', 'Each ingredient is only permitted 5 substitutes', substitutes, 'valid');
+
+    const substituteIds = new Set(substitutes.map(item => item.ingredient.toString()));
+    if (substituteIds.size !== substitutes.length)
+        return this.invalidate('substitutes', 'Each ingredient in a substitute list must be unique', substitutes, 'valid');
+    else if (substituteIds.has(this.ingredient.toString()))
+        return this.invalidate('substitutes', 'Ingredient can not be in substitutes list');
+
+    return true;
 });
 
 const drinkSchema = new mongoose.Schema({
@@ -194,13 +157,11 @@ const drinkSchema = new mongoose.Schema({
         maxlength: 600,
     },
     preparation_method: {
-        type: String,
-        lowercase: true,
+        type: Number,
         required: true
     },
     serving_style: {
-        type: String,
-        lowercase: true,
+        type: Number,
         required: true
     },
     drinkware: {
@@ -222,7 +183,7 @@ const drinkSchema = new mongoose.Schema({
         }
     },
     ingredients: {
-        type: [ingredientSchema],
+        type: [drinkIngredientSchema],
         required: true
     },
     tools: {
@@ -386,23 +347,47 @@ drinkSchema.virtual('gallery_urls').get(function() {
     return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
 });
 
-drinkSchema.virtual('drinkwareInfo', {
+drinkSchema.virtual('drinkware_info', {
     ref: 'Drinkware',
     localField: 'drinkware',
     foreignField: '_id',
     justOne: true
 });
 
-drinkSchema.virtual('ingredientInfo', {
-    ref: 'Ingredient',
-    localField: 'ingredients.ingredient_id',
-    foreignField: '_id'
-});
+// drinkSchema.virtual('ingredients.ingredient_info', {
+//     ref: 'Ingredient',
+//     localField: 'ingredients.ingredient',
+//     foreignField: '_id'
+// });
 
-drinkSchema.virtual('toolInfo', {
+drinkSchema.virtual('tool_info', {
     ref: 'Tool',
     localField: 'tools',
     foreignField: '_id'
+});
+
+drinkSchema.virtual('preparation_method_info').get(async function() {
+    const [{ id, name }] = await executeSqlQuery(`
+        SELECT
+            id,
+            name
+        FROM drink_preparation_methods
+        WHERE id = ?
+        LIMIT 1;
+    `, [this.preparation_method]);
+    return { id, name };
+});
+
+drinkSchema.virtual('serving_style_info').get(async function() {
+    const [{ id, name }] = await executeSqlQuery(`
+        SELECT
+            id,
+            name
+        FROM drink_serving_styles
+        WHERE id = ?
+        LIMIT 1;
+    `, [this.serving_style]);
+    return { id, name };
 });
 
 const Drink = mongoose.model('Drink', drinkSchema);
