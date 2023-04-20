@@ -14,7 +14,7 @@ const toolSchema = new mongoose.Schema({
         maxlength: 600,
     },
     category: {
-        type: String,
+        type: Number,
         required: true,
     },
     cover: {
@@ -24,12 +24,27 @@ const toolSchema = new mongoose.Schema({
     }
 },{ collection: 'tools', discriminatorKey: 'model' });
 
-toolSchema.query.categoryFilter = function(categories) {
-    return categories.length ? this.where('category').in(categories) : this;
-}
+toolSchema.path('category').validate(async function(category) {
+    if (!await this.constructor.validateCategory(category))
+        return this.invalidate('category', 'Invalid category value', category, 'exist');
+
+    return true;
+});
 
 toolSchema.virtual('verified').get(function() {
     return this instanceof VerifiedTool;
+});
+
+toolSchema.virtual('category_info').get(async function() {
+    const [{ categoryName }] = await executeSqlQuery(`
+        SELECT name AS categoryName
+        FROM tool_categories
+        WHERE id = ? LIMIT 1;
+    `, [this.category]);
+    return {
+        id: this.category,
+        name: categoryName
+    };
 });
 
 toolSchema.virtual('cover_url').get(function() {
@@ -45,35 +60,42 @@ toolSchema.virtual('cover_url').get(function() {
 
 toolSchema.statics = {
     getCategories: async function() {
-        const categories = await executeSqlQuery('SELECT name FROM tool_categories');
-        return (await categories.map(item => item.name));
+        const categories = await executeSqlQuery(`
+            SELECT *
+            FROM tool_categories
+        `);
+        return (await categories.map(item => ({
+            id: item.id,
+            name: item.name
+        })));
     },
-    validateCategories: async function(categories) {
-        const errors = {};
-        if (!Array.isArray(categories))
-            categories = [categories];
-
-        await Promise.all(categories.map(async category => {
-            const [{ categoryCount }] = await executeSqlQuery('SELECT COUNT(*) AS categoryCount FROM tool_categories WHERE name = ? LIMIT 1;', [category]);
-            if (!categoryCount)
-                errors[category] = { type: 'valid', message: 'Invalid tool category' };
-        }));
-
-        return { isValid: !Object.keys(errors).length, errors };
+    validateCategory: async function(categoryId) {
+        const [{ categoryCount }] = await executeSqlQuery(`
+            SELECT
+                COUNT(*) AS categoryCount
+            FROM tool_categories 
+            WHERE id = ? LIMIT 1;
+        `, [categoryId]);
+        return !!categoryCount;
+    },
+    searchFilters: async function(categories) {
+        const categoryValidations = await Promise.all(categories.map(item => this.validateCategory(item)));
+        const invalidCategories = categories.reduce((accumulator, current, index) => ([
+            ...accumulator,
+            ...(!categoryValidations[index] ? [{
+                category: current,
+                message: 'Invalid category filter'
+            }] : [])
+        ]), []);
+        if (invalidCategories.length) {
+            const error = new Error('Invalid search filters');
+            error.errors = invalidCategories;
+            throw error;
+        }
+        return [
+            ...(categories.length ? [{ 'category': { $in: categories } }] : [])
+        ];
     }
-}
-
-toolSchema.methods.customValidate = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = {};
-
-    const categoryValidation = await this.constructor.validateCategories(this.category);
-    if (!categoryValidation.isValid)
-        error.errors['category'] = categoryValidation.errors[0];
-    
-    if (Object.keys(error.errors).length)
-        throw error;
 }
 
 const Tool = mongoose.model('Tool', toolSchema);

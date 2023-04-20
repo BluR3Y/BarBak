@@ -10,7 +10,7 @@ const app = express();
 const auth = require('./lib/auth');
 const connectDB = require('./config/database-config');
 // const assetControl = require('./middleware/asset-control');
-const errorHandler = require('./middlewares/error-handler');
+const errorHandler = require('./middleware/error-handler');
 
 connectDB.ready.then(_ => {
     const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;

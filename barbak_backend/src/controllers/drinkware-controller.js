@@ -1,34 +1,33 @@
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
 const FileAccessControl = require('../models/file-access-control-model');
 const { subject } = require('@casl/ability');
+const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 const responseObject = require('../utils/response-object');
 
-module.exports.create = async (req, res) => {
+module.exports.create = async (req, res, next) => {
     try {
         const { drinkware_type = 'user' } = req.params;
 
         if (!req.ability.can('create', subject('drinkware', { subject_type: drinkware_type })))
-            return res.status(403).send({ path: 'drinkware_type', type: 'valid', message: 'Unauthorized to create drinkware' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to create drinkware');
         else if (drinkware_type === 'user' ?
             await UserDrinkware.exists({ user: req.user._id, name: req.body.name }) :
             await VerifiedDrinkware.exists({ name: req.body.name })
-        ) 
-            return res.status(400).send({ name: { type: 'exist', message: 'A drinkware with that name currently exists' } });
-        // return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+        )
+            throw new AppError(409, 'ALREADY_EXIST', 'A drinkware with that name currently exists');
 
         const createdDrinkware = drinkware_type === 'user' ?
             new UserDrinkware({
                 ...req.body,
                 user: req.user._id
             }) :
-            new VerifiedDrinkware(req.body)
-        ;
+            new VerifiedDrinkware(req.body);
         await createdDrinkware.validate();
         await createdDrinkware.save();
 
-        const responseFields = [
+        const response = await responseObject(createdDrinkware, [
             { name: "_id", alias: "id" },
             { name: "name" },
             { name: "description"},
@@ -45,13 +44,10 @@ module.exports.create = async (req, res) => {
                 name: "date_verified",
                 condition: (document) => document instanceof VerifiedDrinkware
             }
-        ];
-        res.status(201).send(responseObject(createdDrinkware, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
-        if (err.name === 'ValidationError')
-            return res.status(400).send(err);
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
@@ -61,14 +57,14 @@ module.exports.update = async (req, res) => {
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (!req.ability.can('update', subject('drinkware', { document: drinkwareInfo })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');
         else if (drinkwareInfo instanceof UserDrinkware ?
             await UserDrinkware.exists({ user: req.user._id, name: req.body.name, _id: { $ne: drinkware_id } }) :
             await VerifiedDrinkware.exists({ name: req.body.name, _id: { $ne: drinkware_id } })
         )
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+            throw AppError(409, 'ALREADY_EXISTS', 'A drinkware with that name currently exists');
 
         drinkwareInfo.set(req.body);
         await drinkwareInfo.validate();
@@ -76,29 +72,24 @@ module.exports.update = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        if (err.name === 'ValidationError')
-            return res.status(400).send(err);
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.delete = async (req, res) => {
+module.exports.delete = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (!req.ability.can('delete', subject('drinkware', { document: drinkwareInfo })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');
 
         if (drinkwareInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: drinkwareInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('delete', { user: req.user }))
-                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
+            if (!aclDocument.authorize('delete', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware cover image');
             
             await s3Operations.removeObject(aclDocument.file_path);
             await aclDocument.remove();
@@ -106,63 +97,59 @@ module.exports.delete = async (req, res) => {
         await drinkwareInfo.remove();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.updatePrivacy = async (req, res) => {
+module.exports.updatePrivacy = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
-        const drinkwareInfo = await UserDrinkware.findOne({ _id: drinkware_id });
+        const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
+        else if (!(drinkwareInfo instanceof UserDrinkware))
+            throw new AppError(400, 'INVALID_ARGUMENT', 'Privacy change is only allowed on non-verified drinkware');
         else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');
 
         drinkwareInfo.public = !drinkwareInfo.public;
         if (drinkwareInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: drinkwareInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('update', { user: req.user }))
-                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
+            if (!aclDocument.authorize('update', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware cover image');
 
             aclDocument.permissions = [
                 { action: 'manage', conditions: { 'user._id': req.user._id } },
-                ...(drinkwareInfo.public ? [{ action: 'read' }] : [])
+                ...(drinkwareInfo.public ? { action: 'read' } : {})
             ];
             await aclDocument.save();
         }
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.uploadCover = async (req, res) => {
+module.exports.uploadCover = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareCover = req.file;
 
         if (!drinkwareCover)
-            return res.status(400).send({ path: 'image', type: 'exist', message: 'No image was uploaded' });
+            throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
 
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');
 
         if (drinkwareInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: drinkwareInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Cover image not found' });
-            else if (!aclDocument.authorize('update', { user: req.user }))
-                return res.status(403).send({ path: 'cover', type: 'valid', message: 'Unauthorized to modify cover image' });
+            if (!aclDocument.authorize('update', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware cover image');
 
             const [,uploadInfo] = await Promise.all([
                 s3Operations.removeObject(aclDocument.file_path),
@@ -186,7 +173,7 @@ module.exports.uploadCover = async (req, res) => {
                 permissions: (drinkwareInfo instanceof UserDrinkware ?
                     [
                         { action: 'manage', condition: { 'user._id': req.user._id } },
-                        ...(drinkwareInfo.public ? [{ action: 'read' }] : [])
+                        ...(drinkwareInfo.public ? { action: 'read' } : {})
                     ] : [
                         { action: 'read' },
                         { action: 'manage', conditions: { 'user.role': 'admin' } },
@@ -200,34 +187,29 @@ module.exports.uploadCover = async (req, res) => {
         await drinkwareInfo.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     } finally {
-        if (req.file) {
-            await fileOperations.deleteSingle(req.file.path)
-            .catch(err => console.error(err));
-        }
+        fileOperations.deleteSingle(req.file.path)
+        .catch(err => console.error(err));
     }
 }
 
-module.exports.deleteCover = async (req, res) => {
+module.exports.deleteCover = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (!req.ability.can('patch', subject('drinkware', { document: drinkwareInfo })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify drinkware');
         else if (!drinkwareInfo.cover)
-            return res.status(404).send({ path: 'image', type: 'exist', message: 'Drinkware does not have a cover image' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not have a cover image');
 
         const aclDocument = await FileAccessControl.findOne({ _id: drinkwareInfo.cover });
-        if (!aclDocument)
-            return res.status(404).send({ path: 'cover', type: 'exist', message: 'Drinkware cover image not found' });
-        else if (!aclDocument.authorize('delete', { user: req.user }))
-            return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to delete cover image' });
-        
+        if (!aclDocument.authorize('delete', { user: req.user }))
+            throw new AppError(404, 'FORBIDDEN', 'Unauthorized to modify drinkware cover image');
+
         await s3Operations.removeObject(aclDocument.file_path);
         await aclDocument.remove();
 
@@ -236,25 +218,24 @@ module.exports.deleteCover = async (req, res) => {
 
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.copy = async (req, res) => {
+module.exports.copy = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo) 
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (
             (!req.ability.can('read', subject('drinkware', { action_type: 'public', document: drinkwareInfo }))) ||
             (!req.ability.can('create', subject('drinkware', { subject_type: 'user' })))
         )
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         else if (await UserDrinkware.exists({ user: req.user._id, name: drinkwareInfo.name }))
-            return res.status(400).send({ path: 'name', type: 'exist', message: 'A drinkware with that name currently exists' });
+            throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with a drinkware');
         
         const { name, description } = drinkwareInfo;
         const createdDrinkware = new UserDrinkware({
@@ -265,10 +246,8 @@ module.exports.copy = async (req, res) => {
 
         if (drinkwareInfo.cover) {
             const aclDocument = await FileAccessControl.findOne({ _id: drinkwareInfo.cover });
-            if (!aclDocument)
-                return res.status(404).send({ path: 'cover', type: 'exist', message: 'Drinkware cover image not found' });
-            else if (!aclDocument.authorize('read', { user: req.user }))
-                return res.status(404).send({ path: 'cover', type: 'valid', message: 'Unauthorized to view cover image' });
+            if (!aclDocument.authorize('read', { user: req.user }))
+                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view drinkware cover image');
 
             const copyInfo = await s3Operations.copyObject(aclDocument.file_path);
             const createdACL = FileAccessControl({
@@ -286,25 +265,24 @@ module.exports.copy = async (req, res) => {
         await createdDrinkware.save();
         res.status(204).send();
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.getDrinkware = async (req, res) => {
+module.exports.getDrinkware = async (req, res, next) => {
     try {
         const { drinkware_id, privacy_type = 'public' } = req.params;
         const drinkwareInfo = await Drinkware.findOne({ _id: drinkware_id });
 
         if (!drinkwareInfo)
-            return res.status(404).send({ path: 'drinkware_id', type: 'exist', message: 'Drinkware does not exist' });
+            throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
         else if (!req.ability.can('read', subject('drinkware', {
             action_type: privacy_type,
             document: drinkwareInfo
         })))
-            return res.status(403).send({ path: 'drinkware_id', type: 'valid', message: 'Unauthorized request' });
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view drinkware');
 
-        const responseFields = [
+        const response = await responseObject(drinkwareInfo, [
             { name: '_id', alias: 'id'},
             { name: 'name' },
             { name: 'description' },
@@ -326,41 +304,38 @@ module.exports.getDrinkware = async (req, res) => {
                 name: 'public',
                 condition: (document) => privacy_type === 'private' && document instanceof UserDrinkware
             }
-        ];
-        res.status(200).send(responseObject(drinkwareInfo, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.search = async (req, res) => {
+module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering } = req.query;
 
         const searchQuery = Drinkware
-            .where({ name: { $regex: query } })
-            .or(req.user ? [
-                { model: 'Verified Drinkware' },
-                { user: req.user._id },
-                { public: true }
-            ] : [
-                { model: 'Verified Drinkware' },
-                { public: true }
-            ]);
-
+            .where({
+                name: { $regex: query },
+                $or: [
+                    { model: 'Verified Drinkware' },
+                    { model: 'User Drinkware', public: true },
+                    ...(req.user ? [{ model: 'User Drinkware', user: req.user._id }] : [])
+                ]
+            });
         const totalDocuments = await Drinkware.countDocuments(searchQuery);
         const responseDocuments = await Drinkware
             .find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
-            ])));
+            ]))));
 
         const response = {
             page,
@@ -371,12 +346,11 @@ module.exports.search = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.log(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }
 
-module.exports.clientDrinkware = async (req, res) => {
+module.exports.clientDrinkware = async (req, res, next) => {
     try {
         const { page, page_size, ordering } = req.query;
         const searchQuery = Drinkware.where({ user: req.user._id });
@@ -387,13 +361,12 @@ module.exports.clientDrinkware = async (req, res) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
-                { name: 'public' },
-                { name: 'date_created' }
-            ])));
+                { name: 'verified' }
+            ]))));
 
         const response = {
             page,
@@ -404,7 +377,6 @@ module.exports.clientDrinkware = async (req, res) => {
         };
         res.status(200).send(response);
     } catch(err) {
-        console.error(err);
-        res.status(500).send('Internal server error');
+        next(err);
     }
 }

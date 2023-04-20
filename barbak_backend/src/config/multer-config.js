@@ -27,7 +27,7 @@ module.exports.imageUpload = multer({
         const subType = mime[1];
 
         if (type !== 'image' || !allowedFileFormats.images.includes(subType))
-            return cb(new multer.MulterError('Unsupported File Format'));
+            return cb(new multer.MulterError('UNSUPPORTED_FILE_FORMAT'));
         cb (null, true);
     },
     limits: {
@@ -58,7 +58,7 @@ module.exports.videoUpload = multer({
         const subType = mime[1];
 
         if (type !== 'video' || !allowedFileFormats.videos.includes(subType))
-            return cb(new multer.MulterError('Unsupported File Format'));
+            return cb(new multer.MulterError('UNSUPPORTED_FILE_FORMAT'));
         cb (null, true);
     },
     limits: {
