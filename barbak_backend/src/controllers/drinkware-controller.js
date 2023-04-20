@@ -10,7 +10,7 @@ module.exports.create = async (req, res, next) => {
     try {
         const { drinkware_type = 'user' } = req.params;
 
-        if (!req.ability.can('create', subject('drinkwsare', { subject_type: drinkware_type })))
+        if (!req.ability.can('create', subject('drinkware', { subject_type: drinkware_type })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to create drinkware');
         else if (drinkware_type === 'user' ?
             await UserDrinkware.exists({ user: req.user._id, name: req.body.name }) :
@@ -27,7 +27,7 @@ module.exports.create = async (req, res, next) => {
         await createdDrinkware.validate();
         await createdDrinkware.save();
 
-        const responseFields = [
+        const response = await responseObject(createdDrinkware, [
             { name: "_id", alias: "id" },
             { name: "name" },
             { name: "description"},
@@ -44,8 +44,8 @@ module.exports.create = async (req, res, next) => {
                 name: "date_verified",
                 condition: (document) => document instanceof VerifiedDrinkware
             }
-        ];
-        res.status(201).send(responseObject(createdDrinkware, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -282,7 +282,7 @@ module.exports.getDrinkware = async (req, res, next) => {
         })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view drinkware');
 
-        const responseFields = [
+        const response = await responseObject(drinkwareInfo, [
             { name: '_id', alias: 'id'},
             { name: 'name' },
             { name: 'description' },
@@ -304,8 +304,8 @@ module.exports.getDrinkware = async (req, res, next) => {
                 name: 'public',
                 condition: (document) => privacy_type === 'private' && document instanceof UserDrinkware
             }
-        ];
-        res.status(200).send(responseObject(drinkwareInfo, responseFields));
+        ]);
+        res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -316,28 +316,26 @@ module.exports.search = async (req, res, next) => {
         const { query, page, page_size, ordering } = req.query;
 
         const searchQuery = Drinkware
-            .where({ name: { $regex: query } })
-            .or(req.user ? [
-                { model: 'Verified Drinkware' },
-                { user: req.user._id },
-                { public: true }
-            ] : [
-                { model: 'Verified Drinkware' },
-                { public: true }
-            ]);
-
+            .where({
+                name: { $regex: query },
+                $or: [
+                    { model: 'Verified Drinkware' },
+                    { model: 'User Drinkware', public: true },
+                    ...(req.user ? [{ model: 'User Drinkware', user: req.user._id }] : [])
+                ]
+            });
         const totalDocuments = await Drinkware.countDocuments(searchQuery);
         const responseDocuments = await Drinkware
             .find(searchQuery)
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
-            ])));
+            ]))));
 
         const response = {
             page,
@@ -363,13 +361,12 @@ module.exports.clientDrinkware = async (req, res, next) => {
             .sort(ordering)
             .skip((page - 1) * page_size)
             .limit(page_size)
-            .then(documents => documents.map(doc => responseObject(doc, [
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'cover_url', alias: 'cover' },
-                { name: 'public' },
-                { name: 'date_created' }
-            ])));
+                { name: 'verified' }
+            ]))));
 
         const response = {
             page,

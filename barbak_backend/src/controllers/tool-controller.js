@@ -306,28 +306,27 @@ module.exports.getTool = async (req, res, next) => {
 
 module.exports.search = async (req, res, next) => {
     try {
-        const { query, page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(category => Tool.validateCategory(category)));
-        const errorCategories = categoryFilterValidations.reduce((accumulator, current, index) => {
-            if (!current)
-                accumulator[category_filter[index]] = 'Invalid category filter';
-            return accumulator;
-        }, {});
-        if (Object.keys(errorCategories).length)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
+        const { query, page, page_size, ordering, categories } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Tool.searchFilters(categories)
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
         const searchQuery = Tool
-            .where({ name: { $regex: query } })
-            .or(req.user ? [
-                { model: 'Verified Tool' },
-                { user: req.user._id },
-                { public: true }
-            ] : [
-                { model: 'Verified Tool' },
-                { public: true }
-            ])
-            .categoryFilter(category_filter);
-
+            .where({
+                name: { $regex: query },
+                $and: [
+                    {
+                        $or: [
+                            { model: 'Verified Tool' },
+                            { model: 'User Tool', public: true },
+                            ...(req.user ? [{ model: 'User Tool', user: req.user._id }] : [])
+                        ]
+                    }, ...(searchFilters.length ? [{ $and: searchFilters }] : [])
+                ]
+            });
         const totalDocuments = await Tool.countDocuments(searchQuery);
         const responseDocuments = await Tool
             .find(searchQuery)
@@ -340,7 +339,7 @@ module.exports.search = async (req, res, next) => {
                 { name: 'category_info', alias: 'category' },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
-            ]))))
+            ]))));
 
         const response = {
             page,
@@ -357,20 +356,20 @@ module.exports.search = async (req, res, next) => {
 
 module.exports.clientTools = async (req, res, next) => {
     try {
-        const { page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(category => Tool.validateCategory(category)));
-        const errorCategories = categoryFilterValidations.reduce((accumulator, current, index) => {
-            if (!current)
-                accumulator[category_filter[index]] = 'Invalid category filter';
-            return accumulator;
-        }, {});
-        if (Object.keys(errorCategories).length)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filters', errorCategories);
+        const { page, page_size, ordering, categories } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Tool.searchFilters(categories)
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
         const searchQuery = Tool
-            .where({ user: req.user._id })
-            .categoryFilter(category_filter);
-
+            .where({
+                model: 'User Tool',
+                user: req.user._id,
+                ...(searchFilters.length ? { $and: searchFilters } : {})
+            });
         const totalDocuments = await Tool.countDocuments(searchQuery);
         const responseDocuments = await Tool
             .find(searchQuery)

@@ -31,10 +31,6 @@ toolSchema.path('category').validate(async function(category) {
     return true;
 });
 
-toolSchema.query.categoryFilter = function(categories) {
-    return categories.length ? this.where('category').in(categories) : this;
-}
-
 toolSchema.virtual('verified').get(function() {
     return this instanceof VerifiedTool;
 });
@@ -81,6 +77,24 @@ toolSchema.statics = {
             WHERE id = ? LIMIT 1;
         `, [categoryId]);
         return !!categoryCount;
+    },
+    searchFilters: async function(categories) {
+        const categoryValidations = await Promise.all(categories.map(item => this.validateCategory(item)));
+        const invalidCategories = categories.reduce((accumulator, current, index) => ([
+            ...accumulator,
+            ...(!categoryValidations[index] ? [{
+                category: current,
+                message: 'Invalid category filter'
+            }] : [])
+        ]), []);
+        if (invalidCategories.length) {
+            const error = new Error('Invalid search filters');
+            error.errors = invalidCategories;
+            throw error;
+        }
+        return [
+            ...(categories.length ? [{ 'category': { $in: categories } }] : [])
+        ];
     }
 }
 

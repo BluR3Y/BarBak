@@ -371,70 +371,99 @@ module.exports.getDrink = async (req, res, next) => {
     }
 }
 
-module.exports.search = async (req, res) => {
-    // try {
-    //     const { query, page = 1, page_size = 10, ordering, category_filter } = req.query;
+module.exports.search = async (req, res, next) => {
+    try {
+        const { query, page, page_size, ordering, preparation_methods, serving_styles } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Drink.searchFilters(preparation_methods, serving_styles);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
-    //     // Missing Filters
+        const searchQuery = Drink
+            .where({
+                name: { $regex: query },
+                $and: [
+                    {
+                        $or: [
+                            { model: 'Verified Drink' },
+                            { model: 'User Drink', public: true },
+                            ...(req.user ? [{ model: 'User Drink', user: req.user._id }] : []),
+                        ]
+                    }, ...(searchFilters.length ? [{ $and: searchFilters }] : [])
+                ]
+            });
+        const totalDocuments = await Drink.countDocuments(searchQuery);
+        const responseDocuments = await Drink
+            .find(searchQuery)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'tags' },
+                { name: 'verified' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'public' }
+            ]))));
 
-    //     const searchQuery = Drink
-    //         .where({ name: { $regex: query } })
-    //         .or([
-    //             { model: 'Verified Drink' },
-    //             { model: 'User Drink', public: true },
-    //             (req.user ? { model: 'User Drink', user: req.user._id } : {})
-    //         ]);
-
-    //     const totalDocuments = await Drink.countDocuments(searchQuery);
-    //     const responseDocuments = await Drink
-    //         .find(searchQuery)
-    //         .select('name tags assets')
-    //         .sort(ordering)
-    //         .skip((page - 1) * page_size)
-    //         .limit(page_size)
-    //         .then(documents => documents.map(doc => responseObject(doc, [
-    //             { name: '_id', alias: 'id' },
-    //             { name: 'name' },
-    //             { name: 'tags' },
-    //             { name: 'verified' },
-    //             { name: 'cover_url', alias: 'cover' }
-    //         ])));
-        
-    //     const response = {
-    //         page,
-    //         page_size,
-    //         total_pages: Math.ceil(totalDocuments / page_size),
-    //         total_results: totalDocuments,
-    //         data: responseDocuments
-    //     };
-    //     res.status(200).send(response);
-    // } catch(err) {
-    //     console.log(err);
-    //     res.status(500).send('Internal server error');
-    // }
+            const response = {
+                page,
+                page_size,
+                total_pages: Math.ceil(totalDocuments / page_size),
+                total_results: totalDocuments,
+                data: responseDocuments
+            };
+            res.status(200).send(response);
+    } catch(err) {
+        next(err);
+    }
 }
 
-module.exports.clientDrinks = async (req, res) => {
-    // try {
-    //     const { page, page_size, ordering } = req.query;
-    //     const searchQuery = Drink.where({ name: req.user._id });
+module.exports.clientDrinks = async (req, res, next) => {
+    try {
+        const { page, page_size, ordering, preparation_methods, serving_styles } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Drink.searchFilters(preparation_methods, serving_styles);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
-    //     const totalDocuments = await Drink.countDocuments(searchQuery);
-    //     const responseDocuments = await Drink
-    //         .find(searchQuery);
-        
-    //     const response = {
-    //         page,
-    //         page_size,
-    //         total_pages: Math.ceil(totalDocuments / page_size),
-    //         total_results: totalDocuments,
-    //         data: responseDocuments
-    //     };
-    //     res.status(200).send(response);
-    // } catch(err) {
-    //     console.error(err);
-    //     res.status(500).send('Internal server error');
-    // }
+        const searchQuery = Drink
+            .where({
+                model: 'User Drink',
+                user: req.user._id,
+                ...(searchFilters.length ? { $and: searchFilters } : {})
+            });
+        const totalDocuments = await Drink.countDocuments(searchQuery);
+        const responseDocuments = await Drink
+            .find(searchQuery)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'tags' },
+                { name: 'verified' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'public' }
+            ]))));
+
+            const response = {
+                page,
+                page_size,
+                total_pages: Math.ceil(totalDocuments / page_size),
+                total_results: totalDocuments,
+                data: responseDocuments
+            };
+            res.status(200).send(response);
+    } catch(err) {
+        next(err);
+    }
 }
 
 module.exports.getPreparationMethods = async (req, res, next) => {

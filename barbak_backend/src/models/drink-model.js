@@ -324,6 +324,41 @@ drinkSchema.statics = {
             WHERE id = ? LIMIT 1;
         `, [style]);
         return !!styleCount;
+    },
+    searchFilters: async function(preparation_methods, serving_styles) {
+        const [preparationMethodValidations,servingStyleValidations] = await Promise.all([
+            Promise.all(preparation_methods.map(method => Drink.validatePreparationMethod(method))),
+            Promise.all(serving_styles.map(style => Drink.validateServingStyle(style)))
+        ]);
+        const invalidParameters = {
+            ...(preparationMethodValidations.some(method => !method) ? {
+                preparation_methods: preparation_methods.reduce((accumulator, current, index) => ([
+                    ...accumulator,
+                    ...(!preparationMethodValidations[index] ? [{
+                        preparation_method: current,
+                        message: 'Invalid preparation method'    
+                    }] : []) 
+                ]), [])
+            } : {}),
+            ...(servingStyleValidations.some(style => !style) ? {
+                serving_styles: serving_styles.reduce((accumulator, current, index) => ([
+                    ...accumulator,
+                    ...(!servingStyleValidations[index] ? [{
+                        serving_style: current,
+                        message: 'Invalid serving style'
+                    }] : [])
+                ]), [])
+            } : {})
+        };
+        if (Object.keys(invalidParameters).length) {
+            const error = new Error('Invalid filter parameters');
+            error.errors = invalidParameters;
+            throw error;
+        }
+        return [
+            ...(preparation_methods.length ? [{ preparation_method: { $in: preparation_methods } }] : []),
+            ...(serving_styles.length ? [{ serving_style: { $in: serving_styles } }] : [])
+        ];
     }
 }
 

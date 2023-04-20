@@ -310,44 +310,27 @@ module.exports.getIngredient = async (req, res, next) => {
 
 module.exports.search = async (req, res, next) => {
     try {
-        const { query, page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(({ category, sub_categories }) => {
-            return Ingredient.validateCategory(category, sub_categories);
-        }));
-        const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
-            return [
-                ...accumulator,
-                ...(!isValid ? [{
-                    category: category_filter[index].category,
-                    reason,
-                    ...(reason === 'invalid_sub_categories' ? {
-                        errors: errors.map(subId => {
-                            return {
-                                sub_category: subId,
-                                message: 'Invalid sub-category value'
-                            }
-                        })
-                    } : {
-                        message: 'Invalid category value'
-                    })
-                }] : [])
-            ];
-        }, []);
-        if (invalidCategoryFilters.length)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
+        const { query, page, page_size, ordering, categories} = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Ingredient.searchFilters(categories);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
         const searchQuery = Ingredient
-            .where({ name: { $regex: query } })
-            .or(req.user ? [
-                { model: 'Verified Ingredient' },
-                { user: req.user._id },
-                { public: true }
-            ] : [
-                { model: 'Verified Ingredient' },
-                { public: true }
-            ])
-            .categoryFilter(category_filter);
-        
+            .where({
+                name: { $regex: query },
+                $and: [
+                    {
+                        $or: [
+                            { model: 'Verified Ingredient' },
+                            { model: 'User Ingredient', public: true },
+                            ...(req.user ? [{ model: 'User Ingredient', user: req.user._id }] : []),
+                        ]
+                    }, {...(searchFilters.length ? { $or: searchFilters } : {})}
+                ]
+            });
         const totalDocuments = await Ingredient.countDocuments(searchQuery);
         const responseDocuments = await Ingredient
             .find(searchQuery)
@@ -378,36 +361,20 @@ module.exports.search = async (req, res, next) => {
 
 module.exports.clientIngredients = async (req, res, next) => {
     try {
-        const { page, page_size, ordering, category_filter } = req.query;
-        const categoryFilterValidations = await Promise.all(category_filter.map(({ category, sub_categories }) => {
-            return Ingredient.validateCategory(category, sub_categories);
-        }));
-        const invalidCategoryFilters = categoryFilterValidations.reduce((accumulator, { isValid, reason, errors }, index) => {
-            return [
-                ...accumulator,
-                ...(!isValid ? [{
-                    category: category_filter[index].category,
-                    reason,
-                    ...(reason === 'invalid_sub_categories' ? {
-                        errors: errors.map(subId => {
-                            return {
-                                sub_category: subId,
-                                message: 'Invalid sub-category value'
-                            }
-                        })
-                    } : {
-                        message: 'Invalid category value'
-                    })
-                }] : [])
-            ];
-        }, []);
-        if (invalidCategoryFilters.length)
-            throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid category filter parameters', invalidCategoryFilters);
+        const { page, page_size, ordering, categories } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Ingredient.searchFilters(categories);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
         const searchQuery = Ingredient
-            .find({ user: req.user._id })
-            .categoryFilter(category_filter);
-
+            .where({
+                model: 'User Ingredient',
+                user: req.user._id,
+                ...(searchFilters.length ? { $or: searchFilters } : {})
+            });
         const totalDocuments = await Ingredient.countDocuments(searchQuery);
         const responseDocuments = await Ingredient
             .find(searchQuery)

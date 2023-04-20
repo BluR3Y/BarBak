@@ -84,18 +84,6 @@ ingredientSchema.virtual('cover_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-ingredientSchema.query.categoryFilter = function(categories) {
-    const conditions = categories.map(({ category, sub_categories }) => {
-        return {
-            'classification.category': category,
-            ...(sub_categories ? {
-                'classification.sub_category': { $in: sub_categories }
-            } : {})
-        }
-    });
-    return conditions.length ? this.where({ $or: conditions }) : this;
-}
-
 ingredientSchema.statics = {
     getCategories: async function() {
         const data = await executeSqlQuery(`
@@ -152,6 +140,37 @@ ingredientSchema.statics = {
         }
         
         return { isValid: true };
+    },
+    searchFilters: async function(categories) {
+        const categoryValidations = await Promise.all(categories.map(({ category, sub_categories }) => this.validateCategory(category, sub_categories)));
+        const invalidCategoryFilters = categoryValidations.reduce((accumulator, { isValid, reason, errors }, index) => ([
+            ...accumulator,
+            ...(!isValid ? [{
+                category: categories[index].category,
+                reason,
+                ...(reason === 'invalid_sub_categories' ? {
+                    errors: errors.map(subId => ({
+                        sub_category: subId,
+                        message: 'Invalid sub-category value'
+                    }))
+                } : {
+                    message: 'Invalid category value'
+                })
+            }] : [])
+        ]), []);
+        if (Object.keys(invalidCategoryFilters).length) {
+            const error = new Error('Invalid categories provided');
+            error.errors = invalidCategoryFilters;
+            throw error;
+        }
+        return [
+            ...(categories.map(({ category, sub_categories }) => ({
+                'classification.category': category,
+                ...(sub_categories ? {
+                    'classification.sub_category': { $in: sub_categories }
+                } : {})
+            })))
+        ]
     }
 }
 
