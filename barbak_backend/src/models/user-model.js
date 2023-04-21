@@ -4,17 +4,89 @@ const { redisClient } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
 const { default_covers } = require('../config/config.json');
 
+const durationSchema = new mongoose.Schema({
+    start: {
+        type: Date,
+        required: true
+    },
+    end: {
+        type: Date,
+        required: true
+    },
+    active: {
+        type: Boolean,
+        default: false
+    }
+});
+
+// Validate duration to disable 'end' if active true
+
+const experienceSchema = new mongoose.Schema({
+    position: {
+        type: String,
+        required: true,
+        maxlength: 30
+    },
+    workplace: {
+        type: String,
+        required: true,
+        maxlength: 40
+    },
+    bar_type: {
+        type: String
+    },
+    location: {
+        type: String,
+        required: true
+    },
+    duration: durationSchema
+});
+
+const achievementSchema = new mongoose.Schema({
+    description: {
+        type: String,
+        minlength: 50,
+        maxlength: 600,
+        required: true
+    },
+    location: {
+        type: String,
+        maxlength: 30,
+        required: true
+    },
+    duration: durationSchema
+});
+
+const educationSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        maxlength: 30,
+        required: true
+    },
+    institute: {
+        type: String,
+        maxlength: 30,
+        required: true
+    },
+    location: {
+        type: String,
+        maxlength: 30,
+        required: true
+    },
+    duration: durationSchema
+});
+
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
-        minlength: [6, 'Username must contain at least 6 characters'],
-        maxlength: [30, 'Username length must not exceed 30 characters'],
-        required: [true, 'Username is required'],
+        minlength: 6,
+        maxlength: 30,
+        required: true,
         lowercase: true
     },
     fullname: {
         type: String,
-        maxlength: [30, 'Name must not exceed 30 characters'],
+        maxlength: 30,
         lowercase: true
     },
     email: {
@@ -24,11 +96,11 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: true
     },
     about_me: {
         type: String,
-        maxlength: [600, 'About me must not exceed 600 characters']
+        maxlength: 600
     },
     profile_image: {
         type: mongoose.Schema.Types.ObjectId,
@@ -36,124 +108,37 @@ const userSchema = new mongoose.Schema({
         default: null
     },
     experience: {
-        type: [{
-            position: {
-                type: String,
-                required: [true, 'Job position is required'],
-                maxlength: [30, 'Job position must not exceed 30 characters']
-            },
-            workplace: {
-                type: String,
-                required: [true, 'Workplace field is required'],
-                minlength: [6, 'Workplace must contain at least 6 characters'],
-                maxlength: [40, 'Workplace must not exceed 40 characters']
-            },
-            bar_type: {
-                type: String,
-            },
-            location: {
-                type: String,
-                required: [true, 'Location field is required'],
-                maxlength: [30, 'Location exceeds character limit']
-            },
-            duration: {
-                type: {
-                    start: {
-                        type: Date,
-                        required: [true, 'Start date is required']
-                    },
-                    end: {
-                        type: Date,
-                        default: null,
-                    }
-                },
-                required: [true, 'Position duration is required']
-            }
-        }],
+        type: [experienceSchema],
         validate: {
             validator: function(items) {
-                return items && items.length <= 20;
+                return items?.length <= 20;
             },
-            message: 'Number of work experience items has been exceeded'
+            message: 'Number of experience items has been exceeded'
         }
     },
     achievements: {
-        type: [{
-            description: {
-                type: String,
-                minlength: [50, 'Description must contain at least 50 characters'],
-                maxlength: [600, 'Description has exceeded character limit'],
-                required: [true, 'Description is required']
-            },
-            location: {
-                type: String,
-                maxlength: [30, 'Location exceeds character limit'],
-                required: [true, 'Location is required']
-            },
-            duration: {
-                type: {
-                    start: {
-                        type: Date,
-                        required: [true, 'Start date is required'],
-                    },
-                    end: {
-                        type: Date,
-                        default: null
-                    }
-                },
-                required: [true, 'Milestone duration is required']
-            }
-        }],
+        type: [achievementSchema],
         validate: {
             validator: function(items) {
-                return items && items.length <= 20;
+                return items?.length <= 20;
             },
             message: 'Number of achievements has been exceeded'
         }
     },
     education: {
-        type: [{
-            name: {
-                type: String,
-                maxlength: [30, 'Certificate name exceeds character limit'],
-                required: [true, 'Certificate name is required']
-            },
-            institute: {
-                type: String,
-                maxlength: [30, 'Institute name exceeds character limit'],
-                required: [true, 'Institute name is required']
-            },
-            location: {
-                type: String,
-                maxlength: [30, 'Location exceeds character limit'],
-                required: [true, 'Location is required']
-            },
-            duration: {
-                type: {
-                    start: {
-                        type: Date,
-                        required: [true, 'Start date is required'],
-                    },
-                    end: {
-                        type: Date,
-                        default: null
-                    }
-                },
-                required: [true, 'Certification duration is required']
-            }
-        }],
+        type: [educationSchema],
         validate: {
             validator: function(items) {
-                return items && items.length <= 20;
+                return items?.length <= 20;
             },
             message: 'Number of certificates has been exceeded'
-        },
+        }
     },
     skills: {
         type: [String],
         validate: {
             validator: function(items) {
-                return items && items.length <= 20;
+                return items?.length <= 20;
             },
             message: 'Number of skills has been exceeded'
         }
@@ -162,14 +147,14 @@ const userSchema = new mongoose.Schema({
         type: [String],
         validate: {
             validator: function(items) {
-                return items && items.length <= 5;
+                return items?.length <= 5;
             },
             message: 'Number of interests has been exceeded'
         }
     },
     public: {
         type: Boolean,
-        default: true
+        default: false
     },
     expertise_level: {
         type: String,
@@ -186,7 +171,15 @@ const userSchema = new mongoose.Schema({
         immutable: true,
         default: () => Date.now()
     }
-},{ collection: 'users' });
+} , { collection: 'users' });
+
+userSchema.path('username').validate(async function(username) {
+    return (!await this.constructor.exists({ username }));
+}, 'Username already associated with another account', 'exist');
+
+userSchema.path('email').validate(async function(email) {
+    return (!await this.constructor.exists({ email }));
+}, 'Email already associated with another account', 'exist');
 
 userSchema.virtual('profile_image_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
@@ -238,33 +231,6 @@ userSchema.statics.validateRegistrationCode = async function(sessionId, registra
         await redisClient.del(`registration-code:${sessionId}`);
 
     return validation;
-}
-
-userSchema.methods.customValidate = async function() {
-    const error = new Error();
-    error.name = "CustomValidationError";
-    error.errors = [];
-
-    if (await this.model('User').findOne({ username: this.username }))
-        error.errors['username'] = "exist";
-    if (await this.model('User').findOne({ email: this.email }))
-        error.errors['email'] = "exist";
-
-    if (Object.keys(error.errors).length)
-        throw error;
-}
-
-userSchema.methods.responseObject = function(fields) {
-    const resObject = {};
-
-    for (const obj of fields) {
-        if (obj.condition && !obj.condition(this))
-            continue;
-    
-        if (obj.name in this)
-            resObject[obj.alias || obj.name] = this[obj.name];
-    }
-    return resObject;
 }
 
 module.exports = mongoose.model('User', userSchema);
