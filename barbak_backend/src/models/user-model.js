@@ -31,7 +31,8 @@ const userSchema = new mongoose.Schema({
         maxlength: [600, 'About me must not exceed 600 characters']
     },
     profile_image: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File Access Control',
         default: null
     },
     experience: {
@@ -188,10 +189,14 @@ const userSchema = new mongoose.Schema({
 },{ collection: 'users' });
 
 userSchema.virtual('profile_image_url').get(function() {
-    const { HOSTNAME, PORT, NODE_ENV } = process.env;
-    const filepath = this.profile_image || default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
-
-    return filepath ? `${NODE_ENV === 'production' ? 'https' : 'http'}://${HOSTNAME}:${PORT}/${filepath}` : filepath;
+    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+    let filepath;
+    if (this.profile_image) 
+        filepath = 'assets/' + this.profile_image;
+    else
+        filepath = default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
+    
+    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
 userSchema.statics.hashPassword = function(password) {

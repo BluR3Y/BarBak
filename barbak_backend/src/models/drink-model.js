@@ -49,7 +49,7 @@ ingredientSchema.path('ingredient').validate(async function(ingredient) {
 });
 
 ingredientSchema.path('measure').validate(async function({ unit, quantity }) {
-    const { classification } = this.ingredientInfo;
+    const { category, sub_category } = this.ingredientInfo;
     const [data] = await executeSqlQuery(`
         SELECT
             measure.is_standardized,
@@ -65,7 +65,7 @@ ingredientSchema.path('measure').validate(async function({ unit, quantity }) {
             )
         WHERE ingredient_categories.id = ? AND ingredient_sub_categories.id = ? AND measure.id = ?
         LIMIT 1;
-    `, [classification.category, classification.sub_category, unit]);
+    `, [category, sub_category, unit]);
 
     if (!data) {
         return this.invalidate('measure.unit', 'Ingredient unit of measure is not valid', unit, 'valid');

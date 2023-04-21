@@ -4,8 +4,6 @@ const auth = require('../lib/auth');
 const joiValidator = require('../middleware/joi_validator');
 
 module.exports.connect = function(router) {
-    router.get('/users/tester', userController.tester);
-
     router.get('/users/@me', auth.sessionAuthenticationRequired, userController.clientInfo);
     router.get('/users/:user_id', joiValidator, userController.getUser);
 

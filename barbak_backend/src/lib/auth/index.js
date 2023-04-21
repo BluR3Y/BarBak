@@ -1,16 +1,13 @@
 const passport = require('passport');
 const User = require('../../models/user-model');
-// const Developer = require('../../models/developer-model');
+const AppError = require('../../utils/app-error');
+const responseObject = require('../../utils/response-object');
 
 // Login Strategies:
 const localLogin = require('./local-login-strategy');
 
 
-///////////////////////////////////////////////////////////
-// Keep configuration localized here instead of server.js
-//
 // Set up Auth middleware
-//////////////////////////////////////
 exports.configureMiddleware = function(app) {
     // Used to serialize the user for the session
     passport.serializeUser(function (user, done) {
@@ -40,19 +37,21 @@ exports.authenticate = {
 function authenticationStrategyCallback(req, res, next) {
     return (err, user, info) => {
         if (err)
-            return res.status(400).send(err);
+            return next(new AppError(400, 'INVALID_ARGUMENT', 'Invalid login credentials'));
         req.logIn(user, function(err) {
             if (err)
-                return res.status(500).send('An error occured while processing your request');
-            const responseFields = [
+                return next(new Error('Internal server error'));
+            responseObject(user, [
                 { name: '_id', alias: 'id' },
                 { name: 'username' },
                 { name: 'profile_image_url', alias: 'profile_image' },
                 { name: 'role' },
                 { name: 'public' },
                 { name: 'expertise_level' }
-            ];
-            res.status(200).send(user.responseObject(responseFields));
+            ])
+            .then(response => {
+                res.status(200).send(response);
+            });
         })
     }
 }
@@ -61,12 +60,5 @@ function authenticationStrategyCallback(req, res, next) {
 exports.sessionAuthenticationRequired = function(req, res, next) {
     if(!req.isAuthenticated())
         return res.status(401).send('Not Authenticated');
-    next();
-}
-
-exports.getUser = async function(req, res, next) {
-    // console.log(req.session)
-    // console.log(req.user)
-
     next();
 }

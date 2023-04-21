@@ -1,45 +1,25 @@
 const _ = require('lodash');
 
-// const responseObject = async function(object, fields) {
-//     const responseObj = {};
-
-//     await Promise.all(fields.map(async (obj) => {
-//         if (obj.condition && !obj.condition(object))
-//             return;
-
-//         const fieldData = await _.get(object, obj.name);
-//         if (obj.sub_fields?.length && Array.isArray(fieldData)) {
-//             _.set(responseObj, (obj.alias || obj.name), await Promise.all(fieldData.map(subObj => responseObject(subObj, obj.sub_fields))));
-//         } else if (obj.sub_fields?.length && typeof fieldData === 'object') {
-//             _.set(responseObj, (obj.alias || obj.name), await responseObject(fieldData, obj.sub_fields));
-//         }  else if (typeof fieldData !== 'undefined') {
-//             _.set(responseObj, (obj.alias || obj.name), fieldData);
-//         }
-//     }));
-
-//     return responseObj;
-// }
-
-const responseObject = async function(object, fields) {
+const responseObject = async function(source, fields) {
     const responseObj = {};
-    const keysInOrder = fields.map(obj => obj.alias || obj.name);
 
-    for (const key of keysInOrder) {
+    for (const key of fields.map(obj => obj.alias || obj.name)) {
         const obj = fields.find(obj => obj.alias === key || obj.name === key);
-
-        if (obj.condition && !obj.condition(object))
+        if (obj.condition && !obj.condition(source))
             continue;
 
-        const fieldData = await _.get(object, obj.name);
-        if (obj.sub_fields?.length && Array.isArray(fieldData)) {
-            responseObj[key] = await Promise.all(fieldData.map(subObj => responseObject(subObj, obj.sub_fields)));
-        } else if (obj.sub_fields?.length && typeof fieldData === 'object') {
-            responseObj[key] = await responseObject(fieldData, obj.sub_fields);
+        const fieldData = await _.get(source, obj.name);
+        if (obj.parent_fields?.length && typeof fieldData === 'object') {
+            _.assign(responseObj, await responseObject(fieldData, obj.parent_fields));
+        } else if (obj.child_fields?.length) {
+            _.set(responseObj, key, await (Array.isArray(fieldData) ?
+                Promise.all(fieldData.map(subObj => responseObject(subObj, obj.child_fields))) :
+                responseObject(fieldData, obj.child_fields))
+            );
         } else if (typeof fieldData !== 'undefined') {
-            responseObj[key] = fieldData;
+            _.set(responseObj, key, fieldData);
         }
     }
-
     return responseObj;
 }
 
