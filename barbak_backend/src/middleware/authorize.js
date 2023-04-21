@@ -1,5 +1,6 @@
 const { Ability, createAliasResolver } = require('@casl/ability');
 const { executeSqlQuery } = require('../config/database-config');
+const AppError = require('../utils/app-error');
 
 async function defineUserAbilities(user) {
     const aliasResolver = createAliasResolver({
@@ -45,15 +46,18 @@ async function defineUserAbilities(user) {
     return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
 }
 
-module.exports = async function(req, res, next) {
-    const user = req.user;
-    const action = req.method.toLowerCase();
-    const resource = req.path.split('/')[1];
-
-    const ability = await defineUserAbilities(user);
-    if (!ability.can(action, resource)) 
-        return res.status(403).send('Access denied');
-    req.ability = ability;
-
-    next();
+module.exports = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const action = req.method.toLowerCase();
+        const resource = req.path.split('/')[1];
+    
+        const ability = await defineUserAbilities(user);
+        if (!ability.can(action, resource))
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
+        req.ability = ability;
+        next();
+    } catch(err) {
+        next(err);
+    }
 }

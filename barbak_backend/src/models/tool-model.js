@@ -53,7 +53,7 @@ toolSchema.virtual('cover_url').get(function() {
     if (this.cover) 
         filepath = 'assets/' + this.cover;
     else
-        filepath = default_covers['tools'] ? 'assets/default/' + default_covers['tools'] : null;
+        filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
 
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });

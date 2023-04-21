@@ -13,19 +13,13 @@ const ingredientSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
-    classification: {
-        type: {
-            category: {
-                type: Number,
-                required: true
-            },
-            sub_category: {
-                type: Number,
-                required: true
-            }
-        },
-        required: true,
-        _id: false
+    category: {
+        type: Number,
+        required: true
+    },
+    sub_category: {
+        type: Number,
+        required: true
     },
     cover: {
         type: mongoose.Schema.Types.ObjectId,
@@ -34,13 +28,13 @@ const ingredientSchema = new mongoose.Schema({
     }
 },{ collection: 'ingredients', discriminatorKey: 'model' });
 
-ingredientSchema.path('classification').validate(async function({ category, sub_category }) {
-    const { isValid, reason } = await this.constructor.validateCategory(category, sub_category);
+ingredientSchema.path('category').validate(async function(category) {
+    const { isValid, reason } = await this.constructor.validateCategory(category, this.sub_category);
 
     if (!isValid && reason === 'invalid_category')
-        return this.invalidate('classification.category', 'Invalid category value', category, 'exist');
+        return this.invalidate('category', 'Invalid category value', category, 'exist');
     else if (!isValid && reason === 'invalid_sub_categories')
-        return this.invalidate('classification.sub_category', 'Invalid sub-category value', sub_category, 'exist');
+        return this.invalidate('sub_category', 'Invalid sub-category value', this.sub_category, 'exist');
     
     return true;
 });
@@ -50,7 +44,7 @@ ingredientSchema.virtual('verified').get(function() {
 });
 
 ingredientSchema.virtual('classification_info').get(async function() {
-    const { category, sub_category } = this.classification;
+    const { category, sub_category } = this;
     const [{ categoryName, subName }] = await executeSqlQuery(`
         SELECT
             ingredient_categories.name AS categoryName,
@@ -165,9 +159,9 @@ ingredientSchema.statics = {
         }
         return [
             ...(categories.map(({ category, sub_categories }) => ({
-                'classification.category': category,
+                'category': category,
                 ...(sub_categories ? {
-                    'classification.sub_category': { $in: sub_categories }
+                    'sub_category': { $in: sub_categories }
                 } : {})
             })))
         ]

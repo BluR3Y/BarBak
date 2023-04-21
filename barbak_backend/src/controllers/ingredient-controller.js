@@ -31,7 +31,10 @@ module.exports.create = async (req, res, next) => {
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'classification_info', alias: 'classification' },
+            { name: 'classification_info', parent_fields: [
+                { name: 'category' },
+                { name: 'sub_category' }
+            ] },
             { name: 'cover_url', alias: 'cover' },
             {
                 name: 'public',
@@ -238,11 +241,12 @@ module.exports.copy = async (req, res, next) => {
         else if (await UserIngredient.exists({ user: req.user._id, name: ingredientInfo.name }))
             throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with an ingredient');
 
-        const { name, description, classification } = ingredientInfo;
+        const { name, description, category, sub_category } = ingredientInfo;
         const createdIngredient = new UserIngredient({
             name,
             description,
-            classification,
+            category,
+            sub_category,
             user: req.user._id
         });
 
@@ -286,7 +290,10 @@ module.exports.getIngredient = async (req, res, next) => {
             { name: '_id', alias: 'id' },
             { name: 'name' },
             { name: 'description' },
-            { name: 'classification_info', alias: 'classification' },
+            { name: 'classification_info', parent_fields: [
+                { name: 'category' },
+                { name: 'sub_category' },
+            ] },
             { name: 'cover_url', alias: 'cover' },
             { name: 'verified' },
             {
@@ -341,7 +348,10 @@ module.exports.search = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
-                { name: 'classification_info', alias: 'classification' },
+                { name: 'classification_info', parent_fields: [
+                    { name: 'category' },
+                    { name: 'sub_category' },
+                ] },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ]))));
@@ -385,7 +395,10 @@ module.exports.clientIngredients = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
-                { name: 'classification_info', alias: 'classification' },
+                { name: 'classification_info', parent_fields: [
+                    { name: 'category' },
+                    { name: 'sub_category' },
+                ] },
                 { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' }
             ]))));

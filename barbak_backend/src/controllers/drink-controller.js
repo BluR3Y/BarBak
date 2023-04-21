@@ -302,7 +302,7 @@ module.exports.getDrink = async (req, res, next) => {
             throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
         else if (!req.ability.can('read', subject('drinks', { action_type: privacy_type, document: drinkInfo })))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view drink');
-
+        
         const response = await responseObject(drinkInfo, [
             { name: '_id', alias: 'id' },
             { name: 'name' },
@@ -310,21 +310,27 @@ module.exports.getDrink = async (req, res, next) => {
             { name: 'preparation_method_info', alias: 'preparation_method' },
             { name: 'serving_style_info', alias: 'serving_style' },
             { name: 'preparation' },
-            { name: 'ingredients', sub_fields: [
-                { name: 'ingredient_info', alias: 'ingredient', sub_fields: [
+            { name: 'ingredients', child_fields: [
+                { name: 'ingredient_info', alias: 'ingredient', child_fields: [
                     { name: '_id', alias: 'id' },
                     { name: 'name' },
                     { name: 'description' },
-                    { name: 'classification_info', alias: 'classification' },
+                    { name: 'classification_info', parent_fields: [
+                        { name: 'category' },
+                        { name: 'sub_category' },
+                    ] },
                     { name: 'cover_url', alias: 'cover' }
                 ] },
                 { name: 'measure_info', alias: 'measure' },
-                { name: 'substitutes', sub_fields: [
-                    { name: 'ingredient_info', alias: 'ingredient', sub_fields: [
+                { name: 'substitutes', child_fields: [
+                    { name: 'ingredient_info', alias: 'ingredient', child_fields: [
                         { name: '_id', alias: 'id' },
                         { name: 'name' },
                         { name: 'description' },
-                        { name: 'classification_info', alias: 'classification' },
+                        { name: 'classification_info', parent_fields: [
+                            { name: 'category' },
+                            { name: 'sub_category' },
+                        ] },
                         { name: 'cover_url', alias: 'cover' }
                     ] },
                     { name: 'measure_info', alias: 'measure' }
@@ -332,13 +338,13 @@ module.exports.getDrink = async (req, res, next) => {
                 { name: 'optional' },
                 { name: 'garnish' }
             ] },
-            { name: 'drinkware_info', alias: 'drinkware', sub_fields: [
+            { name: 'drinkware_info', alias: 'drinkware', child_fields: [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
                 { name: 'cover_url', alias: 'cover' },
             ] },
-            { name: 'tool_info', alias: 'tools', sub_fields: [
+            { name: 'tool_info', alias: 'tools', child_fields: [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'description' },
