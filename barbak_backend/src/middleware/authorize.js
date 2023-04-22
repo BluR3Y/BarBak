@@ -8,7 +8,7 @@ async function defineUserAbilities(user) {
         read: 'get',
         update: ['put','patch']
     });
-
+    
     const userPermissions = await executeSqlQuery(`
         SELECT 
             role_permissions.action, 
@@ -19,8 +19,8 @@ async function defineUserAbilities(user) {
             role_permissions.role_id
         FROM user_roles
         JOIN role_permissions ON user_roles.id = role_permissions.role_id OR role_id IS NULL
-        WHERE user_roles.name = ?;
-    `, [user?.role ?? 'guest']);
+        WHERE ${user?.role ? "user_roles.id = ?" : "user_roles.name = 'guest'"}
+    `, [user?.role]);
 
     var jsonPermissions = [];
     for (const permission of userPermissions) {

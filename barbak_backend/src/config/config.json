@@ -33,5 +33,9 @@
         "FORBIDDEN": 305,
         "ALREADY_EXIST": 306,
         "INTERNAL": 307
-    }
+    },
+    "verified_asset_administrators": [
+        "admin",
+        "editor"
+    ]
 }

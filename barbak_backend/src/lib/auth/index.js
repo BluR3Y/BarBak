@@ -45,7 +45,7 @@ function authenticationStrategyCallback(req, res, next) {
                 { name: '_id', alias: 'id' },
                 { name: 'username' },
                 { name: 'profile_image_url', alias: 'profile_image' },
-                { name: 'role' },
+                { name: 'role_info', alias: 'role' },
                 { name: 'public' },
                 { name: 'expertise_level' }
             ])
@@ -59,6 +59,6 @@ function authenticationStrategyCallback(req, res, next) {
 // Middleware that checks if session exists
 exports.sessionAuthenticationRequired = function(req, res, next) {
     if(!req.isAuthenticated())
-        return res.status(401).send('Not Authenticated');
+        throw new AppError(401, 'UNAUTHORIZED', 'Unauthorized request');
     next();
 }

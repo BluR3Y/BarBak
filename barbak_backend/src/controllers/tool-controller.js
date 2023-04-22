@@ -174,7 +174,7 @@ module.exports.uploadCover = async (req, res, next) => {
                 file_path: uploadInfo.filepath,
                 permissions: (toolInfo instanceof UserTool ?
                     [
-                        { action: 'manage', condition: { 'user._id': req.user._id } },
+                        { action: 'manage', conditions: { 'user._id': req.user._id } },
                         ...(toolInfo.public ? { action: 'read' } : {})
                     ] : [
                         { action: 'read' },

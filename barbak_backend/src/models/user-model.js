@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
-const { redisClient } = require('../config/database-config');
+const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
 const { default_covers } = require('../config/config.json');
 
@@ -162,9 +162,8 @@ const userSchema = new mongoose.Schema({
         enum: ['novice', 'intermediate', 'expert']
     },
     role: {
-        type: String,
-        enum: ['admin', 'editor', 'user'],
-        default: 'user'
+        type: Number,
+        default: null
     },
     date_registered: {
         type: Date,
@@ -181,6 +180,30 @@ userSchema.path('email').validate(async function(email) {
     return (!await this.constructor.exists({ email }));
 }, 'Email already associated with another account', 'exist');
 
+userSchema.path('role').validate(async function(role) {
+    if (role) {
+        const [{ roleCount }] = await executeSqlQuery(`
+            SELECT 
+                COUNT(*) AS roleCount
+            FROM user_roles
+            WHERE id = ?
+            LIMIT 1;
+        `, [role]);
+        if (!roleCount)
+            this.invalidate('role', 'Invalid user role', 'valid');
+    } else {
+        const [{ id }] = await executeSqlQuery(`
+            SELECT
+                id
+            FROM user_roles
+            WHERE name = 'user'
+            LIMIT 1;
+        `);
+        this.role = id;
+    }
+    return true;
+});
+
 userSchema.virtual('profile_image_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
@@ -190,6 +213,17 @@ userSchema.virtual('profile_image_url').get(function() {
         filepath = default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
     
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
+});
+
+userSchema.virtual('role_info').get(async function() {
+    const [{ name }] = await executeSqlQuery(`
+        SELECT
+            name
+        FROM user_roles
+        WHERE id = ?
+        LIMIT 1;
+    `, [this.role]);
+    return name;
 });
 
 userSchema.statics.hashPassword = function(password) {

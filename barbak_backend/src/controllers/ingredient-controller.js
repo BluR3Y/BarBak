@@ -176,7 +176,7 @@ module.exports.uploadCover = async (req, res, next) => {
                 file_path: uploadInfo.filepath,
                 permissions: (ingredientInfo instanceof UserIngredient ?
                     [
-                        { action: 'manage', condition: { 'user._id': req.user._id } },
+                        { action: 'manage', conditions: { 'user._id': req.user._id } },
                         ...(ingredientInfo.public ? { action: 'read' } : {})
                     ] : [
                         { action: 'read' },

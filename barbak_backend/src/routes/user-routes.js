@@ -5,9 +5,9 @@ const joiValidator = require('../middleware/joi_validator');
 
 module.exports.connect = function(router) {
     router.get('/users/@me', auth.sessionAuthenticationRequired, userController.clientInfo);
-    router.get('/users/:user_id', joiValidator, userController.getUser);
+    router.get('/users/:user_id/:privacy_type?', userController.getUser);
 
     router.patch('/users/profile-image/upload', imageUpload.single('profile_image'), userController.uploadProfileImage);
     router.patch('/users/profile-image/remove', userController.removeProfileImage);
-    router.patch('/users/username', joiValidator, userController.changeUsername);
+    router.patch('/users/username', userController.changeUsername);
 }

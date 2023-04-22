@@ -156,7 +156,7 @@ module.exports.uploadGallery = async (req, res, next) => {
                 file_path: imageUpload.filepath,
                 permissions: (drinkInfo instanceof UserDrink ?
                     [
-                        { action: 'manage', condition: { 'user._id': req.user._id } },
+                        { action: 'manage', conditions: { 'user._id': req.user._id } },
                         ...(drinkInfo.public ? [{ action: 'read' }] : [])
                     ] : [
                         { action: 'read' },

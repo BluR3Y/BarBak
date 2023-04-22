@@ -172,7 +172,7 @@ module.exports.uploadCover = async (req, res, next) => {
                 file_path: uploadInfo.filepath,
                 permissions: (drinkwareInfo instanceof UserDrinkware ?
                     [
-                        { action: 'manage', condition: { 'user._id': req.user._id } },
+                        { action: 'manage', conditions: { 'user._id': req.user._id } },
                         ...(drinkwareInfo.public ? { action: 'read' } : {})
                     ] : [
                         { action: 'read' },
