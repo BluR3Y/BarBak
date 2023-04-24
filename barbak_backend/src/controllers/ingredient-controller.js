@@ -331,9 +331,9 @@ module.exports.search = async (req, res, next) => {
                 $and: [
                     {
                         $or: [
-                            { model: 'Verified Ingredient' },
-                            { model: 'User Ingredient', public: true },
-                            ...(req.user ? [{ model: 'User Ingredient', user: req.user._id }] : []),
+                            { variant: 'Verified Ingredient' },
+                            { variant: 'User Ingredient', public: true },
+                            ...(req.user ? [{ variant: 'User Ingredient', user: req.user._id }] : []),
                         ]
                     }, {...(searchFilters.length ? { $or: searchFilters } : {})}
                 ]
@@ -381,7 +381,7 @@ module.exports.clientIngredients = async (req, res, next) => {
 
         const searchQuery = Ingredient
             .where({
-                model: 'User Ingredient',
+                variant: 'User Ingredient',
                 user: req.user._id,
                 ...(searchFilters.length ? { $or: searchFilters } : {})
             });

@@ -52,60 +52,60 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     -- Drinkware Rules
     (@editor_role_id, 'create', 'drinkware', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'update', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'delete', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
 
     -- Tool Rules
     (@editor_role_id, 'create', 'tools', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'update', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'delete', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
 
     -- Ingredient Rules
     (@editor_role_id, 'create', 'ingredients', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'update', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'delete', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
 
     -- Drink Rules
     (@editor_role_id, 'create', 'drinks', '{ "subject_type": "user" }'),
     (@editor_role_id, 'read', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'update', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }'),
     (@editor_role_id, 'delete', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }'),
 
@@ -114,95 +114,95 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
         (@editor_role_id, 'create', 'drinkware', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'drinkware', '{
             "action_type": "private", 
-            "document.model": "Verified Drinkware" 
+            "document.variant": "Verified Drinkware" 
         }'),
-        (@editor_role_id, 'update', 'drinkware', '{ "document.model": "Verified Drinkware" }'),
-        (@editor_role_id, 'delete', 'drinkware', '{ "document.model": "Verified Drinkware" }'),
+        (@editor_role_id, 'update', 'drinkware', '{ "document.variant": "Verified Drinkware" }'),
+        (@editor_role_id, 'delete', 'drinkware', '{ "document.variant": "Verified Drinkware" }'),
 
         -- Verified Tool Rules
         (@editor_role_id, 'create', 'tools', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'tools', '{
             "action_type": "private", 
-            "document.model": "Verified Tool"
+            "document.variant": "Verified Tool"
         }'),
-        (@editor_role_id, 'update', 'tools', '{"document.model": "Verified Tool" }'),
-        (@editor_role_id, 'delete', 'tools', '{ "document.model": "Verified Tool" }'),
+        (@editor_role_id, 'update', 'tools', '{"document.variant": "Verified Tool" }'),
+        (@editor_role_id, 'delete', 'tools', '{ "document.variant": "Verified Tool" }'),
 
         -- Verified Ingredient Rules
         (@editor_role_id, 'create', 'ingredients', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'ingredients', '{
             "action_type": "private", 
-            "document.model": "Verified Ingredient"
+            "document.variant": "Verified Ingredient"
         }'),
-        (@editor_role_id, 'update', 'ingredients', '{ "document.model": "Verified Ingredient" }'),
-        (@editor_role_id, 'delete', 'ingredients', '{ "document.model": "Verified Ingredient" }'),
+        (@editor_role_id, 'update', 'ingredients', '{ "document.variant": "Verified Ingredient" }'),
+        (@editor_role_id, 'delete', 'ingredients', '{ "document.variant": "Verified Ingredient" }'),
 
         -- Verified Drink Rules
         (@editor_role_id, 'create', 'drinks', '{ "subject_type": "verified" }'),
         (@editor_role_id, 'read', 'drinks', '{ 
             "action_type": "private", 
-            "document.model": "Verified Drink" 
+            "document.variant": "Verified Drink" 
         }'),
-        (@editor_role_id, 'update', 'drinks', '{ "document.model": "Verified Drink" }'),
-        (@editor_role_id, 'delete', 'drinks', '{ "document.model": "Verified Drink" }'),
+        (@editor_role_id, 'update', 'drinks', '{ "document.variant": "Verified Drink" }'),
+        (@editor_role_id, 'delete', 'drinks', '{ "document.variant": "Verified Drink" }'),
 
         -- Public User Drinkware Rules
         (@editor_role_id, 'read', 'drinkware', '{
             "action_type": "private",
-            "document.model": "User Drinkware",
+            "document.variant": "User Drinkware",
             "document.public": true
         }'),
         (@editor_role_id, 'update', 'drinkware', '{
-            "document.model": "User Drinkware",
+            "document.variant": "User Drinkware",
             "document.public": true
         }'),
         (@editor_role_id, 'delete', 'drinkware', '{
-            "document.model": "User Drinkware",
+            "document.variant": "User Drinkware",
             "document.public": true
         }'),
 
         -- Public User Tool Rules
         (@editor_role_id, 'read', 'tools', '{
             "action_type": "private",
-            "document.model": "User Tool",
+            "document.variant": "User Tool",
             "document.public": true
         }'),
         (@editor_role_id, 'update', 'tools', '{
-            "document.model": "User Tool",
+            "document.variant": "User Tool",
             "document.public": true
         }'),
         (@editor_role_id, 'delete', 'tools', '{
-            "document.model": "User Tool",
+            "document.variant": "User Tool",
             "document.public": true
         }'),
 
         -- Public User Ingredient Rules
         (@editor_role_id, 'read', 'ingredients', '{
             "action_type": "private",
-            "document.model": "User Ingredient",
+            "document.variant": "User Ingredient",
             "document.public": true
         }'),
         (@editor_role_id, 'update', 'ingredients', '{
-            "document.model": "User Ingredient",
+            "document.variant": "User Ingredient",
             "document.public": true
         }'),
         (@editor_role_id, 'delete', 'ingredients', '{
-            "document.model": "User Ingredient",
+            "document.variant": "User Ingredient",
             "document.public": true
         }'),
 
         -- Public User Drink Rules
         (@editor_role_id, 'read', 'drink', '{
             "action_type": "private",
-            "document.model": "User Drink",
+            "document.variant": "User Drink",
             "document.public": true
         }'),
         (@editor_role_id, 'update', 'drinks', '{
-            "document.model": "User Drink",
+            "document.variant": "User Drink",
             "document.public": true
         }'),
         (@editor_role_id, 'delete', 'drinks', '{
-            "document.model": "User Drink",
+            "document.variant": "User Drink",
             "document.public": true
         }')
 ;
@@ -220,60 +220,60 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     -- Drinkware Rules
     (@user_role_id, 'create', 'drinkware', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'update', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'delete', 'drinkware', '{
-        "document.model": "User Drinkware",
+        "document.variant": "User Drinkware",
         "document.user": "USER_ID"
     }'),
 
     -- Tool Rules
     (@user_role_id, 'create', 'tools', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'update', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'delete', 'tools', '{
-        "document.model": "User Tool",
+        "document.variant": "User Tool",
         "document.user": "USER_ID"
     }'),
 
     -- Ingredient Rules
     (@user_role_id, 'create', 'ingredients', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'update', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'delete', 'ingredients', '{
-        "document.model": "User Ingredient",
+        "document.variant": "User Ingredient",
         "document.user": "USER_ID"
     }'),
 
     -- Drink Rules
     (@user_role_id, 'create', 'drinks', '{ "subject_type": "user" }'),
     (@user_role_id, 'read', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'update', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }'),
     (@user_role_id, 'delete', 'drinks', '{
-        "document.model": "User Drink",
+        "document.variant": "User Drink",
         "document.user": "USER_ID"
     }')
 ;
@@ -286,7 +286,7 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
 -- All User Permissions
 INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
     -- Asset Rules
-    (NULL, 'read', 'assets', NULL),
+    -- (NULL, 'read', 'assets', NULL),
 
     -- User Content
     (NULL, 'read', 'users', '{ 
@@ -295,40 +295,40 @@ INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALU
     }'),
     (NULL, 'read', 'drinkware', '{ 
         "action_type": "public", 
-        "document.model": "User Drinkware", 
+        "document.variant": "User Drinkware", 
         "document.public": true 
     }'),
     (NULL, 'read', 'tools', '{ 
         "action_type": "public", 
-        "document.model": "User Tool", 
+        "document.variant": "User Tool", 
         "document.public": true 
     }'),
     (NULL, 'read', 'ingredients', '{ 
         "action_type": "public", 
-        "document.model": "User Ingredient", 
+        "document.variant": "User Ingredient", 
         "document.public": true 
     }'),
     (NULL, 'read', 'drinks', '{ 
         "action_type": "public", 
-        "document.model": "User Drink", 
+        "document.variant": "User Drink", 
         "document.public": true 
     }'),
 
     -- Verified Content
     (NULL, 'read', 'drinkware', '{
         "action_type": "public",
-        "document.model": "Verified Drinkware"
+        "document.variant": "Verified Drinkware"
     }'),
     (NULL, 'read', 'tools', '{
         "action_type": "public",
-        "document.model": "Verified Tool"
+        "document.variant": "Verified Tool"
     }'),
     (NULL, 'read', 'ingredients', '{
         "action_type": "public",
-        "document.model": "Verified Ingredient"
+        "document.variant": "Verified Ingredient"
     }'),
     (NULL, 'read', 'drinks', '{
         "action_type": "public",
-        "document.model": "Verified Drink"
+        "document.variant": "Verified Drink"
     }')
 ;

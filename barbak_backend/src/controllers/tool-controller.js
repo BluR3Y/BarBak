@@ -320,9 +320,9 @@ module.exports.search = async (req, res, next) => {
                 $and: [
                     {
                         $or: [
-                            { model: 'Verified Tool' },
-                            { model: 'User Tool', public: true },
-                            ...(req.user ? [{ model: 'User Tool', user: req.user._id }] : [])
+                            { variant: 'Verified Tool' },
+                            { variant: 'User Tool', public: true },
+                            ...(req.user ? [{ variant: 'User Tool', user: req.user._id }] : [])
                         ]
                     }, ...(searchFilters.length ? [{ $and: searchFilters }] : [])
                 ]
@@ -366,7 +366,7 @@ module.exports.clientTools = async (req, res, next) => {
 
         const searchQuery = Tool
             .where({
-                model: 'User Tool',
+                variant: 'User Tool',
                 user: req.user._id,
                 ...(searchFilters.length ? { $and: searchFilters } : {})
             });

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
 
-const ingredientSchema = new mongoose.Schema({
+const Ingredient = mongoose.model('Ingredient', new mongoose.Schema({
     name: {
         type: String,
         minlength: 3,
@@ -23,12 +23,12 @@ const ingredientSchema = new mongoose.Schema({
     },
     cover: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'File Access Control',
+        ref: 'Asset Access Control',
         default: null
     }
-},{ collection: 'ingredients', discriminatorKey: 'model' });
+},{ collection: 'ingredients', discriminatorKey: 'variant' }));
 
-ingredientSchema.path('category').validate(async function(category) {
+Ingredient.schema.path('category').validate(async function(category) {
     const { isValid, reason } = await this.constructor.validateCategory(category, this.sub_category);
 
     if (!isValid && reason === 'invalid_category')
@@ -39,11 +39,11 @@ ingredientSchema.path('category').validate(async function(category) {
     return true;
 });
 
-ingredientSchema.virtual('verified').get(function() {
+Ingredient.schema.virtual('verified').get(function() {
     return this instanceof VerifiedIngredient;
 });
 
-ingredientSchema.virtual('classification_info').get(async function() {
+Ingredient.schema.virtual('classification_info').get(async function() {
     const { category, sub_category } = this;
     const [{ categoryName, subName }] = await executeSqlQuery(`
         SELECT
@@ -67,7 +67,7 @@ ingredientSchema.virtual('classification_info').get(async function() {
     };
 });
 
-ingredientSchema.virtual('cover_url').get(function() {
+Ingredient.schema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
     if (this.cover) 
@@ -78,7 +78,7 @@ ingredientSchema.virtual('cover_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-ingredientSchema.statics = {
+Ingredient.schema.statics = {
     getCategories: async function() {
         const data = await executeSqlQuery(`
             SELECT
@@ -168,8 +168,6 @@ ingredientSchema.statics = {
     }
 }
 
-const Ingredient = mongoose.model('Ingredient', ingredientSchema);
-
 const verifiedSchema = new mongoose.Schema({
     date_verified: {
         type: Date,
@@ -177,8 +175,6 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
-
-const VerifiedIngredient = Ingredient.discriminator('Verified Ingredient', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -198,10 +194,8 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-const UserIngredient = Ingredient.discriminator('User Ingredient', userSchema);
-
 module.exports = {
     Ingredient,
-    VerifiedIngredient,
-    UserIngredient
+    VerifiedIngredient: Ingredient.discriminator('Verified Ingredient', verifiedSchema),
+    UserIngredient: Ingredient.discriminator('User Ingredient', userSchema)
 };

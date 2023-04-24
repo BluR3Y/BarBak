@@ -319,9 +319,9 @@ module.exports.search = async (req, res, next) => {
             .where({
                 name: { $regex: query },
                 $or: [
-                    { model: 'Verified Drinkware' },
-                    { model: 'User Drinkware', public: true },
-                    ...(req.user ? [{ model: 'User Drinkware', user: req.user._id }] : [])
+                    { variant: 'Verified Drinkware' },
+                    { variant: 'User Drinkware', public: true },
+                    ...(req.user ? [{ variant: 'User Drinkware', user: req.user._id }] : [])
                 ]
             });
         const totalDocuments = await Drinkware.countDocuments(searchQuery);

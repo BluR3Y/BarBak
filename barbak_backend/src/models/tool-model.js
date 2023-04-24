@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
 
-const toolSchema = new mongoose.Schema({
+const Tool = mongoose.model('Tool', new mongoose.Schema({
     name: {
         type: String,
-        required: true,
         minlength: 3,
         maxlength: 30,
+        required: true,
     },
     description: {
         type: String,
@@ -19,23 +19,23 @@ const toolSchema = new mongoose.Schema({
     },
     cover: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'File Access Control',
+        ref: 'Asset Access Control',
         default: null
     }
-},{ collection: 'tools', discriminatorKey: 'model' });
+},{ collection: 'tools', discriminatorKey: 'variant' }));
 
-toolSchema.path('category').validate(async function(category) {
+Tool.schema.path('category').validate(async function(category) {
     if (!await this.constructor.validateCategory(category))
         return this.invalidate('category', 'Invalid category value', category, 'exist');
 
     return true;
 });
 
-toolSchema.virtual('verified').get(function() {
-    return this instanceof VerifiedTool;
+Tool.schema.virtual('verified').get(function() {
+    return (this instanceof this.model('Verified Tool'));
 });
 
-toolSchema.virtual('category_info').get(async function() {
+Tool.schema.virtual('category_info').get(async function() {
     const [{ categoryName }] = await executeSqlQuery(`
         SELECT name AS categoryName
         FROM tool_categories
@@ -47,7 +47,7 @@ toolSchema.virtual('category_info').get(async function() {
     };
 });
 
-toolSchema.virtual('cover_url').get(function() {
+Tool.schema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
     if (this.cover) 
@@ -58,7 +58,7 @@ toolSchema.virtual('cover_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-toolSchema.statics = {
+Tool.schema.statics = {
     getCategories: async function() {
         const categories = await executeSqlQuery(`
             SELECT *
@@ -98,8 +98,6 @@ toolSchema.statics = {
     }
 }
 
-const Tool = mongoose.model('Tool', toolSchema);
-
 const verifiedSchema = new mongoose.Schema({
     date_verified: {
         type: Date,
@@ -107,8 +105,6 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
-
-const VerifiedTool = Tool.discriminator('Verified Tool', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -128,12 +124,8 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// Make Public Function
-
-const UserTool = Tool.discriminator('User Tool', userSchema);
-
 module.exports = {
     Tool,
-    VerifiedTool,
-    UserTool
+    VerifiedTool: Tool.discriminator('Verified Tool', verifiedSchema),
+    UserTool: Tool.discriminator('User Tool', userSchema)
 };

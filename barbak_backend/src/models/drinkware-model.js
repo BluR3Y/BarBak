@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const { default_covers } = require('../config/config.json');
 
-const drinkwareSchema = new mongoose.Schema({
+const Drinkware = mongoose.model('Drinkware', new mongoose.Schema({
     name: {
         type: String,
-        required: true,
         minlength: 3,
-        maxlength: 30
+        maxlength: 30,
+        required: true,
     },
     description: {
         type: String,
@@ -14,16 +14,16 @@ const drinkwareSchema = new mongoose.Schema({
     },
     cover: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'File Access Control',
+        ref: 'Asset Access Control',
         default: null
     }
-},{ collection: 'drinkware', discriminatorKey: 'model' });
+},{ collection: 'drinkware', discriminatorKey: 'variant' }));
 
-drinkwareSchema.virtual('verified').get(function() {
-    return this instanceof VerifiedDrinkware;
+Drinkware.schema.virtual('verified').get(function() {
+    return (this instanceof this.model('Verified Drinkware'));
 });
 
-drinkwareSchema.virtual('cover_url').get(function() {
+Drinkware.schema.virtual('cover_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
     let filepath;
 
@@ -35,8 +35,6 @@ drinkwareSchema.virtual('cover_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
-
 const verifiedSchema = new mongoose.Schema({
     date_verified: {
         type: Date,
@@ -44,8 +42,6 @@ const verifiedSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 });
-
-const VerifiedDrinkware = Drinkware.discriminator('Verified Drinkware', verifiedSchema);
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -65,12 +61,8 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-const UserDrinkware = Drinkware.discriminator('User Drinkware', userSchema);
-
-// Make Public Function
-
 module.exports = {
     Drinkware,
-    VerifiedDrinkware,
-    UserDrinkware
+    VerifiedDrinkware: Drinkware.discriminator('Verified Drinkware', verifiedSchema),
+    UserDrinkware: Drinkware.discriminator('User Drinkware', userSchema)
 };
