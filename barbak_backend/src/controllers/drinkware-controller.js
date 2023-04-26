@@ -189,8 +189,10 @@ module.exports.uploadCover = async (req, res, next) => {
     } catch(err) {
         next(err);
     } finally {
-        fileOperations.deleteSingle(req.file.path)
-        .catch(err => console.error(err));
+        if (req.file) {
+            fileOperations.deleteSingle(req.file.path)
+            .catch(err => console.error(err));
+        }
     }
 }
 

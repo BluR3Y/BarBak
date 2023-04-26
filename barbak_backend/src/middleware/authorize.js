@@ -1,5 +1,5 @@
 const { AppRole } = require('../models/roles-model');
-const { Ability, createAliasResolver } = require('@casl/ability');
+const { Ability, createAliasResolver, ForbiddenError } = require('@casl/ability');
 const AppError = require('../utils/app-error');
 
 async function defineUserAbilities(user) {
@@ -8,6 +8,7 @@ async function defineUserAbilities(user) {
         read: 'get',
         update: ['put','patch']
     });
+    ForbiddenError.setDefaultMessage('Unauthorized request');
     
     const userRole = await AppRole.findOne({
         ...(user ? { _id: user.role } : { name: 'guest' })
