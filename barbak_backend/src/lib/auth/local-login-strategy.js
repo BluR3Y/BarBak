@@ -9,7 +9,9 @@ module.exports = function(passport) {
     },
     async function(req, username, password, done) {
 
-        const retrievedUser = await User.findOne({ $or: [ { username }, { email: username } ] });
+        const retrievedUser = await User
+            .findOne({ $or: [ { username }, { email: username } ] })
+            .populate({ path: 'role_info', select: 'name' });
         if (!retrievedUser) 
             return done({ path: 'user', type: 'exist', message: 'User does not exist' });
         else if (!await retrievedUser.validatePassword(password))

@@ -112,7 +112,9 @@ module.exports.getUser = async (req, res, next) => {
 
 module.exports.clientInfo = async (req, res) => {
     try {
-        const userInfo = await User.findOne({ _id: req.user._id });
+        const userInfo = await User
+            .findOne({ _id: req.user._id })
+            .populate({ path: 'role_info', select: 'name' });
         const response = await responseObject(userInfo, [
             { name: '_id', alias: 'id' },
             { name: 'username' },
@@ -120,6 +122,9 @@ module.exports.clientInfo = async (req, res) => {
             { name: 'email' },
             { name: 'profile_image_url' },
             { name: 'expertise_level' },
+            { name: 'role_info', parent_fields: [
+                { name: 'name', alias: 'role' }
+            ] },
             { name: 'date_registered' }
         ]);
         res.status(200).send(response);

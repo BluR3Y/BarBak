@@ -45,7 +45,9 @@ function authenticationStrategyCallback(req, res, next) {
                 { name: '_id', alias: 'id' },
                 { name: 'username' },
                 { name: 'profile_image_url', alias: 'profile_image' },
-                { name: 'role_info', alias: 'role' },
+                { name: 'role_info', parent_fields: [
+                    { name: 'name', alias: 'role' }
+                ] },
                 { name: 'public' },
                 { name: 'expertise_level' }
             ])

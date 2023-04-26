@@ -1,5 +1,5 @@
+const { AppRole } = require('../models/roles-model');
 const { Ability, createAliasResolver } = require('@casl/ability');
-const { executeSqlQuery } = require('../config/database-config');
 const AppError = require('../utils/app-error');
 
 async function defineUserAbilities(user) {
@@ -9,41 +9,12 @@ async function defineUserAbilities(user) {
         update: ['put','patch']
     });
     
-    const userPermissions = await executeSqlQuery(`
-        SELECT 
-            role_permissions.action, 
-            role_permissions.subject, 
-            role_permissions.fields, 
-            role_permissions.conditions,
-            role_permissions.inverted,
-            role_permissions.role_id
-        FROM user_roles
-        JOIN role_permissions ON user_roles.id = role_permissions.role_id OR role_id IS NULL
-        WHERE ${user?.role ? "user_roles.id = ?" : "user_roles.name = 'guest'"}
-    `, [user?.role]);
+    const userRole = await AppRole.findOne({
+        ...(user ? { _id: user.role } : { name: 'guest' })
+    });
+    const userPermissions = JSON.parse(JSON.stringify(userRole.permissions).replace(/"USER_ID"/g, `"${user?._id}"`));
 
-    var jsonPermissions = [];
-    for (const permission of userPermissions) {
-        var formattedConditions = null;
-        if (permission.conditions) {
-            const jsonConditions = JSON.parse(permission.conditions);
-            for (const condition in jsonConditions) {
-                if (jsonConditions[condition] === 'USER_ID') 
-                    jsonConditions[condition] = user._id;
-            }
-            formattedConditions = jsonConditions;
-        }
-
-        jsonPermissions.push({
-            action: permission.action,
-            subject: permission.subject,
-            fields: permission.fields,
-            conditions: formattedConditions,
-            inverted: permission.inverted,
-        });
-    }
-    // console.log(jsonPermissions.filter(item => true))     // debugging
-    return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
+    return new Ability(userPermissions, { resolveAction: aliasResolver });
 }
 
 module.exports = async (req, res, next) => {
@@ -51,7 +22,7 @@ module.exports = async (req, res, next) => {
         const user = req.user;
         const action = req.method.toLowerCase();
         const resource = req.path.split('/')[1];
-    
+
         const ability = await defineUserAbilities(user);
         if (!ability.can(action, resource))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');

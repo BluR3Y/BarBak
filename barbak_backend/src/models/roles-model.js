@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const permissionSchema = new mongoose.Schema({
-    actions: {
+    action: {
         type: [{
             type: String,
             enum: ['create','read','update','delete','manage'],
@@ -9,10 +9,10 @@ const permissionSchema = new mongoose.Schema({
         }],
         validate: (items) => items?.length
     },
-    subjects: {
+    subject: {
         type: [String],
         required: true,
-        validate: (items) => items?.length
+        validate: (items) => items.length
     },
     fields: {
         type: [String],
@@ -33,31 +33,22 @@ const permissionSchema = new mongoose.Schema({
     _id: false
 });
 
-const Role = mongoose.model('Role', new mongoose.Schema({
+const appRoleSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true
     },
     permissions: {
         type: [permissionSchema],
-        required: true
+        required: true,
+        validate: (items) => items.length
     }
-},{ collection: 'roles', discriminatorKey: 'variant' }));
+},{ collection: 'app-roles' });
 
-const appRoleSchema = Role.schema.add(new mongoose.Schema());
-
-appRoleSchema.path('permissions.subjects').validate(function(subjects) {
+appRoleSchema.path('permissions.subject').validate(function(subjects) {
     return subjects.every(subject => ['all','users','accounts','media','drinkware','drinks','tools','ingredients'].includes(subject));
 }, 'Invalid permission subjects');
 
-appRoleSchema.statics = {
-    defaultRole: async function() {
-        const { _id } = await this.findOne({ name: 'user' }).select('_id');
-        return _id;
-    }
-}
-
 module.exports = {
-    Role,
-    AppRole: Role.discriminator('App Role', appRoleSchema)
-}
+    AppRole: mongoose.model('App Role', appRoleSchema)
+};

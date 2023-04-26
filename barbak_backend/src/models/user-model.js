@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
+const { AppRole } = require('./roles-model');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
-const { redisClient, executeSqlQuery } = require('../config/database-config');
+const { redisClient } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
 const { default_covers } = require('../config/config.json');
 
@@ -162,8 +163,9 @@ const userSchema = new mongoose.Schema({
         enum: ['novice', 'intermediate', 'expert']
     },
     role: {
-        type: Number,
-        default: null
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'App Role',
+        default: '6447797f01eba11f622d6a6b'
     },
     date_registered: {
         type: Date,
@@ -181,28 +183,8 @@ userSchema.path('email').validate(async function(email) {
 }, 'Email already associated with another account', 'exist');
 
 userSchema.path('role').validate(async function(role) {
-    if (role) {
-        const [{ roleCount }] = await executeSqlQuery(`
-            SELECT 
-                COUNT(*) AS roleCount
-            FROM user_roles
-            WHERE id = ?
-            LIMIT 1;
-        `, [role]);
-        if (!roleCount)
-            this.invalidate('role', 'Invalid user role', 'valid');
-    } else {
-        const [{ id }] = await executeSqlQuery(`
-            SELECT
-                id
-            FROM user_roles
-            WHERE name = 'user'
-            LIMIT 1;
-        `);
-        this.role = id;
-    }
-    return true;
-});
+    return (await AppRole.exists({ _id: role }));
+}, 'Invalid user role');
 
 userSchema.virtual('profile_image_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
@@ -215,15 +197,11 @@ userSchema.virtual('profile_image_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-userSchema.virtual('role_info').get(async function() {
-    const [{ name }] = await executeSqlQuery(`
-        SELECT
-            name
-        FROM user_roles
-        WHERE id = ?
-        LIMIT 1;
-    `, [this.role]);
-    return name;
+userSchema.virtual('role_info', {
+    ref: 'App Role',
+    localField: 'role',
+    foreignField: '_id',
+    justOne: true
 });
 
 userSchema.statics.hashPassword = function(password) {
