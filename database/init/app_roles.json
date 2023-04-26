@@ -175,182 +175,182 @@
                 "inverted": false,
                 "reason": null
             },
-                {
-                    "action": ["read"],
-                    "subject": ["drinkware"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Drinkware",
-                        "action_type": { "$in": ["public","private"] }
-                    },
-                    "inverted": false,
-                    "reason": null
+            {
+                "action": ["read"],
+                "subject": ["drinkware"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Drinkware",
+                    "action_type": { "$in": ["public","private"] }
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["drinkware"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Drinkware"
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["drinkware"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Drinkware"
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["tools"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Tool",
-                        "action_type": { "$in": ["public","private"] }
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["tools"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Tool",
+                    "action_type": { "$in": ["public","private"] }
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["tools"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Tool"
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["tools"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Tool"
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["ingredients"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Ingredient",
-                        "action_type": { "$in": ["public","private"] }
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["ingredients"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Ingredient",
+                    "action_type": { "$in": ["public","private"] }
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["ingredients"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Ingredient"
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["ingredients"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Ingredient"
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["drinks"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Drink",
-                        "action_type": { "$in": ["public","private"] }
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["drinks"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Drink",
+                    "action_type": { "$in": ["public","private"] }
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["drinks"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "Verified Drink"
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["drinks"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "Verified Drink"
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["drinkware"],
-                    "fields": null,
-                    "conditions": {
-                        "action_type": { "$in": ["public","private"] },
-                        "document.variant": "User Drinkware",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["drinkware"],
+                "fields": null,
+                "conditions": {
+                    "action_type": { "$in": ["public","private"] },
+                    "document.variant": "User Drinkware",
+                    "document.public": true
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["drinkware"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "User Drinkware",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["drinkware"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "User Drinkware",
+                    "document.public": true
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["tools"],
-                    "fields": null,
-                    "conditions": {
-                        "action_type": { "$in": ["public","private"] },
-                        "document.variant": "User Tool",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["tools"],
+                "fields": null,
+                "conditions": {
+                    "action_type": { "$in": ["public","private"] },
+                    "document.variant": "User Tool",
+                    "document.public": true
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["tools"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "User Tool",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["tools"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "User Tool",
+                    "document.public": true
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["ingredients"],
-                    "fields": null,
-                    "conditions": {
-                        "action_type": { "$in": ["public","private"] },
-                        "document.variant": "User Ingredient",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["ingredients"],
+                "fields": null,
+                "conditions": {
+                    "action_type": { "$in": ["public","private"] },
+                    "document.variant": "User Ingredient",
+                    "document.public": true
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["ingredients"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "User Ingredient",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["ingredients"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "User Ingredient",
+                    "document.public": true
                 },
-                {
-                    "action": ["read"],
-                    "subject": ["drinks"],
-                    "fields": null,
-                    "conditions": {
-                        "action_type": { "$in": ["public","private"] },
-                        "document.variant": "User Drink",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["read"],
+                "subject": ["drinks"],
+                "fields": null,
+                "conditions": {
+                    "action_type": { "$in": ["public","private"] },
+                    "document.variant": "User Drink",
+                    "document.public": true
                 },
-                {
-                    "action": ["update","delete"],
-                    "subject": ["drinks"],
-                    "fields": null,
-                    "conditions": {
-                        "document.variant": "User Drink",
-                        "document.public": true
-                    },
-                    "inverted": false,
-                    "reason": null
-                }
+                "inverted": false,
+                "reason": null
+            },
+            {
+                "action": ["update","delete"],
+                "subject": ["drinks"],
+                "fields": null,
+                "conditions": {
+                    "document.variant": "User Drink",
+                    "document.public": true
+                },
+                "inverted": false,
+                "reason": null
+            }
         ],
         "variant": "App Role"
     },
@@ -392,7 +392,17 @@
                     "reason": null
                 },
                 {
-                    "action": ["read","update","delete"],
+                    "action": ["read"],
+                    "subject": ["drinkware"],
+                    "fields": null,
+                    "conditions": {
+                        "document.variant": "User Drinkware",
+                        "document.user": "USER_ID",
+                        "action_type": { "$in": ["public","private"] }
+                    }
+                },
+                {
+                    "action": ["update","delete"],
                     "subject": ["drinkware"],
                     "fields": null,
                     "conditions": {
@@ -413,7 +423,17 @@
                     "reason": null
                 },
                 {
-                    "action": ["read","update","delete"],
+                    "action": ["read"],
+                    "subject": ["tools"],
+                    "fields": null,
+                    "conditions": {
+                        "document.variant": "User Tool",
+                        "document.user": "USER_ID",
+                        "action_type": { "$in": ["public","private"] }
+                    }
+                },
+                {
+                    "action": ["update","delete"],
                     "subject": ["tools"],
                     "fields": null,
                     "conditions": {
@@ -434,7 +454,17 @@
                     "reason": null
                 },
                 {
-                    "action": ["read","update","delete"],
+                    "action": ["read"],
+                    "subject": ["ingredients"],
+                    "fields": null,
+                    "conditions": {
+                        "document.variant": "User Ingredient",
+                        "document.user": "USER_ID",
+                        "action_type": { "$in": ["public","private"] }
+                    }
+                },
+                {
+                    "action": ["update","delete"],
                     "subject": ["ingredients"],
                     "fields": null,
                     "conditions": {
@@ -455,7 +485,17 @@
                     "reason": null
                 },
                 {
-                    "action": ["read","update","delete"],
+                    "action": ["read"],
+                    "subject": ["drinks"],
+                    "fields": null,
+                    "conditions": {
+                        "document.variant": "User Drink",
+                        "document.user": "USER_ID",
+                        "action_type": { "$in": ["public","private"] }
+                    }
+                },
+                {
+                    "action": ["update","delete"],
                     "subject": ["drinks"],
                     "fields": null,
                     "conditions": {
