@@ -31,7 +31,7 @@ module.exports.uploadProfileImage = async (req, res, next) => {
             });
             await aclDocument.save();
         } else {
-            if (!req.ability.can('create', subject('media', { subject_type: 'user_asset' })))
+            // if (!req.ability.can('create', subject('media', { subject_type: 'user_asset' })))
             //  Last Here
             const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
             const createdACL = new UserAssetAccessControl({

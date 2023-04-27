@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const { AppRole } = require('./roles-model');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
-const { redisClient } = require('../config/database-config');
+const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
 const { default_covers } = require('../config/config.json');
 
@@ -154,10 +153,14 @@ const userSchema = new mongoose.Schema({
         default: 'novice',
         enum: ['novice', 'intermediate', 'expert']
     },
+    // role: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'App Role',
+    //     default: '6447797f01eba11f622d6a6b'
+    // },
     role: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'App Role',
-        default: '6447797f01eba11f622d6a6b'
+        type: Number,
+        default: 3
     },
     date_registered: {
         type: Date,
@@ -174,9 +177,9 @@ userSchema.path('email').validate(async function(email) {
     return (!await this.constructor.exists({ email, _id: { $ne: this._id } }));
 }, 'Email already associated with another account', 'exist');
 
-userSchema.path('role').validate(async function(role) {
-    return (await AppRole.exists({ _id: role }));
-}, 'Invalid user role');
+// userSchema.path('role').validate(async function(role) {
+//     return (await AppRole.exists({ _id: role }));
+// }, 'Invalid user role');
 
 userSchema.virtual('profile_image_url').get(function() {
     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
@@ -189,11 +192,22 @@ userSchema.virtual('profile_image_url').get(function() {
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
 
-userSchema.virtual('role_info', {
-    ref: 'App Role',
-    localField: 'role',
-    foreignField: '_id',
-    justOne: true
+// userSchema.virtual('role_info', {
+//     ref: 'App Role',
+//     localField: 'role',
+//     foreignField: '_id',
+//     justOne: true
+// });
+
+userSchema.virtual('role_info').get(async function() {
+    const [{ id, name }] = await executeSqlQuery(`
+        SELECT
+            id, name
+        FROM user_roles
+        WHERE id = ?
+        LIMIT 1;
+    `, [this.role]);
+    return { id, name };
 });
 
 userSchema.statics.hashPassword = function(password) {
