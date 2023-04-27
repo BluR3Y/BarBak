@@ -23,44 +23,22 @@ const FileAccessControl = mongoose.model('File Access Control', new mongoose.Sch
     }
 },{ collection: 'file-access-control', discriminatorKey: 'variant' }));
 
-const assetAccessControl = new mongoose.Schema({
-    referenced_document: {
+const verifiedAssetControlSchema = new mongoose.Schema();
+
+const userAssetControlSchema = new mongoose.Schema({
+    user: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        refPath: 'referenced_model'
-    }, 
-    referenced_model: {
-        type: String,
+        ref: 'User',
         required: true
-    }
-});
-
-assetAccessControl.path('referenced_document').validate(async function(document) {
-    return (await this.model(this.referenced_model).exists({ _id: document }));
-}, 'Referenced document does not exist', 'exist');
-
-assetAccessControl.virtual('document_info', {
-    ref: function() {
-        return this.referenced_model;
     },
-    localField: 'referenced_document',
-    foreignField: '_id'
-});
-
-assetAccessControl.pre('validate', function(next) {
-    if (!['User','Tool','Ingredient','Drinkware','Drink'].includes(this.referenced_model)) {
-        this.invalidate('referenced_model', 'Invalid document model', this.referenced_model, 'valid');
-        this.$ignore('referenced_document');
+    public: {
+        type: Boolean,
+        default: false
     }
-    next();
-});
-
-assetAccessControl.pre('findOne', async function(next) {
-    this.populate('document_info');
-    next();
 });
 
 module.exports = {
     FileAccessControl,
-    AssetAccessControl: FileAccessControl.discriminator('Asset Access Control', assetAccessControl)
+    VerifiedAssetAccessControl: FileAccessControl.discriminator('Verified Asset Access Control', verifiedAssetControlSchema),
+    UserAssetAccessControl: FileAccessControl.discriminator('User Asset Access Control', userAssetControlSchema)
 };

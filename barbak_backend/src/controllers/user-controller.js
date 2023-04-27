@@ -2,7 +2,7 @@ const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
 const { subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
-const FileAccessControl = require('../models/file-access-control-model');
+const { UserAssetAccessControl } = require('../models/file-access-control-model');
 const AppError = require('../utils/app-error');
 const responseObject = require('../utils/response-object');
 
@@ -12,12 +12,12 @@ module.exports.uploadProfileImage = async (req, res, next) => {
         if (!profileImage)
             throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
         
-        const userInfo = await User.findOne({ _id: req.user._id });
+        const userInfo = await User.findById(req.user._id);
         if (userInfo.profile_image) {
-            const aclDocument = await FileAccessControl.findOne({ _id: userInfo.profile_image });
-            if (!aclDocument.authorize('update', { user: req.user }))
+            const aclDocument = await UserAssetAccessControl.findById(userInfo.profile_image);
+            if (!req.ability.can('update', subject('media', { document: aclDocument })))
                 throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify user profile image');
-
+            
             const [,uploadInfo] = await Promise.all([
                 s3Operations.removeObject(aclDocument.file_path),
                 s3Operations.createObject(profileImage, 'assets/users/images')
@@ -31,16 +31,16 @@ module.exports.uploadProfileImage = async (req, res, next) => {
             });
             await aclDocument.save();
         } else {
+            if (!req.ability.can('create', subject('media', { subject_type: 'user_asset' })))
+            //  Last Here
             const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
-            const createdACL = new FileAccessControl({
+            const createdACL = new UserAssetAccessControl({
                 file_name: uploadInfo.filename,
                 file_size: profileImage.size,
                 mime_type: profileImage.mimetype,
                 file_path: uploadInfo.filepath,
-                permissions: [
-                    { action: 'manage', conditions: { 'user._id': req.user._id } },
-                    ...(userInfo.public ? [{ action: 'read' }] : [])
-                ]
+                user: req.user._id,
+                public: true
             });
             await createdACL.save();
             userInfo.profile_image = createdACL._id;
@@ -49,13 +49,59 @@ module.exports.uploadProfileImage = async (req, res, next) => {
         res.status(204).send();
     } catch(err) {
         next(err);
-    } finally {
-        if (req.file) {
-            fileOperations.deleteSingle(req.file.path)
-            .catch(err => console.error(err));
-        }
     }
 }
+
+// module.exports.uploadProfileImage = async (req, res, next) => {
+//     try {
+//         const profileImage = req.file;
+//         if (!profileImage)
+//             throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
+        
+//         const userInfo = await User.findOne({ _id: req.user._id });
+//         if (userInfo.profile_image) {
+//             const aclDocument = await FileAccessControl.findOne({ _id: userInfo.profile_image });
+//             if (!aclDocument.authorize('update', { user: req.user }))
+//                 throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify user profile image');
+
+//             const [,uploadInfo] = await Promise.all([
+//                 s3Operations.removeObject(aclDocument.file_path),
+//                 s3Operations.createObject(profileImage, 'assets/users/images')
+//             ]);
+
+//             aclDocument.set({
+//                 file_name: uploadInfo.filename,
+//                 file_size: profileImage.size,
+//                 mime_type: profileImage.mimetype,
+//                 file_path: uploadInfo.filepath
+//             });
+//             await aclDocument.save();
+//         } else {
+//             const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
+//             const createdACL = new FileAccessControl({
+//                 file_name: uploadInfo.filename,
+//                 file_size: profileImage.size,
+//                 mime_type: profileImage.mimetype,
+//                 file_path: uploadInfo.filepath,
+//                 permissions: [
+//                     { action: 'manage', conditions: { 'user._id': req.user._id } },
+//                     ...(userInfo.public ? [{ action: 'read' }] : [])
+//                 ]
+//             });
+//             await createdACL.save();
+//             userInfo.profile_image = createdACL._id;
+//         }
+//         await userInfo.save();
+//         res.status(204).send();
+//     } catch(err) {
+//         next(err);
+//     } finally {
+//         if (req.file) {
+//             fileOperations.deleteSingle(req.file.path)
+//             .catch(err => console.error(err));
+//         }
+//     }
+// }
 
 module.exports.removeProfileImage = async (req, res, next) => {
     try {

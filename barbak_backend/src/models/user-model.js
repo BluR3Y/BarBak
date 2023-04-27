@@ -83,7 +83,8 @@ const userSchema = new mongoose.Schema({
         minlength: 6,
         maxlength: 30,
         required: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     fullname: {
         type: String,
@@ -93,7 +94,8 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     password: {
         type: String,
@@ -111,45 +113,35 @@ const userSchema = new mongoose.Schema({
     experience: {
         type: [experienceSchema],
         validate: {
-            validator: function(items) {
-                return items?.length <= 20;
-            },
+            validator: (items) => items && items.length <= 20,
             message: 'Number of experience items has been exceeded'
         }
     },
     achievements: {
         type: [achievementSchema],
         validate: {
-            validator: function(items) {
-                return items?.length <= 20;
-            },
+            validator: (items) => items && items.length <= 20,
             message: 'Number of achievements has been exceeded'
         }
     },
     education: {
         type: [educationSchema],
         validate: {
-            validator: function(items) {
-                return items?.length <= 20;
-            },
+            validator: (items) => items && items.length <= 20,
             message: 'Number of certificates has been exceeded'
         }
     },
     skills: {
         type: [String],
         validate: {
-            validator: function(items) {
-                return items?.length <= 20;
-            },
+            validator: (items) => items && items.length <= 20,
             message: 'Number of skills has been exceeded'
         }
     },
     interests: {
         type: [String],
         validate: {
-            validator: function(items) {
-                return items?.length <= 5;
-            },
+            validator: (items) => items && items.length <= 5,
             message: 'Number of interests has been exceeded'
         }
     },
@@ -175,11 +167,11 @@ const userSchema = new mongoose.Schema({
 } , { collection: 'users' });
 
 userSchema.path('username').validate(async function(username) {
-    return (!await this.constructor.exists({ username }));
+    return (!await this.constructor.exists({ username, _id: { $ne: this._id } }));
 }, 'Username already associated with another account', 'exist');
 
 userSchema.path('email').validate(async function(email) {
-    return (!await this.constructor.exists({ email }));
+    return (!await this.constructor.exists({ email, _id: { $ne: this._id } }));
 }, 'Email already associated with another account', 'exist');
 
 userSchema.path('role').validate(async function(role) {
