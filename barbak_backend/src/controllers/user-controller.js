@@ -12,43 +12,19 @@ module.exports.uploadProfileImage = async (req, res, next) => {
         if (!profileImage)
             throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
         
-        const userInfo = await User.findById(req.user._id);
+        const userInfo = await User.findOne({ _id: req.user._id });
         if (userInfo.profile_image) {
-            const aclDocument = await UserAssetAccessControl.findById(userInfo.profile_image);
-            if (!req.ability.can('update', subject('media', { document: aclDocument })))
-                throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify user profile image');
-            
-            const [,uploadInfo] = await Promise.all([
-                s3Operations.removeObject(aclDocument.file_path),
-                s3Operations.createObject(profileImage, 'assets/users/images')
-            ]);
 
-            aclDocument.set({
-                file_name: uploadInfo.filename,
-                file_size: profileImage.size,
-                mime_type: profileImage.mimetype,
-                file_path: uploadInfo.filepath
-            });
-            await aclDocument.save();
         } else {
-            // if (!req.ability.can('create', subject('media', { subject_type: 'user_asset' })))
-            //  Last Here
-            const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
-            const createdACL = new UserAssetAccessControl({
-                file_name: uploadInfo.filename,
-                file_size: profileImage.size,
-                mime_type: profileImage.mimetype,
-                file_path: uploadInfo.filepath,
-                user: req.user._id,
-                public: true
-            });
-            await createdACL.save();
-            userInfo.profile_image = createdACL._id;
+            
         }
-        await userInfo.save();
-        res.status(204).send();
     } catch(err) {
         next(err);
+    } finally {
+        if (req.file) {
+            fileOperations.deleteSingle(req.file.path)
+            .catch(err => console.error(err));
+        }
     }
 }
 
@@ -156,11 +132,9 @@ module.exports.getUser = async (req, res, next) => {
     }
 }
 
-module.exports.clientInfo = async (req, res) => {
+module.exports.clientInfo = async (req, res, next) => {
     try {
-        const userInfo = await User
-            .findOne({ _id: req.user._id })
-            .populate({ path: 'role_info', select: 'name' });
+        const userInfo = await User.findOne({ _id: req.user._id });
         const response = await responseObject(userInfo, [
             { name: '_id', alias: 'id' },
             { name: 'username' },

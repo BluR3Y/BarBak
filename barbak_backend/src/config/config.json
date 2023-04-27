@@ -33,5 +33,9 @@
         "FORBIDDEN": 305,
         "ALREADY_EXIST": 306,
         "INTERNAL": 307
+    },
+    "basic_user_roles": {
+        "user": 3,
+        "guest": 4
     }
 }

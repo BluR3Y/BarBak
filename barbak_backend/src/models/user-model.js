@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
-const { default_covers } = require('../config/config.json');
+const { default_covers, basic_user_roles } = require('../config/config.json');
 
 const durationSchema = new mongoose.Schema({
     start: {
@@ -104,9 +104,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
+    // profile_image: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'File Access Control',
+    //     default: null
+    // },
     profile_image: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'File Access Control',
+        type: String,
         default: null
     },
     experience: {
@@ -153,14 +157,9 @@ const userSchema = new mongoose.Schema({
         default: 'novice',
         enum: ['novice', 'intermediate', 'expert']
     },
-    // role: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'App Role',
-    //     default: '6447797f01eba11f622d6a6b'
-    // },
     role: {
         type: Number,
-        default: 3
+        default: basic_user_roles.user
     },
     date_registered: {
         type: Date,
@@ -191,13 +190,6 @@ userSchema.virtual('profile_image_url').get(function() {
     
     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
 });
-
-// userSchema.virtual('role_info', {
-//     ref: 'App Role',
-//     localField: 'role',
-//     foreignField: '_id',
-//     justOne: true
-// });
 
 userSchema.virtual('role_info').get(async function() {
     const [{ id, name }] = await executeSqlQuery(`
