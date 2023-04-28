@@ -155,7 +155,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: Number,
-        default: user_roles.user
+        default: user_roles.standard
     },
     date_registered: {
         type: Date,
