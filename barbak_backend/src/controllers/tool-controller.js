@@ -1,6 +1,6 @@
 const { Tool, VerifiedTool, UserTool } = require('../models/tool-model');
-// const FileAccessControl = require('../models/file-access-control-model');
-const { subject } = require('@casl/ability');
+const { VerifiedAssetControl, UserAssetControl } = require('../models/asset-access-control-model');
+const { ForbiddenError: CaslError, subject } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 const responseObject = require('../utils/response-object');
@@ -9,10 +9,11 @@ const AppError = require('../utils/app-error');
 module.exports.create = async (req, res, next) => {
     try {
         const { tool_type = 'user' } = req.params;
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to create tool')
+            .throwUnlessCan('create', subject('tools', { subject_type: tool_type }));
 
-        if (!req.ability.can('create', subject('tools', { subject_type: tool_type })))
-            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to create tool');
-        else if (tool_type === 'user' ? 
+        if (tool_type === 'user' ?
             await UserTool.exists({ user: req.user._id, name: req.body.name }) :
             await VerifiedTool.exists({ name: req.body.name })
         )
@@ -24,7 +25,6 @@ module.exports.create = async (req, res, next) => {
                 user: req.user._id 
             }) :
             new VerifiedTool(req.body);
-        await createdTool.validate();
         await createdTool.save();
 
         const response = await responseObject(createdTool, [
@@ -51,6 +51,54 @@ module.exports.create = async (req, res, next) => {
         next(err);
     }
 }
+
+// module.exports.create = async (req, res, next) => {
+//     try {
+//         const { tool_type = 'user' } = req.params;
+
+//         if (!req.ability.can('create', subject('tools', { subject_type: tool_type })))
+//             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to create tool');
+//         else if (tool_type === 'user' ? 
+//             await UserTool.exists({ user: req.user._id, name: req.body.name }) :
+//             await VerifiedTool.exists({ name: req.body.name })
+//         )
+//             throw new AppError(409, 'ALREADY_EXIST', 'A tool with that name currently exists');
+
+//         const createdTool = tool_type === 'user' ? 
+//             new UserTool({ 
+//                 ...req.body, 
+//                 user: req.user._id 
+//             }) :
+//             new VerifiedTool(req.body);
+//         await createdTool.validate();
+//         await createdTool.save();
+
+//         const response = await responseObject(createdTool, [
+//             { name: '_id', alias: 'id' },
+//             { name: 'name' },
+//             { name: 'description' },
+//             { name: 'category_info', alias: 'category' },
+//             { name: 'cover_url', alias: 'cover' },
+//             {
+//                 name: 'public',
+//                 condition: (document) => document instanceof UserTool
+//             },
+//             {
+//                 name: 'date_created',
+//                 condition: (document) => document instanceof UserTool
+//             },
+//             {
+//                 name: 'date_verified',
+//                 condition: (document) => document instanceof VerifiedTool
+//             }
+//         ]);
+//         res.status(201).send(response);
+//     } catch(err) {
+//         next(err);
+//     }
+// }
+// Last Here
+
 
 module.exports.update = async (req, res, next) => {
     try {

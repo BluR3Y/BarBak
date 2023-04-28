@@ -1,5 +1,5 @@
 const accountController = require('../controllers/account-controller');
-const joiValidator = require('../middleware/joi_validator');
+const joiValidator = require('../middlewares/joi_validator');
 
 module.exports.connect = function(router) {
     router.post('/accounts/login', accountController.login);

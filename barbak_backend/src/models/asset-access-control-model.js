@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const FileAccessControl = mongoose.model('File Access Control', new mongoose.Schema({
+const AssetAccessControl = mongoose.model('Asset Access Control', new mongoose.Schema({
     file_name: {
         type: String,
         required: true
@@ -21,11 +21,11 @@ const FileAccessControl = mongoose.model('File Access Control', new mongoose.Sch
         type: Date,
         default: () => Date.now()
     }
-},{ collection: 'file-access-control', discriminatorKey: 'variant' }));
+},{ collection: 'asset-access-control', discriminatorKey: 'variant' }));
 
-const verifiedAssetControlSchema = new mongoose.Schema();
+const verifiedSchema = new mongoose.Schema();
 
-const userAssetControlSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -38,7 +38,7 @@ const userAssetControlSchema = new mongoose.Schema({
 });
 
 module.exports = {
-    FileAccessControl,
-    VerifiedAssetAccessControl: FileAccessControl.discriminator('Verified Asset Access Control', verifiedAssetControlSchema),
-    UserAssetAccessControl: FileAccessControl.discriminator('User Asset Access Control', userAssetControlSchema)
+    AssetAccessControl,
+    VerifiedAssetControl: AssetAccessControl.discriminator('Verified Asset Access Control', verifiedSchema),
+    UserAssetControl: AssetAccessControl.discriminator('User Asset Access Control', userSchema)
 };

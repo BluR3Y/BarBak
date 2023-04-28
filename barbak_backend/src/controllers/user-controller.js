@@ -1,7 +1,7 @@
 const User = require('../models/user-model');
 const { ForbiddenError: CaslError, subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
-const { UserAssetControl } = require('../models/file-access-control-model');
+const { UserAssetControl } = require('../models/asset-access-control-model');
 const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');
 const responseObject = require('../utils/response-object');

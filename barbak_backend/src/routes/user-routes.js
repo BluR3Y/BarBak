@@ -1,7 +1,7 @@
 const userController = require('../controllers/user-controller');
 const { imageUpload } = require('../config/multer-config');
 const auth = require('../lib/auth');
-const joiValidator = require('../middleware/joi_validator');
+const joiValidator = require('../middlewares/joi_validator');
 
 module.exports.connect = function(router) {
     router.get('/users/@me', auth.sessionAuthenticationRequired, userController.clientInfo);

@@ -1,6 +1,6 @@
 const ingredientController = require('../controllers/ingredient-controller');
 const { imageUpload } = require('../config/multer-config');
-const joiValidator = require('../middleware/joi_validator');
+const joiValidator = require('../middlewares/joi_validator');
 const auth = require('../lib/auth');
 
 module.exports.connect = function(router) {

@@ -217,7 +217,7 @@ const Drink = mongoose.model('Drink', new mongoose.Schema({
             gallery: {
                 type: [{
                     type: mongoose.Schema.Types.ObjectId,
-                    ref: 'File Access Control',
+                    ref: 'Asset Access Control',
                     required: true
                 }],
                 validate: {
