@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/email-queue');
-const { default_covers, basic_user_roles } = require('../config/config.json');
+const { default_covers, user_roles } = require('../config/config.json');
 
 const durationSchema = new mongoose.Schema({
     start: {
@@ -104,13 +104,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
-    // profile_image: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'File Access Control',
-    //     default: null
-    // },
     profile_image: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User Asset Access Control',
         default: null
     },
     experience: {
@@ -159,7 +155,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: Number,
-        default: basic_user_roles.user
+        default: user_roles.user
     },
     date_registered: {
         type: Date,

@@ -34,8 +34,10 @@
         "ALREADY_EXIST": 306,
         "INTERNAL": 307
     },
-    "basic_user_roles": {
-        "user": 3,
+    "user_roles": {
+        "admin": 1,
+        "editor": 2,
+        "standard": 3,
         "guest": 4
     }
 }

@@ -9,16 +9,13 @@ class AppError extends Error {
         Error.captureStackTrace(this, this.constructor);
     }
 
-    errorResponse() {
-        const response = { 
-            code: error_codes[this.errorCode],
-            message: this.message,
-            ...(this.errors ? { errors: this.errors } : {})
-        };
-        
-        return response;
+    errorResponse(res) {
+        const { statusCode, errorCode, message, errors } = this;
+        return res.status(statusCode).send({
+            code: error_codes[errorCode],
+            message: message,
+            ...(this.errors ? { errors: errors } : {})
+        });
     }
 }
 module.exports = AppError;
-
-// Discord error codes: https://discord.com/developers/docs/topics/opcodes-and-status-codes

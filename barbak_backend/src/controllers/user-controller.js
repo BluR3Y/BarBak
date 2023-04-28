@@ -1,9 +1,9 @@
-const fileOperations = require('../utils/file-operations');
 const User = require('../models/user-model');
-const { subject } = require('@casl/ability');
+const { ForbiddenError: CaslError, subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
-const { UserAssetAccessControl } = require('../models/file-access-control-model');
+const { UserAssetControl } = require('../models/file-access-control-model');
 const AppError = require('../utils/app-error');
+const fileOperations = require('../utils/file-operations');
 const responseObject = require('../utils/response-object');
 
 module.exports.uploadProfileImage = async (req, res, next) => {
@@ -11,13 +11,37 @@ module.exports.uploadProfileImage = async (req, res, next) => {
         const profileImage = req.file;
         if (!profileImage)
             throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
-        
-        const userInfo = await User.findOne({ _id: req.user._id });
-        if (userInfo.profile_image) {
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to create asset')
+            .throwUnlessCan('create', subject('assets', { action_type: 'user' }));
 
-        } else {
-            
+        const userInfo = await User.findById(req.user._id);
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to modify user profile')
+            .throwUnlessCan('update', subject('users', { document: userInfo }));
+
+        if (!userInfo.profile_image) {
+            const aclDocument = await UserAssetControl.findById(userInfo.profile_image);
+            CaslError.from(req.ability)
+                .setMessage('Unauthorized to modify asset')
+                .throwUnlessCan('delete', subject('assets', { document: aclDocument }));
+
+            await s3Operations.removeObject(aclDocument.file_path);
         }
+
+        const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
+        const createdACL = new UserAssetControl({
+            file_name: uploadInfo.filename,
+            file_size: profileImage.size,
+            mime_type: profileImage.mimetype,
+            file_path: uploadInfo.filepath,
+            user: req.user._id,
+            public: true
+        });
+        await aclDocument.save();
+        userInfo.profile_image = createdACL._id;
+        await userInfo.save();
+        res.status(204).send();
     } catch(err) {
         next(err);
     } finally {
@@ -81,13 +105,22 @@ module.exports.uploadProfileImage = async (req, res, next) => {
 
 module.exports.removeProfileImage = async (req, res, next) => {
     try {
-        const userInfo = await User.findOne({ _id: req.user._id });
+        const userInfo = await User.findById(req.user._id);
         if (!userInfo.profile_image)
             throw new AppError(404, 'NOT_FOUND', 'Account has no profile image');
+        CaslError.from(req.ability)
+            .setMessage('Uauthorized to modify user profile')
+            .throwUnlessCan('delete', subject('assets', { document: userInfo }));
         
-       const aclDocument = await FileAccessControl.findOne({ _id: userInfo.profile_image });
-        await s3Operations.removeObject(aclDocument.file_path);
-        await aclDocument.remove();
+        const aclDocument = await UserAssetControl.findById(userInfo.profile_image);
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to delete asset')
+            .throwUnlessCan('delete', subject('assets', { document: aclDocument }));
+
+        await Promise.all([
+            s3Operations.removeObject(aclDocument.file_path),
+            aclDocument.remove()
+        ]);
         userInfo.profile_image = null;
         await userInfo.save();
         res.status(204).send();
@@ -96,28 +129,62 @@ module.exports.removeProfileImage = async (req, res, next) => {
     }
 }
 
+// module.exports.removeProfileImage = async (req, res, next) => {
+//     try {
+//         const userInfo = await User.findOne({ _id: req.user._id });
+//         if (!userInfo.profile_image)
+//             throw new AppError(404, 'NOT_FOUND', 'Account has no profile image');
+        
+//        const aclDocument = await FileAccessControl.findOne({ _id: userInfo.profile_image });
+//         await s3Operations.removeObject(aclDocument.file_path);
+//         await aclDocument.remove();
+//         userInfo.profile_image = null;
+//         await userInfo.save();
+//         res.status(204).send();
+//     } catch(err) {
+//         next(err);
+//     }
+// }
+
 module.exports.changeUsername = async (req, res, next) => {
     try {
         const { username } = req.body;
-        if (await User.exists({ username }))
-            throw new AppError(409, 'ALREADY_EXIST', 'Username is already associated with another account');
-        
-        await User.findOneAndUpdate({ _id: req.user._id }, { username });
+        const userInfo = await User.findById(req.user._id);
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to modify user profile')
+            .throwUnlessCan('update', subject('users', { document: userInfo }));
+
+        userInfo.set({username});
+        await userInfo.save();
         res.status(204).send();
     } catch(err) {
         next(err);
     }
 }
 
+// module.exports.changeUsername = async (req, res, next) => {
+//     try {
+//         const { username } = req.body;
+//         if (await User.exists({ username }))
+//             throw new AppError(409, 'ALREADY_EXIST', 'Username is already associated with another account');
+        
+//         await User.findOneAndUpdate({ _id: req.user._id }, { username });
+//         res.status(204).send();
+//     } catch(err) {
+//         next(err);
+//     }
+// }
+
 module.exports.getUser = async (req, res, next) => {
     try {
         const { user_id, privacy_type = 'public' } = req.params;
-        const userInfo = await User.findOne({ _id: user_id });
-
+        const userInfo = await User.findById(user_id);
+        
         if (!userInfo)
             throw new AppError(404, 'NOT_FOUND', 'User does not exist');
-        else if (!req.ability.can('read', subject('users', { action_type: privacy_type, document: userInfo })))
-            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view user');
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to view user profile')
+            .throwUnlessCan('read', subject('users', { action_type: privacy_type, document: userInfo }));
 
         const response = await responseObject(userInfo, [
             { name: '_id', alias: 'id' },
@@ -132,9 +199,34 @@ module.exports.getUser = async (req, res, next) => {
     }
 }
 
+// module.exports.getUser = async (req, res, next) => {
+//     try {
+//         const { user_id, privacy_type = 'public' } = req.params;
+//         const userInfo = await User.findOne({ _id: user_id });
+
+//         if (!userInfo)
+//             throw new AppError(404, 'NOT_FOUND', 'User does not exist');
+//         else if (!req.ability.can('read', subject('users', { action_type: privacy_type, document: userInfo })))
+//             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view user');
+
+//         const response = await responseObject(userInfo, [
+//             { name: '_id', alias: 'id' },
+//             { name: 'username' },
+//             { name: 'fullname' },
+//             { name: 'profile_image_url' },
+//             { name: 'expertise_level' }
+//         ]);
+//         res.status(200).send(response);
+//     } catch(err) {
+//         next(err);
+//     }
+// }
+
+// Last Here
+
 module.exports.clientInfo = async (req, res, next) => {
     try {
-        const userInfo = await User.findOne({ _id: req.user._id });
+        const userInfo = await User.findById(req.user._id);
         const response = await responseObject(userInfo, [
             { name: '_id', alias: 'id' },
             { name: 'username' },

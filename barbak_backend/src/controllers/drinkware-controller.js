@@ -1,5 +1,5 @@
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
-const FileAccessControl = require('../models/file-access-control-model');
+// const FileAccessControl = require('../models/file-access-control-model');
 const { subject } = require('@casl/ability');
 const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');

@@ -11,7 +11,7 @@ CREATE TABLE user_roles (
 INSERT INTO user_roles (`name`) VALUES
     ('admin'),
     ('editor'),
-    ('user'),
+    ('standard'),
     ('guest')
 ;
 
@@ -19,7 +19,7 @@ INSERT INTO user_roles (`name`) VALUES
 
 SELECT id INTO @admin_role_id FROM user_roles WHERE name = 'admin';
 SELECT id INTO @editor_role_id FROM user_roles WHERE name = 'editor';
-SELECT id INTO @user_role_id FROM user_roles WHERE name = 'user';
+SELECT id INTO @standard_role_id FROM user_roles WHERE name = 'standard';
 SELECT id INTO @guest_role_id FROM user_roles WHERE name = 'guest';
 
 CREATE TABLE role_permissions (
@@ -264,9 +264,46 @@ INSERT INTO role_permissions (`action`,`subject`,`conditions`, `description`) VA
         ('[ "update", "delete" ]', '[ "drinks" ]', '{
             "document.variant": "User Drink",
             "document.public": true
-        }', 'Permission to [update, delete] public user [drink] resources')
+        }', 'Permission to [update, delete] public user [drink] resources'),
 
-        -- Add Media Permissions
+    -- Asset Permissions
+        -- -- Create User Asset Resources
+        -- ('[ "create" ]', '[ "assets" ]', '{
+        --     "subject_type": "user"
+        -- }', 'Permission to [create] user [asset] resources'),
+        -- -- Create Verified Asset Resources
+        -- ('[ "create" ]', '[ "assets" ]', '{
+        --     "subject_type": "verified"
+        -- }', 'Permission to [create] verified [asset] resources'),
+        -- -- Read Own Asset Resources
+        -- ('[ "read" ]', '[ "assets" ]', '{
+        --     "document.variant": "User Asset Access Control",
+        --     "document.user": "USER_ID",
+        --     "action_type": { "$in": [ "public", "private" ] }
+        -- }', 'Permission to [read] own [asset] resources'),
+        -- -- Modify Own Asset Resources
+        -- ('[ "update", "delete" ]', '[ "assets ]', '{
+        --     "document.variant": "User Asset Access Control",
+        --     "document.user": "USER_ID",
+        -- }', 'Permission to [update, delete] own [asset] resources'),
+        -- -- Read Verified Asset Resources (Public)
+        -- ('[ "" ]','[  ]', '', ''),
+        -- -- Read Verified Asset Resources (Private)
+        -- ('[  ]','[  ]', '', ''),
+        -- -- Modify Verified Asset Resources
+        -- ('[  ]','[  ]', '', ''),
+        -- -- Read 'Public' User Asset Resources
+        -- ('[  ]','[  ]', '', ''),
+        -- -- Read 'Public' User Asset
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
+        -- ('[  ]','[  ]', '', ''),
 ;
 
 -- User Role Permissions
@@ -328,30 +365,30 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@editor_role_id, 45),
     (@editor_role_id, 46),
 
-    (@user_role_id, 3),
-    (@user_role_id, 4),
-    (@user_role_id, 5),
-    (@user_role_id, 6),
-    (@user_role_id, 8),
-    (@user_role_id, 9),
-    (@user_role_id, 10),
-    (@user_role_id, 11),
-    (@user_role_id, 14),
-    (@user_role_id, 18),
-    (@user_role_id, 19),
-    (@user_role_id, 20),
-    (@user_role_id, 21),
-    (@user_role_id, 24),
-    (@user_role_id, 28),
-    (@user_role_id, 29),
-    (@user_role_id, 30),
-    (@user_role_id, 31),
-    (@user_role_id, 34),
-    (@user_role_id, 38),
-    (@user_role_id, 39),
-    (@user_role_id, 40),
-    (@user_role_id, 41),
-    (@user_role_id, 44),
+    (@standard_role_id, 3),
+    (@standard_role_id, 4),
+    (@standard_role_id, 5),
+    (@standard_role_id, 6),
+    (@standard_role_id, 8),
+    (@standard_role_id, 9),
+    (@standard_role_id, 10),
+    (@standard_role_id, 11),
+    (@standard_role_id, 14),
+    (@standard_role_id, 18),
+    (@standard_role_id, 19),
+    (@standard_role_id, 20),
+    (@standard_role_id, 21),
+    (@standard_role_id, 24),
+    (@standard_role_id, 28),
+    (@standard_role_id, 29),
+    (@standard_role_id, 30),
+    (@standard_role_id, 31),
+    (@standard_role_id, 34),
+    (@standard_role_id, 38),
+    (@standard_role_id, 39),
+    (@standard_role_id, 40),
+    (@standard_role_id, 41),
+    (@standard_role_id, 44),
 
     (@guest_role_id, 2),
     (@guest_role_id, 6),

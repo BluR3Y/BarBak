@@ -1,6 +1,6 @@
 const { subject } = require('@casl/ability');
 const { Drink, VerifiedDrink, UserDrink } = require('../models/drink-model');
-const FileAccessControl = require('../models/file-access-control-model');
+// const FileAccessControl = require('../models/file-access-control-model');
 const responseObject = require('../utils/response-object');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
