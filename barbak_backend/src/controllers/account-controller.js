@@ -105,7 +105,6 @@ module.exports.usernameSelection = async (req, res, next) => {
             responseObject(createdUser, [
                 { name: '_id', alias: 'id' },
                 { name: 'username' },
-                { name: 'profile_image_url', alias: 'profile_image' },
                 { name: 'role_info', alias: 'role' },
                 { name: 'public' },
                 { name: 'expertise_level' }

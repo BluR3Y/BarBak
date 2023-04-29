@@ -1,7 +1,6 @@
 const User = require('../models/user-model');
 const { ForbiddenError: CaslError, subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
-const { UserAssetControl } = require('../models/asset-access-control-model');
 const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');
 const responseObject = require('../utils/response-object');
@@ -11,35 +10,17 @@ module.exports.uploadProfileImage = async (req, res, next) => {
         const profileImage = req.file;
         if (!profileImage)
             throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
-        CaslError.from(req.ability)
-            .setMessage('Unauthorized to create asset')
-            .throwUnlessCan('create', subject('assets', { subject_type: 'user' }));
-
+        
         const userInfo = await User.findById(req.user._id);
         CaslError.from(req.ability)
             .setMessage('Unauthorized to modify user profile')
             .throwUnlessCan('update', subject('users', { document: userInfo }));
 
-        if (userInfo.profile_image) {
-            const aclDocument = await UserAssetControl.findById(userInfo.profile_image);
-            CaslError.from(req.ability)
-                .setMessage('Unauthorized to modify asset')
-                .throwUnlessCan('delete', subject('assets', { document: aclDocument }));
-
-            await s3Operations.removeObject(aclDocument.file_path);
-        }
-
-        const uploadInfo = await s3Operations.createObject(profileImage, 'assets/users/images');
-        const createdACL = new UserAssetControl({
-            file_name: uploadInfo.filename,
-            file_size: profileImage.size,
-            mime_type: profileImage.mimetype,
-            file_path: uploadInfo.filepath,
-            user: req.user._id,
-            public: true
-        });
-        await createdACL.save();
-        userInfo.profile_image = createdACL._id;
+        const [uploadInfo] = await Promise.all([
+            s3Operations.createObject(profileImage, 'avatars'),
+            ...(userInfo.profile_image ? [s3Operations.removeObject(userInfo.profile_image)] : [])
+        ]);
+        userInfo.profile_image = uploadInfo.filepath;
         await userInfo.save();
         res.status(204).send();
     } catch(err) {
@@ -55,21 +36,14 @@ module.exports.uploadProfileImage = async (req, res, next) => {
 module.exports.removeProfileImage = async (req, res, next) => {
     try {
         const userInfo = await User.findById(req.user._id);
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to modify user profile')
+            .throwUnlessCan('update', subject('users', { document: userInfo }));
+
         if (!userInfo.profile_image)
             throw new AppError(404, 'NOT_FOUND', 'Account has no profile image');
-        CaslError.from(req.ability)
-            .setMessage('Uauthorized to modify user profile')
-            .throwUnlessCan('update', subject('users', { document: userInfo }));
         
-        const aclDocument = await UserAssetControl.findById(userInfo.profile_image);
-        CaslError.from(req.ability)
-            .setMessage('Unauthorized to delete asset')
-            .throwUnlessCan('delete', subject('assets', { document: aclDocument }));
-
-        await Promise.all([
-            s3Operations.removeObject(aclDocument.file_path),
-            aclDocument.remove()
-        ]);
+        await s3Operations.removeObject(userInfo.profile_image);
         userInfo.profile_image = null;
         await userInfo.save();
         res.status(204).send();
@@ -109,7 +83,6 @@ module.exports.getUser = async (req, res, next) => {
             { name: '_id', alias: 'id' },
             { name: 'username' },
             { name: 'fullname' },
-            { name: 'profile_image_url' },
             { name: 'expertise_level' }
         ]);
         res.status(200).send(response);
@@ -126,7 +99,6 @@ module.exports.clientInfo = async (req, res, next) => {
             { name: 'username' },
             { name: 'fullname' },
             { name: 'email' },
-            { name: 'profile_image_url' },
             { name: 'expertise_level' },
             { name: 'role_info', parent_fields: [
                 { name: 'name', alias: 'role' }

@@ -4,7 +4,7 @@ const { Error: MongooseError } = require('mongoose');
 const { ForbiddenError: CaslError } = require('@casl/ability');
 
 module.exports = (err, req, res, next) => {
-    // console.log(err.errors)
+    console.log(err)
     switch(true) {
         case err instanceof AppError:
             return err.errorResponse(res);

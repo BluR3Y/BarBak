@@ -104,9 +104,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
+    // profile_image: {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'User Asset Access Control',
+    //     default: null
+    // },
     profile_image: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User Asset Access Control',
+        type: String,
         default: null
     },
     experience: {
@@ -176,16 +180,16 @@ userSchema.path('email').validate(async function(email) {
 //     return (await AppRole.exists({ _id: role }));
 // }, 'Invalid user role');
 
-userSchema.virtual('profile_image_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    let filepath;
-    if (this.profile_image) 
-        filepath = 'assets/' + this.profile_image;
-    else
-        filepath = default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
+// userSchema.virtual('profile_image_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     let filepath;
+//     if (this.profile_image) 
+//         filepath = 'assets/' + this.profile_image;
+//     else
+//         filepath = default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
     
-    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-});
+//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
+// });
 
 userSchema.virtual('role_info').get(async function() {
     const [{ id, name }] = await executeSqlQuery(`

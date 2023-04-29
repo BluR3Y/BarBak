@@ -26,6 +26,7 @@
 const mediaControllers = require('../controllers/media-controller');
 
 module.exports.connect = function(router) {
-    router.get('/assets/:access_control_id', mediaControllers.assets);
-    // Static File Route Here
+    router.get('/media/embed/:filepath', mediaControllers.embeded);
+    router.get('/media/avatars/:user_id', mediaControllers.avatars);
+    router.get('media/assets/:access_control_id', mediaControllers.assets);
 };

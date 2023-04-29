@@ -18,8 +18,7 @@ const Tool = mongoose.model('Tool', new mongoose.Schema({
         required: true,
     },
     cover: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Asset Access Control',
+        type: String,
         default: null
     }
 },{ collection: 'tools', discriminatorKey: 'variant' }));
@@ -47,16 +46,16 @@ Tool.schema.virtual('category_info').get(async function() {
     };
 });
 
-Tool.schema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    let filepath;
-    if (this.cover) 
-        filepath = 'assets/' + this.cover;
-    else
-        filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
+// Tool.schema.virtual('cover_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     let filepath;
+//     if (this.cover) 
+//         filepath = 'assets/' + this.cover;
+//     else
+//         filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
 
-    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-});
+//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
+// });
 
 Tool.schema.statics = {
     getCategories: async function() {

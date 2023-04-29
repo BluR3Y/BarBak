@@ -264,45 +264,45 @@ INSERT INTO role_permissions (`action`,`subject`,`conditions`, `description`) VA
         ('[ "update", "delete" ]', '[ "drinks" ]', '{
             "document.variant": "User Drink",
             "document.public": true
-        }', 'Permission to [update, delete] public user [drink] resources'),
+        }', 'Permission to [update, delete] public user [drink] resources')
 
-    -- Asset Permissions
-        -- Create User Asset Resources
-        ('[ "create" ]', '[ "assets" ]', '{
-            "subject_type": "user"
-        }', 'Permission to [create] user [asset] resources'),
-        -- Create Verified Asset Resources
-        ('[ "create" ]', '[ "assets" ]', '{
-            "subject_type": "verified"
-        }', 'Permission to [create] verified [asset] resources'),
-        -- Read Own Asset Resources
-        ('[ "read" ]', '[ "assets" ]', '{
-            "document.variant": "User Asset Access Control",
-            "document.user": "USER_ID"
-        }', 'Permission to [read] own [asset] resources'),
-        -- Modify Own Asset Resources
-        ('[ "update", "delete" ]', '[ "assets" ]', '{
-            "document.variant": "User Asset Access Control",
-            "document.user": "USER_ID"
-        }', 'Permission to [update, delete] own [asset] resources'),
-        -- Read Verified Asset Resources
-        ('[ "read" ]','[ "assets" ]', '{
-            "document.variant": "Verified Asset Access Control"
-        }', 'Permission to [read] verified [asset] resources'),
-        -- Modify Verified Asset Resources
-        ('[ "update", "delete" ]','[ "assets" ]', '{
-            "document.variant": "Verified Asset Access Control"
-        }', 'Permission to [update, delete] verified [asset] resources'),
-        -- Read 'Public' User Asset Resources
-        ('[ "read" ]','[ "assets" ]', '{
-            "document.variant": "User Asset Access Control",
-            "document.public": true
-        }', 'Permission to [read] public user [asset] resources'),
-        -- Modify 'Public' User Asset Resources
-        ('[ "update", "delete" ]','[ "assets" ]', '{
-            "document.variant": "User Asset Access Control",
-            "document.public": true
-        }', 'Permission to [update, delete] public user [asset] resources')
+    -- -- Asset Permissions
+    --     -- Create User Asset Resources
+    --     ('[ "create" ]', '[ "assets" ]', '{
+    --         "subject_type": "user"
+    --     }', 'Permission to [create] user [asset] resources'),
+    --     -- Create Verified Asset Resources
+    --     ('[ "create" ]', '[ "assets" ]', '{
+    --         "subject_type": "verified"
+    --     }', 'Permission to [create] verified [asset] resources'),
+    --     -- Read Own Asset Resources
+    --     ('[ "read" ]', '[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.user": "USER_ID"
+    --     }', 'Permission to [read] own [asset] resources'),
+    --     -- Modify Own Asset Resources
+    --     ('[ "update", "delete" ]', '[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.user": "USER_ID"
+    --     }', 'Permission to [update, delete] own [asset] resources'),
+    --     -- Read Verified Asset Resources
+    --     ('[ "read" ]','[ "assets" ]', '{
+    --         "document.variant": "Verified Asset Access Control"
+    --     }', 'Permission to [read] verified [asset] resources'),
+    --     -- Modify Verified Asset Resources
+    --     ('[ "update", "delete" ]','[ "assets" ]', '{
+    --         "document.variant": "Verified Asset Access Control"
+    --     }', 'Permission to [update, delete] verified [asset] resources'),
+    --     -- Read 'Public' User Asset Resources
+    --     ('[ "read" ]','[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.public": true
+    --     }', 'Permission to [read] public user [asset] resources'),
+    --     -- Modify 'Public' User Asset Resources
+    --     ('[ "update", "delete" ]','[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.public": true
+    --     }', 'Permission to [update, delete] public user [asset] resources')
 ;
 
 -- User Role Permissions
@@ -363,14 +363,14 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@editor_role_id, 44),
     (@editor_role_id, 45),
     (@editor_role_id, 46),
-    (@editor_role_id, 47),
-    (@editor_role_id, 48),
-    (@editor_role_id, 49),
-    (@editor_role_id, 50),
-    (@editor_role_id, 51),
-    (@editor_role_id, 52),
-    (@editor_role_id, 53),
-    (@editor_role_id, 54),
+    -- (@editor_role_id, 47),
+    -- (@editor_role_id, 48),
+    -- (@editor_role_id, 49),
+    -- (@editor_role_id, 50),
+    -- (@editor_role_id, 51),
+    -- (@editor_role_id, 52),
+    -- (@editor_role_id, 53),
+    -- (@editor_role_id, 54),
 
     (@standard_role_id, 3),
     (@standard_role_id, 4),
@@ -396,11 +396,11 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@standard_role_id, 40),
     (@standard_role_id, 41),
     (@standard_role_id, 44),
-    (@standard_role_id, 47),
-    (@standard_role_id, 49),
-    (@standard_role_id, 50),
-    (@standard_role_id, 51),
-    (@standard_role_id, 53),
+    -- (@standard_role_id, 47),
+    -- (@standard_role_id, 49),
+    -- (@standard_role_id, 50),
+    -- (@standard_role_id, 51),
+    -- (@standard_role_id, 53),
 
     (@guest_role_id, 2),
     (@guest_role_id, 6),
@@ -411,7 +411,7 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@guest_role_id, 31),
     (@guest_role_id, 34),
     (@guest_role_id, 41),
-    (@guest_role_id, 44),
-    (@guest_role_id, 51),
-    (@guest_role_id, 53)
+    (@guest_role_id, 44)
+    -- (@guest_role_id, 51),
+    -- (@guest_role_id, 53)
 ;
