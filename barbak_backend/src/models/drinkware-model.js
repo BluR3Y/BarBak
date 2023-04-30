@@ -16,6 +16,10 @@ const Drinkware = mongoose.model('Drinkware', new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Asset Access Control',
         default: null
+    },
+    date_created: {
+        type: Boolean,
+        default: () => Date.now()
     }
 },{ collection: 'drinkware', discriminatorKey: 'variant' }));
 // Change date_verified with date_created
@@ -23,25 +27,19 @@ Drinkware.schema.virtual('verified').get(function() {
     return (this instanceof this.model('Verified Drinkware'));
 });
 
-Drinkware.schema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    let filepath;
+// Drinkware.schema.virtual('cover_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     let filepath;
 
-    if (this.cover) 
-        filepath = 'assets/' + this.cover;
-    else
-        filepath = default_covers['drinkware'] ? 'assets/default/' + default_covers['drinkware'] : null;
+//     if (this.cover) 
+//         filepath = 'assets/' + this.cover;
+//     else
+//         filepath = default_covers['drinkware'] ? 'assets/default/' + default_covers['drinkware'] : null;
 
-    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-});
+//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
+// });
 
-const verifiedSchema = new mongoose.Schema({
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
+const verifiedSchema = new mongoose.Schema();
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -53,11 +51,6 @@ const userSchema = new mongoose.Schema({
     public: {
         type: Boolean,
         default: false,
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
 });
 

@@ -231,6 +231,10 @@ const Drink = mongoose.model('Drink', new mongoose.Schema({
             _id: false
         },
         default: Object
+    },
+    date_created: {
+        type: Date,
+        default: () => Date.now()
     }
 },{ collection: 'drinks', discriminatorKey: 'variant' }));
 
@@ -366,25 +370,25 @@ Drink.schema.virtual('verified').get(function() {
     return this instanceof VerifiedDrink;
 });
 
-Drink.schema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { assets } = this;
-    const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
+// Drink.schema.virtual('cover_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     const { assets } = this;
+//     const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
 
-    if (assets?.gallery.length)
-        return basePath + 'assets/' + assets.gallery[0];
-    else if (typeof default_covers['drink'] !== 'undefined')
-        return basePath + 'assets/default/' + default_covers['drink'];
-    else
-        return null;
-});
+//     if (assets?.gallery.length)
+//         return basePath + 'assets/' + assets.gallery[0];
+//     else if (typeof default_covers['drink'] !== 'undefined')
+//         return basePath + 'assets/default/' + default_covers['drink'];
+//     else
+//         return null;
+// });
 
-Drink.schema.virtual('gallery_urls').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { assets } = this;
+// Drink.schema.virtual('gallery_urls').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     const { assets } = this;
 
-    return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
-});
+//     return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
+// });
 
 Drink.schema.virtual('drinkware_info', {
     ref: 'Drinkware',
@@ -423,13 +427,7 @@ Drink.schema.virtual('serving_style_info').get(async function() {
     return { id, name };
 });
 
-const verifiedSchema = new mongoose.Schema({
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
+const verifiedSchema = new mongoose.Schema();
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -441,11 +439,6 @@ const userSchema = new mongoose.Schema({
     public: {
         type: Boolean,
         default: false
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
 });
 

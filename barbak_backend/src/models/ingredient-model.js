@@ -25,6 +25,10 @@ const Ingredient = mongoose.model('Ingredient', new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Asset Access Control',
         default: null
+    },
+    date_created: {
+        type: Date,
+        default: () => Date.now()
     }
 },{ collection: 'ingredients', discriminatorKey: 'variant' }));
 
@@ -67,16 +71,16 @@ Ingredient.schema.virtual('classification_info').get(async function() {
     };
 });
 
-Ingredient.schema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    let filepath;
-    if (this.cover) 
-        filepath = 'assets/' + this.cover;
-    else
-        filepath = default_covers['ingredient'] ? 'assets/default/' + default_covers['ingredient'] : null;
+// Ingredient.schema.virtual('cover_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     let filepath;
+//     if (this.cover) 
+//         filepath = 'assets/' + this.cover;
+//     else
+//         filepath = default_covers['ingredient'] ? 'assets/default/' + default_covers['ingredient'] : null;
     
-    return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-});
+//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
+// });
 
 Ingredient.schema.statics = {
     getCategories: async function() {
@@ -168,13 +172,7 @@ Ingredient.schema.statics = {
     }
 }
 
-const verifiedSchema = new mongoose.Schema({
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
+const verifiedSchema = new mongoose.Schema();
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -186,11 +184,6 @@ const userSchema = new mongoose.Schema({
     public: {
         type: Boolean,
         default: false
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
 });
 

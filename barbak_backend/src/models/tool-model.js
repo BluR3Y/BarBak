@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
 
-const Tool = mongoose.model('Tool', new mongoose.Schema({
+const toolSchema = new mongoose.Schema({
     name: {
         type: String,
         minlength: 3,
@@ -20,21 +20,25 @@ const Tool = mongoose.model('Tool', new mongoose.Schema({
     cover: {
         type: String,
         default: null
+    },
+    date_created: {
+        type: Date,
+        default: () => Date.now()
     }
-},{ collection: 'tools', discriminatorKey: 'variant' }));
+},{ collection: 'tools', discriminatorKey: 'variant' })
 
-Tool.schema.path('category').validate(async function(category) {
+toolSchema.path('category').validate(async function(category) {
     if (!await this.constructor.validateCategory(category))
         return this.invalidate('category', 'Invalid category value', category, 'exist');
 
     return true;
 });
 
-Tool.schema.virtual('verified').get(function() {
+toolSchema.virtual('verified').get(function() {
     return (this instanceof this.model('Verified Tool'));
 });
 
-Tool.schema.virtual('category_info').get(async function() {
+toolSchema.virtual('category_info').get(async function() {
     const [{ categoryName }] = await executeSqlQuery(`
         SELECT name AS categoryName
         FROM tool_categories
@@ -46,18 +50,7 @@ Tool.schema.virtual('category_info').get(async function() {
     };
 });
 
-// Tool.schema.virtual('cover_url').get(function() {
-//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-//     let filepath;
-//     if (this.cover) 
-//         filepath = 'assets/' + this.cover;
-//     else
-//         filepath = default_covers['tool'] ? 'assets/default/' + default_covers['tool'] : null;
-
-//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-// });
-
-Tool.schema.statics = {
+toolSchema.statics = {
     getCategories: async function() {
         const categories = await executeSqlQuery(`
             SELECT *
@@ -97,13 +90,9 @@ Tool.schema.statics = {
     }
 }
 
-const verifiedSchema = new mongoose.Schema({
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
+const Tool = mongoose.model('Tool', toolSchema);
+
+const verifiedSchema = new mongoose.Schema();
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -115,11 +104,6 @@ const userSchema = new mongoose.Schema({
     public: {
         type: Boolean,
         default: false,
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
 });
 
