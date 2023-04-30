@@ -18,7 +18,7 @@ const Drinkware = mongoose.model('Drinkware', new mongoose.Schema({
         default: null
     }
 },{ collection: 'drinkware', discriminatorKey: 'variant' }));
-
+// Change date_verified with date_created
 Drinkware.schema.virtual('verified').get(function() {
     return (this instanceof this.model('Verified Drinkware'));
 });

@@ -5,6 +5,7 @@ const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 const responseObject = require('../utils/response-object');
 const AppError = require('../utils/app-error');
+const { permittedFieldsOf } = require('@casl/ability/extra');
 
 module.exports.create = async (req, res, next) => {
     try {
@@ -397,18 +398,18 @@ module.exports.deleteCover = async (req, res, next) => {
 module.exports.copy = async (req, res, next) => {
     try {
         const { tool_id } = req.params;
-        const toolInfo = await Tool.findOne({ _id: tool_id });
+        const toolInfo = await Tool.findById(tool_id);
 
         if (!toolInfo)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view tool')
-            .throwUnlessCan('read', subject('tools', { action_type: 'public', document: toolInfo }));
+            .throwUnlessCan('read', subject('tools', { document: toolInfo }, 'name description category'));
         CaslError.from(req.ability)
             .setMessage('Unauthorized to create tool')
             .throwUnlessCan('create', subject('tools', { subject_type: 'user' }));
 
-        if (await UserTool.exists({ user: req.user._id, name: toolInfo }))
+        if (await UserTool.exists({ user: req.user._id, name: toolInfo.name }))
             throw new AppError(409, 'ALREADY_EXIST', 'Name already associated with a tool');
 
         const { name, description, category } = toolInfo;
@@ -480,35 +481,52 @@ module.exports.copy = async (req, res, next) => {
 
 module.exports.getTool = async (req, res, next) => {
     try {
-        const { tool_id, privacy_type = 'public' } = req.params;
-        const toolInfo = await Tool.findOne({ _id: tool_id });
-
+        const { tool_id, privacy_type = 'public' } = req.params
+        const toolInfo = await Tool.findById(tool_id);
+    
         if (!toolInfo)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-        else if (!req.ability.can('read', subject('tools', { action_type: privacy_type, document: toolInfo })))
-            throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view tool');
-
-        const response = await responseObject(toolInfo, [
-            { name: '_id', alias: 'id' },
-            { name: 'name' },
-            { name: 'description' },
-            { name: 'category_info', alias: 'category' },
-            { name: 'cover_url', alias: 'cover' },
-            { name: 'verified' },
-            {
-                name: 'date_created',
-                condition: (document) => privacy_type === 'private' && document instanceof UserTool
-            },
-            {
-                name: 'date_verified',
-                condition: (document) => privacy_type === 'private' && document instanceof VerifiedTool
-            }
-        ]);
-        res.status(200).send(response);
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to view tool')
+            .throwUnlessCan('read', subject('tools', { document: toolInfo }));
+        // Last Here
+        res.status(400).send('coding')
     } catch(err) {
         next(err);
     }
 }
+
+// module.exports.getTool = async (req, res, next) => {
+//     try {
+//         const { tool_id, privacy_type = 'public' } = req.params;
+//         const toolInfo = await Tool.findOne({ _id: tool_id });
+
+//         if (!toolInfo)
+//             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
+//         else if (!req.ability.can('read', subject('tools', { action_type: privacy_type, document: toolInfo })))
+//             throw new AppError(403, 'FORBIDDEN', 'Unauthorized to view tool');
+
+//         const response = await responseObject(toolInfo, [
+//             { name: '_id', alias: 'id' },
+//             { name: 'name' },
+//             { name: 'description' },
+//             { name: 'category_info', alias: 'category' },
+//             { name: 'cover_url', alias: 'cover' },
+//             { name: 'verified' },
+//             {
+//                 name: 'date_created',
+//                 condition: (document) => privacy_type === 'private' && document instanceof UserTool
+//             },
+//             {
+//                 name: 'date_verified',
+//                 condition: (document) => privacy_type === 'private' && document instanceof VerifiedTool
+//             }
+//         ]);
+//         res.status(200).send(response);
+//     } catch(err) {
+//         next(err);
+//     }
+// }
 
 module.exports.getCover = async (req, res, next) => {
     try {
