@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const { randomBytes, scryptSync,timingSafeEqual, randomInt } = require('crypto');
 const { redisClient, executeSqlQuery } = require('../config/database-config');
-const emailQueue = require('../lib/queue/email-queue');
+const emailQueue = require('../lib/queue/send-email');
+const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers, user_roles } = require('../config/config.json');
 
 const durationSchema = new mongoose.Schema({
@@ -104,11 +105,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         maxlength: 600
     },
-    // profile_image: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'User Asset Access Control',
-    //     default: null
-    // },
     profile_image: {
         type: String,
         default: null
@@ -159,6 +155,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: Number,
+        enum: Object.values(user_roles),
         default: user_roles.standard
     },
     date_registered: {
@@ -176,20 +173,25 @@ userSchema.path('email').validate(async function(email) {
     return (!await this.constructor.exists({ email, _id: { $ne: this._id } }));
 }, 'Email already associated with another account', 'exist');
 
-// userSchema.path('role').validate(async function(role) {
-//     return (await AppRole.exists({ _id: role }));
-// }, 'Invalid user role');
+userSchema.pre('save', async function(next) {
+    const { profile_image } = await this.constructor.findById(this._id) || {};
+    const modifiedFields = this.modifiedPaths();
 
-// userSchema.virtual('profile_image_url').get(function() {
-//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-//     let filepath;
-//     if (this.profile_image) 
-//         filepath = 'assets/' + this.profile_image;
-//     else
-//         filepath = default_covers['user'] ? 'assets/default/' + default_covers['user'] : null;
+    if (modifiedFields.includes('profile_image') && profile_image)
+        await s3FileRemoval({ filepath: profile_image });
     
-//     return filepath ? `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/${filepath}` : null;
-// });
+    next();
+});
+
+userSchema.path('role').validate(async function(role) {
+    const [{ roleCount }] = await executeSqlQuery(`
+        SELECT COUNT(*) AS roleCount
+        FROM user_roles
+        WHERE id = ?
+        LIMIT 1;
+    `, [role]);
+    return !!roleCount;
+}, 'Invalid role assigned to user', 'valid');
 
 userSchema.virtual('role_info').get(async function() {
     const [{ id, name }] = await executeSqlQuery(`

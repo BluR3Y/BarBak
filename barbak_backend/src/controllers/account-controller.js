@@ -91,7 +91,6 @@ module.exports.usernameSelection = async (req, res, next) => {
             email,
             password: hashedPassword
         });
-        await createdUser.validate();
         await createdUser.save();
         
         delete req.session.verifiedAccount;
