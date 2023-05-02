@@ -1,6 +1,5 @@
 const User = require('../models/user-model');
-const { ForbiddenError: CaslError, subject } = require('@casl/ability');
-const { permittedFieldsOf } = require('@casl/ability/extra');
+const { ForbiddenError: CaslError } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
 const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');
@@ -10,7 +9,8 @@ const responseObject = require('../utils/response-object');
 module.exports.modifyClientInfo = async (req, res, next) => {
     try {
         const userInfo = await User.findById(req.user._id);
-        if (!Object.keys(req.body).every(field => req.ability.can('update', subject('users', { document: userInfo }), field)))
+        const allowedFields = userInfo.accessibleFieldsBy(req.ability, 'update');
+        if (!Object.keys(req.body).every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to modify user profile');
 
         userInfo.set(req.body);
@@ -34,12 +34,12 @@ module.exports.getUser = async (req, res, next) => {
     try {
         const { user_id } = req.params;
         const userInfo = await User.findById(user_id);
-
+        
         if (!userInfo)
             throw new AppError(404, 'NOT_FOUND', 'User does not exist');
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view user profile')
-            .throwUnlessCan('read', subject('users', { document: userInfo }));
+            .throwUnlessCan('read', userInfo);
 
         const response = await responseObject(userInfo, [
             { name: '_id', alias: 'id' },
@@ -56,7 +56,7 @@ module.exports.getUser = async (req, res, next) => {
             { name: 'expertise_level' },
             { name: 'role_info', alias: 'role' },
             { name: 'date_registered' },
-        ], permittedFieldsOf(req.ability, 'read', subject('users', { document: userInfo }), { fieldsFrom: rule => rule.fields || [] }));
+        ], userInfo.accessibleFieldsBy(req.ability));
         res.status(200).send(response);
     } catch(err) {
         next(err);
@@ -72,7 +72,7 @@ module.exports.getProfileImage = async (req, res, next) => {
             throw new AppError(404, 'NOT_FOUND', 'User does not exist');
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view user profile')
-            .throwUnlessCan('read', subject('users', { document: userInfo }), 'profile_image');
+            .throwUnlessCan('read', userInfo, 'profile_image');
 
         if (!userInfo.profile_image)
             throw new AppError(404, 'NOT_FOUND', 'User does not have a profile image');

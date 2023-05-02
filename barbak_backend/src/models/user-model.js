@@ -4,6 +4,7 @@ const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/send-email');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers, user_roles } = require('../config/config.json');
+const { accessibleRecordsPlugin } = require('@casl/mongoose');
 
 const durationSchema = new mongoose.Schema({
     start: {
@@ -244,5 +245,12 @@ userSchema.statics.validateRegistrationCode = async function(sessionId, registra
 
     return validation;
 }
+
+// Helps authenticator determine resource type
+userSchema.statics.__resourceType = function() {
+    return 'users';
+}
+
+userSchema.plugin(accessibleRecordsPlugin, { modelName: 'boof' })
 
 module.exports = mongoose.model('User', userSchema);

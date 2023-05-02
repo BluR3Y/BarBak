@@ -2,12 +2,15 @@ const mongoose = require('mongoose');
 const mysql = require('mysql');
 const redis = require('redis');
 const Promise = require('bluebird');
+const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
 
 // MongoDB Connection
 const mongoConnect = () => {
     const mongoUri = process.env.MONGODB_URI;
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
+    mongoose.plugin(accessibleRecordsPlugin);
+    mongoose.plugin(accessibleFieldsPlugin);
     return mongoose.connect(mongoUri, mongoConfig);
 }
 

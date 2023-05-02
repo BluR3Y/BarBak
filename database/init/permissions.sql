@@ -34,7 +34,7 @@ CREATE TABLE role_permissions (
     PriMARY KEY(`id`)
 );
 
-INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `description`) VALUES
+INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `description`) VALUES
     -- Admin has ability to commit any action to any subject
         ('[ "manage" ]', '[ "all" ]', NULL, NULL, 'Permission to commit any action on any subject'),
     -- Account Permissions
@@ -42,7 +42,7 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         ('[ "create" ]', '[ "accounts" ]', NULL, NULL, 'Permission to [create] [account] resources'),
         -- Modify Own Account Resources
         ('[ "update", "delete" ]', '[ "accounts" ]', NULL, '{
-            "document._id": "USER_ID"
+            "_id": "USER_ID"
         }', 'Permission to [update, delete] own [account] resources'),
     
     -- User Permissions
@@ -50,7 +50,7 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         
         -- Full Control of Own User Resources
         ('[ "read", "update", "delete" ]', '[ "users" ]', NULL, '{
-            "document._id": "USER_ID"
+            "_id": "USER_ID"
         }', 'Permission to [read, update, delete] own [user] resources'),
         -- Read 'Public' User Resources (Public)
         ('[ "read" ]', '[ "users" ]', '[
@@ -67,7 +67,7 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "expertise_level",
             "role_info"
         ]', '{
-            "document.public": true
+            "public": true
         }', 'Permission to [read] public [user] resources (Public)'),
     -- Drinkware Permissions
         -- Create Verified Drinkware Resources
@@ -80,8 +80,8 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         }', 'Permission to [create] user [drinkware] resources'),
         -- Full Control of Own Drinkware Resources
         ('[ "read", "update", "delete" ]', '[ "drinkware" ]', NULL, '{
-            "document.variant": "User Drinkware",
-            "document.user": "USER_ID"
+            "variant": "User Drinkware",
+            "user": "USER_ID"
         }', 'Permission to [read, update, delete] own [drinkware] resources'),
         -- Read Verified Drinkware Resources (Public)
         ('[ "read" ]', '[ "drinkware" ]', '[
@@ -90,15 +90,15 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "description",
             "cover"
         ]', '{
-            "document.variant": "Verified Drinkware"
+            "variant": "Verified Drinkware"
         }', 'Permission to [read] verified [drinkware] resources (Public)'),
         -- Read Verified Drinkware Resources (Private)
         ('[ "read" ]', '[ "drinkware" ]', NULL, '{
-            "document.variant": "Verified Drinkware"
+            "variant": "Verified Drinkware"
         }', 'Permission to [read] verified [drinkware] resources (Private)'),
         -- Modify Verified Drinkware Resources
         ('[ "update", "delete" ]', '[ "drinkware" ]', NULL, '{
-            "document.variant": "Verified Drinkware"
+            "variant": "Verified Drinkware"
         }', 'Permission to [update, delete] verified [drinkware] resources'),
         -- Read 'Public' User Drinkware Resources (Public)
         ('[ "read" ]', '[ "drinkware" ]', '[
@@ -109,18 +109,18 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "user",
             "public"
         ]', '{
-            "document.variant": "User Drinkware",
-            "document.public": true
+            "variant": "User Drinkware",
+            "public": true
         }', 'Permission to [read] public user [drinkware] resources (Public)'),
         -- Read 'Public' User Drinkware Resources (Private)
         ('[ "read" ]', '[ "drinkware" ]', NULL, '{
-            "document.variant": "User Drinkware",
-            "document.public": true
+            "variant": "User Drinkware",
+            "public": true
         }', 'Permission to [read] public user [drinkware] resources (Private)'),
         -- Modify 'Public' User Drinkware Resources
         ('[ "update", "delete" ]', '[ "drinkware" ]', NULL, '{
-            "document.variant": "User Drinkware",
-            "document.public": true
+            "variant": "User Drinkware",
+            "public": true
         }', 'Permission to [update, delete] public user [drinkware] resources'),
     -- Tool Permissions
         -- Create Verified Tool Resources
@@ -133,8 +133,8 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         }', 'Permission to [create] user [tool] resources'),
         -- Full Control of Own Tool Resources
         ('[ "read", "update", "delete" ]', '[ "tools" ]', NULL, '{
-            "document.variant": "User Tool",
-            "document.user": "USER_ID"
+            "variant": "User Tool",
+            "user": "USER_ID"
         }', 'Permission to [read, update, delete] own [tool] resources'),
         -- Read Verified Tool Resources (Public)
         ('[ "read" ]', '[ "tools" ]', '[
@@ -146,15 +146,15 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "verified",
             "category_info"
         ]', '{
-            "document.variant": "Verified Tool"
+            "variant": "Verified Tool"
         }', 'Permission to [read] verified [tool] resources (Public)'),
         -- Read Verified Tool Resources (Private)
         ('[ "read" ]', '[ "tools" ]', NULL, '{
-            "document.variant": "Verified Tool"
+            "variant": "Verified Tool"
         }', 'Permission to [read] verified [tool] resources (Private)'),
         -- Modify Verified Tool Resources
         ('[ "update", "delete" ]', '[ "tools" ]', NULL, '{
-            "document.variant": "Verified Tool"
+            "variant": "Verified Tool"
         }', 'Permission to [update, delete] verified [tool] resources'),
         -- Read 'Public' User Tool Resources (Public)
         ('[ "read" ]', '[ "tools" ]', '[
@@ -168,18 +168,18 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "verified",
             "category_info"
         ]', '{
-            "document.variant": "User Tool",
-            "document.public": true
+            "variant": "User Tool",
+            "public": true
         }', 'Permission to [read] public user [tool] resources (Public)'),
         -- Read 'Public' User Tool Resources (Private)
         ('[ "read" ]', '[ "tools" ]', NULL, '{
-            "document.variant": "User Tool",
-            "document.public": true
+            "variant": "User Tool",
+            "public": true
         }', 'Permission to [read] public user [tool] resources (Private)'),
         -- Modify 'Public' User Tool Resources
         ('[ "update", "delete" ]', '[ "tools" ]', NULL, '{
-            "document.variant": "User Tool",
-            "document.public": true
+            "variant": "User Tool",
+            "public": true
         }', 'Permission to [update, delete] public user [tool] resources'),
     -- Ingredient Permissions
         -- Create Verified Ingredient Resources
@@ -192,8 +192,8 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         }', 'Permission to [create] user [ingredient] resources'),
         -- Full Control of own Ingredient Resources
         ('[ "read", "update", "delete" ]', '[ "ingredients" ]', NULL, '{
-            "document.variant": "User Ingredient",
-            "document.user": "USER_ID"
+            "variant": "User Ingredient",
+            "user": "USER_ID"
         }', 'Permission to [read, update, delete] own [ingredient] resources'),
         -- Read Verified Ingredient Resources (Public)
         ('[ "read" ]', '[ "ingredients" ]', '[
@@ -206,15 +206,15 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "verified",
             "classification_info"
         ]', '{
-            "document.variant": "Verified Ingredient"
+            "variant": "Verified Ingredient"
         }', 'Permission to [read] verified [ingredient] resources (Public)'),
         -- Read Verified Ingredient Resources (Private)
         ('[ "read" ]', '[ "ingredients" ]', NULL, '{
-            "document.variant": "Verified Ingredient"
+            "variant": "Verified Ingredient"
         }', 'Permission to [read] verified [ingredient] resources (Private)'),
         -- Modify Verified Ingredient Resources
         ('[ "update", "delete" ]', '[ "ingredients" ]', NULL, '{
-            "document.variant": "Verified Ingredient"
+            "variant": "Verified Ingredient"
         }', 'Permission to [update, delete] verified [ingredient] resources'),
         -- Read 'Public' User Ingredient Resources (Public)
         ('[ "read" ]', '[ "ingredients" ]', '[
@@ -229,18 +229,18 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "verified",
             "classification_info"
         ]', '{
-            "document.variant": "User Ingredient",
-            "document.public": true
+            "variant": "User Ingredient",
+            "public": true
         }', 'Permission to [read] public user [ingredient] resources (Public)'),
         -- Read 'Public' User Ingredient Resources (Private)
         ('[ "read" ]', '[ "ingredients" ]', NULL, '{
-            "document.variant": "User Ingredient",
-            "document.public": true
+            "variant": "User Ingredient",
+            "public": true
         }', 'Permission to [read] public user [ingredient] resources (Private)'),
         -- Modify 'Public' User Ingredient Resources
         ('[ "update", "delete" ]', '[ "ingredients" ]', NULL, '{
-            "document.variant": "User Ingredient",
-            "document.public": true
+            "variant": "User Ingredient",
+            "public": true
         }', 'Permission to [update, delete] public user [ingredient] resources'),
     -- Drink Permissions
         -- Create Verified Drink Resources
@@ -253,8 +253,8 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
         }', 'Permission to [create] user [drink] resources'),
         -- Full Control of Own Drink Resources
         ('[ "read", "update", "delete" ]', '[ "drinks" ]', NULL, '{
-            "document.variant": "User Drink",
-            "document.user": "USER_ID"
+            "variant": "User Drink",
+            "user": "USER_ID"
         }', 'Permission to [read, update, delete] own [drink] resources'),
         -- Read Verified Drink Resources (Public)
         ('[ "read" ]', '[ "drinks" ]', '[
@@ -275,15 +275,15 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "preparation_method_info",
             "serving_style_info"
         ]', '{
-            "document.variant": "Verified Drink"
+            "variant": "Verified Drink"
         }', 'Permission to [read] verified [drink] resources (Public)'),
         -- Read Verified Drink Resources (Private)
         ('[ "read" ]', '[ "drinks" ]', NULL, '{
-            "document.variant": "Verified Drink"
+            "variant": "Verified Drink"
         }', 'Permission to [read] verified [drink] resources (Private)'),
         -- Modify Verified Drink Resources
         ('[ "update", "delete" ]', '[ "drinks" ]', NULL, '{
-            "document.variant": "Verified Drink"
+            "variant": "Verified Drink"
         }', 'Permission to [update, delete] verified [drink] resources'),
         -- Read 'Public' User Drink Resources (Public)
         ('[ "read" ]', '[ "drinks" ]', '[
@@ -306,19 +306,25 @@ INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `descr
             "preparation_method_info",
             "serving_style_info"
         ]', '{
-            "document.variant": "User Drink",
-            "document.public": true
+            "variant": "User Drink",
+            "public": true
         }', 'Permission to [read] public user [drink] resources (Public)'),
         -- Read 'Public' User Drink Resources (Private)
         ('[ "read" ]', '[ "drinks" ]', NULL, '{
-            "document.variant": "User Drink",
-            "document.public": true
+            "variant": "User Drink",
+            "public": true
         }', 'Permission to [read] public user [drink] resources (Private)'),
         -- Modify 'Public' User Drink Resources
         ('[ "update", "delete" ]', '[ "drinks" ]', NULL, '{
-            "document.variant": "User Drink",
-            "document.public": true
+            "variant": "User Drink",
+            "public": true
         }', 'Permission to [update, delete] public user [drink] resources')
+;
+
+-- Preventative Permissions
+INSERT INTO role_permissions (`action`,`subject`, `fields`, `conditions`, `inverted`, `description`) VALUES
+    -- Unauthorized to [update] attribute [role] on [user] resources
+    ('[ "update" ]', '[ "users" ]', '[ "role" ]', NULL, 1, 'Unauthorized to [update] attribute [role] on [user] resources')
 ;
 
 -- User Role Permissions
@@ -374,6 +380,7 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@editor_role_id, 39),
     (@editor_role_id, 40),
     (@editor_role_id, 41),
+    (@editor_role_id, 42),
 
     (@standard_role_id, 3),
     (@standard_role_id, 4),
@@ -394,6 +401,7 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@standard_role_id, 35),
     (@standard_role_id, 36),
     (@standard_role_id, 39),
+    (@standard_role_id, 42),
 
     (@guest_role_id, 2),
     (@guest_role_id, 5),

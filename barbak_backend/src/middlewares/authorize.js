@@ -2,6 +2,7 @@ const { Ability, createAliasResolver, ForbiddenError } = require('@casl/ability'
 const AppError = require('../utils/app-error');
 const { executeSqlQuery } = require('../config/database-config');
 const { user_roles } = require('../config/config.json');
+const mongoose = require('mongoose');
 
 async function defineUserAbilities(user) {
     const aliasResolver = createAliasResolver({
@@ -9,6 +10,11 @@ async function defineUserAbilities(user) {
         read: 'get',
         update: ['put','patch']
     });
+    const subjectDetector = (obj) => {
+        if (obj.constructor)
+            return obj.constructor.__resourceType();
+        return obj.__resourceType;
+    };
     ForbiddenError.setDefaultMessage('Unauthorized request');
 
     const userPermissions = await executeSqlQuery(`
@@ -35,7 +41,7 @@ async function defineUserAbilities(user) {
         reason
     }));
     // console.log(jsonPermissions.filter(item => true))     // debugging
-    return new Ability(jsonPermissions,{ resolveAction: aliasResolver });
+    return new Ability(jsonPermissions,{ resolveAction: aliasResolver, detectSubjectType: subjectDetector });
 }
 
 module.exports = async (req, res, next) => {
@@ -45,8 +51,8 @@ module.exports = async (req, res, next) => {
         const resource = req.path.split('/')[1];
 
         const ability = await defineUserAbilities(user);
-        // if (!ability.can(action, resource))
-        //     throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
+        if (!ability.can(action, resource))
+            throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         req.ability = ability;
         next();
     } catch(err) {

@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@casl/ability": "^6.3.3",
+    "@casl/mongoose": "^7.1.2",
     "aws-sdk": "^2.1340.0",
     "bcrypt": "^5.1.0",
     "bluebird": "^3.7.2",
