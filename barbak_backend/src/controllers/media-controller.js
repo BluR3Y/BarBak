@@ -1,55 +1,42 @@
 const { ForbiddenError: CaslError, subject } = require('@casl/ability');
 const s3Operations = require('../utils/aws-s3-operations');
 const AppError = require('../utils/app-error');
-const User = require('../models/user-model');
-// const { AssetAccessControl } = require('../models/asset-access-control-model');
+const mongoose = require('mongoose');
+const express = require('express');
 
-// module.exports.assets = async (req, res, next) => {
-//     try {
-//         const { access_control_id } = req.params;
-//         const aclDocument = await AssetAccessControl.findById(access_control_id);
-//         if (!aclDocument)
-//             throw new AppError(404, 'NOT_FOUND', 'File does not exist');
-//         CaslError.from(req.ability)
-//             .setMessage('Unauthorized to view file')
-//             .throwUnlessCan('read', subject('assets', { document: aclDocument }));
+module.exports.embeded = express.static('static/default');
 
-//         const fileData = await s3Operations.getObject(aclDocument.file_path);
-//         res.setHeader('Content-Type', fileData.ContentType);
-//         res.send(fileData.Body);
-//     } catch(err) {
-//         next(err);
-//     }
-// }
-
-module.exports.embeded = async (req, res, next) => {
+module.exports.resourceCover = async (req, res, next) => {
     try {
-        const { file_path } = req.params;
-    } catch(err) {
-        next(err);
-    }
-}
+        const { resource_type, document_id } = req.params;
+        var documentModel;
+        switch (true) {
+            case resource_type === 'drinkware':
+                documentModel = 'Drinkware';
+                break;
+            case resource_type === 'ingredients':
+                documentModel = 'Ingredient';
+                break;
+            case resource_type === 'tools':
+                documentModel = 'Tool';
+                break;
+            case resource_type === 'drink':
+                documentModel = 'Drink';
+                break;
+            default:
+                break;
+        }
+        const documentInfo = await mongoose.model(documentModel).findById(document_id);
 
-module.exports.avatars = async (req, res, next) => {
-    try {
-        const { user_id } = req.params;
-        const userInfo = await User.findById(user_id);
-        
-        if (!userInfo)
-            throw new AppError(404, 'NOT_FOUND', 'User does not exist');
+        if (!documentInfo)
+            throw new AppError(404, 'NOT_FOUND', 'File not found');
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to view file')
+            .throwUnlessCan('read', subject(resource_type, { document: documentInfo }), 'cover');
 
-        const fileData = await s3Operations.getObject(userInfo.profile_image);
+        const fileData = await s3Operations.getObject(documentInfo.cover);
         res.setHeader('Content-Type', fileData.ContentType);
         res.send(fileData.Body);
-    } catch(err) {
-        next(err);
-    }
-}
-
-module.exports.assets = async (req, res, next) => {
-    try {
-        const { asset_type, access_control_id } = req.params;
-        
     } catch(err) {
         next(err);
     }
