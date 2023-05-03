@@ -72,11 +72,11 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
     -- Drinkware Permissions
         -- Create Verified Drinkware Resources
         ('[ "create" ]', '[ "drinkware" ]', NULL, '{
-            "subject_type": "verified"
+            "variant": "Verified Drinkware"
         }', 'Permission to [create] verified [drinkware] resources'),
         -- Create User Drinkware Resources
         ('[ "create" ]', '[ "drinkware" ]', NULL, '{
-            "subject_type": "user"
+            "variant": "User Drinkware"
         }', 'Permission to [create] user [drinkware] resources'),
         -- Full Control of Own Drinkware Resources
         ('[ "read", "update", "delete" ]', '[ "drinkware" ]', NULL, '{
@@ -125,11 +125,11 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
     -- Tool Permissions
         -- Create Verified Tool Resources
         ('[ "create" ]', '[ "tools" ]', NULL, '{
-            "subject_type": "verified"
+            "variant": "Verified Tool"
         }', 'Permission to [create] verified [tool] resources'),
         -- Create User Tool Resources
         ('[ "create" ]', '[ "tools" ]', NULL, '{
-            "subject_type": "user"
+            "variant": "User Tool"
         }', 'Permission to [create] user [tool] resources'),
         -- Full Control of Own Tool Resources
         ('[ "read", "update", "delete" ]', '[ "tools" ]', NULL, '{
@@ -184,11 +184,11 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
     -- Ingredient Permissions
         -- Create Verified Ingredient Resources
         ('[ "create" ]', '[ "ingredients" ]', NULL, '{
-            "subject_type": "verified"
+            "variant": "Verified Ingredient"
         }', 'Permission to [create] verified [ingredient] resources'),
         -- Create User Ingredient Resources
         ('[ "create" ]', '[ "ingredients" ]', NULL, '{
-            "subject_type": "user"
+            "variant": "User Ingredient"
         }', 'Permission to [create] user [ingredient] resources'),
         -- Full Control of own Ingredient Resources
         ('[ "read", "update", "delete" ]', '[ "ingredients" ]', NULL, '{
@@ -245,11 +245,11 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
     -- Drink Permissions
         -- Create Verified Drink Resources
         ('[ "create" ]', '[ "drinks" ]', NULL, '{
-            "subject_type": "verified"
+            "variant": "Verified Drink"
         }', 'Permission to [create] verified [drink] resources'),
         -- Create User Drink Resources
         ('[ "create" ]', '[ "drinks" ]', NULL, '{
-            "subject_type": "user"
+            "variant": "User Drink"
         }', 'Permission to [create] user [drink] resources'),
         -- Full Control of Own Drink Resources
         ('[ "read", "update", "delete" ]', '[ "drinks" ]', NULL, '{

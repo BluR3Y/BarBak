@@ -32,7 +32,7 @@ module.exports.resourceCover = async (req, res, next) => {
             throw new AppError(404, 'NOT_FOUND', 'File not found');
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view file')
-            .throwUnlessCan('read', subject(resource_type, { document: documentInfo }), 'cover');
+            .throwUnlessCan('read', documentInfo, 'cover');
 
         const fileData = await s3Operations.getObject(documentInfo.cover);
         res.setHeader('Content-Type', fileData.ContentType);

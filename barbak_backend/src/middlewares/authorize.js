@@ -10,11 +10,7 @@ async function defineUserAbilities(user) {
         read: 'get',
         update: ['put','patch']
     });
-    const subjectDetector = (obj) => {
-        if (obj.constructor)
-            return obj.constructor.__resourceType();
-        return obj.__resourceType;
-    };
+    const subjectDetector = (obj) => obj.__resourceType?.() || obj.constructor?.__resourceType?.();
     ForbiddenError.setDefaultMessage('Unauthorized request');
 
     const userPermissions = await executeSqlQuery(`

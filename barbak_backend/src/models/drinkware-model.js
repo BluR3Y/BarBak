@@ -58,6 +58,10 @@ drinkwareSchema.pre('remove', async function(next) {
     next();
 });
 
+drinkwareSchema.statics.__resourceType = function() {
+    return 'drinkware';
+}
+
 const Drinkware = mongoose.model('Drinkware', drinkwareSchema);
 
 const verifiedSchema = new mongoose.Schema();

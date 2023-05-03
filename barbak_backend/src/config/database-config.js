@@ -10,7 +10,9 @@ const mongoConnect = () => {
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
     mongoose.plugin(accessibleRecordsPlugin);
-    mongoose.plugin(accessibleFieldsPlugin);
+    mongoose.plugin(accessibleFieldsPlugin, {
+        getFields: (schema) => Object.keys({ ...schema.paths, ...schema.virtuals })
+    });
     return mongoose.connect(mongoUri, mongoConfig);
 }
 
