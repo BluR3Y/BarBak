@@ -10,13 +10,9 @@ module.exports.connect = function(router) {
     router.get('/tools/search', toolController.search);
     router.get('/tools/@me', auth.sessionAuthenticationRequired, toolController.clientTools);
     router.get('/tools/categories', toolController.getCategories);
-    router.get('/tools/:tool_id/cover', toolController.getCover);
-    router.get('/tools/:tool_id/:privacy_type?', toolController.getTool);
+    router.get('/tools/:tool_id', toolController.getTool);
 
-    router.patch('/tools/privacy/:tool_id', toolController.updatePrivacy);
-    router.patch('/tools/cover/upload/:tool_id', imageUpload.single('tool_cover'), toolController.uploadCover);
-    router.patch('/tools/cover/remove/:tool_id', toolController.deleteCover);
-    router.patch('/tools/:tool_id', toolController.update);
+    router.patch('/tools/:tool_id', imageUpload.single('cover'), toolController.modify);
 
     router.delete('/tools/:tool_id', toolController.delete);
 }

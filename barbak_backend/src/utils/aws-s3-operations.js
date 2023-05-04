@@ -62,13 +62,17 @@ module.exports.createObject = async function(file, writepath) {
 }
 
 module.exports.copyObject = async function(key, dest) {
-    const filename = randomUUID() + path.extname(key);
+    const filename = randomUUID();
     const command = new CopyObjectCommand({
         Bucket: config.bucket,
         CopySource: path.posix.join(config.bucket, key),
         Key: path.posix.join(dest || path.dirname(key), filename)
     });
-    return (await s3.send(command));
+    return {
+        ...(await s3.send(command)),
+        filename,
+        filepath: command.input.Key
+    };
 }
 
 module.exports.deleteObject = async function(key) {

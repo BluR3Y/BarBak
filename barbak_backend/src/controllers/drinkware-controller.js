@@ -155,10 +155,11 @@ module.exports.getDrinkware = async (req, res, next) => {
 module.exports.search = async (req, res, next) => {
     try {
         const { query, page, page_size, ordering } = req.query;
-        const searchQuery = Drinkware.where({
-            name: { $regex: query }
-        })
-        .accessibleBy(req.ability);
+        const searchQuery = Drinkware
+            .where({
+                name: { $regex: query }
+            })
+            .accessibleBy(req.ability);
         const totalDocuments = await Drinkware.countDocuments(searchQuery);
         const responseDocuments = await Drinkware
             .find(searchQuery)
@@ -190,8 +191,11 @@ module.exports.search = async (req, res, next) => {
 module.exports.clientDrinkware = async (req, res, next) => {
     try {
         const { page, page_size, ordering } = req.query;
-        const searchQuery = Drinkware.where({ user: req.user._id });
-
+        const searchQuery = Drinkware
+            .where({
+                variant: 'User Drinkware',
+                user: req.user._id
+            });
         const totalDocuments = await Drinkware.countDocuments(searchQuery);
         const responseDocuments = await Drinkware
             .find(searchQuery)

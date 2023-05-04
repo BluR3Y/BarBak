@@ -207,7 +207,7 @@ userSchema.virtual('role_info').get(async function() {
 });
 
 userSchema.virtual('profile_image_url').get(async function() {
-    return (await getPreSignedURL(this.profile_image ? this.profile_image : default_covers.user));
+    return (await getPreSignedURL(this.profile_image || default_covers.user));
 });
 
 userSchema.statics.hashPassword = function(password) {

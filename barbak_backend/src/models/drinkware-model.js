@@ -43,7 +43,7 @@ drinkwareSchema.virtual('verified').get(function() {
 });
 
 drinkwareSchema.virtual('cover_url').get(async function() {
-    return (await getPreSignedURL(this.cover ? this.cover : default_covers.drinkware));
+    return (await getPreSignedURL(this.cover || default_covers.drinkware));
 });
 
 drinkwareSchema.pre('save', async function(next) {
@@ -52,14 +52,12 @@ drinkwareSchema.pre('save', async function(next) {
 
     if (modifiedFields.includes('cover') && cover)
         await s3FileRemoval({ filepath: cover });
-
     next();
 });
 
 drinkwareSchema.pre('remove', async function(next) {
     if (this.cover)
         await s3FileRemoval({ filepath: this.cover });
-
     next();
 });
 

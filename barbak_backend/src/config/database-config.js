@@ -16,7 +16,7 @@ const mongoConnect = () => {
                 ...schema.paths,
                 ...schema.virtuals
             }),
-            ...Object.entries(schema.discriminators).reduce((accumulator, [key, value]) => {
+            ...(schema.discriminators ? Object.entries(schema.discriminators).reduce((accumulator, [key, value]) => {
                 return [
                     ...accumulator,
                     ...Object.keys({
@@ -24,7 +24,7 @@ const mongoConnect = () => {
                         ...value.virtuals
                     })
                 ]
-            }, [])
+            }, []) : [])
         ])
     });
     return mongoose.connect(mongoUri, mongoConfig);

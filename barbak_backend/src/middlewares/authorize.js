@@ -2,9 +2,8 @@ const { Ability, createAliasResolver, ForbiddenError } = require('@casl/ability'
 const AppError = require('../utils/app-error');
 const { executeSqlQuery } = require('../config/database-config');
 const { user_roles } = require('../config/config.json');
-const mongoose = require('mongoose');
 
-async function defineUserAbilities(user) {
+async function defineUserAbilities({ role = user_roles.guest, _id }) {
     const aliasResolver = createAliasResolver({
         create: 'post',
         read: 'get',
@@ -27,12 +26,12 @@ async function defineUserAbilities(user) {
         JOIN role_permissions
             ON role_permissions.id = user_permissions.permission_id
         WHERE user_roles.id = ?
-    `, [user?.role || user_roles.guest]);
+    `, [role]);
     const jsonPermissions = userPermissions.map(({ action, subject, fields, conditions, inverted, reason }) => ({
         action: JSON.parse(action),
         subject: JSON.parse(subject),
         fields: (fields ? JSON.parse(fields) : fields),
-        conditions: (conditions ? JSON.parse(conditions.replace(/"USER_ID"/g, `"${user?._id}"`)) : conditions),
+        conditions: (conditions ? JSON.parse(conditions.replace(/"USER_ID"/g, `"${_id}"`)) : conditions),
         inverted,
         reason
     }));
