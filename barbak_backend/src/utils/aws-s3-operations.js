@@ -1,4 +1,12 @@
-const { S3 } = require('aws-sdk');
+const {
+    S3Client,
+    GetObjectCommand,
+    HeadObjectCommand,
+    PutObjectCommand,
+    CopyObjectCommand,
+    DeleteObjectCommand
+} = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const path = require('path');
 const fs = require('fs');
@@ -10,7 +18,7 @@ const config = {
     region: process.env.S3_REGION
 };
 
-const s3 = new S3({
+const s3 = new S3Client({
     credentials: {
         accessKeyId: config.accessKey,
         secretAccessKey: config.secretKey
@@ -18,91 +26,64 @@ const s3 = new S3({
     region: config.region
 });
 
-module.exports.objectMetadata = function(key) {
-    const params = {
+module.exports.getObjectMetadata = async function(key) {
+    const command = new HeadObjectCommand({
         Bucket: config.bucket,
         Key: key
-    }
-    return new Promise((resolve, reject) => {
-        s3.headObject(params, function(err, metadata) {
-            if (err)
-                return reject(err);
-            resolve(metadata);
-        });
     });
+    return (await s3.send(command));
 }
 
-module.exports.getObject = function(key) {
-    const params = {
+module.exports.getObject = async function(key) {
+    const command = new GetObjectCommand({
         Bucket: config.bucket,
-        Key: key,
-    }
-    return new Promise((resolve, reject) => {
-        s3.getObject(params, function(err, data) {
-            if (err)
-                return reject(err);
-            resolve(data);
-        });
+        Key: key
     });
+    return (await s3.send(command));
 }
 
-// Low-level method of uploading file
-module.exports.createObject = function(file, writepath) {
+module.exports.createObject = async function(file, writepath) {
     const fileStats = fs.statSync(file.path);
-    const filename = randomUUID() + path.extname(file.filename);
+    const filename = randomUUID();
     const fileData = fileStats.size >  5 * 1024 * 1024 ? fs.createReadStream(file.path) : fs.readFileSync(file.path);
-    const params = {
+    const command = new PutObjectCommand({
         Bucket: config.bucket,
         Key: path.posix.join(writepath, filename),
         Body: fileData,
         ContentType: file.mimetype,
         ContentEncoding: 'gzip',
-        StorageClass: 'STANDARD',
-    };
-    return new Promise((resolve, reject) => {
-        s3.putObject(params, function(err, data) {
-            if (err)
-                return reject(err);
-            resolve({
-                filename,
-                filepath: params.Key,
-                data
-            });
-        });
+        StorageClass: 'STANDARD'
     });
+    return {
+        ...(await s3.send(command)),
+        filename,
+        filepath: command.input.Key
+    };
 }
 
-module.exports.copyObject = function(key, dest) {
+module.exports.copyObject = async function(key, dest) {
     const filename = randomUUID() + path.extname(key);
-    const params = {
+    const command = new CopyObjectCommand({
         Bucket: config.bucket,
         CopySource: path.posix.join(config.bucket, key),
         Key: path.posix.join(dest || path.dirname(key), filename)
-    };
-
-    return new Promise((resolve, reject) => {
-        s3.copyObject(params, function(err, data) {
-            if (err)
-                return reject(err);
-            resolve({
-                filename,
-                filepath: params.Key,
-                data
-            });
-        });
     });
+    return (await s3.send(command));
 }
 
-module.exports.removeObject = function(key) {
-    const params = {
+module.exports.deleteObject = async function(key) {
+    const command = new DeleteObjectCommand({
         Bucket: config.bucket,
         Key: key
-    };
-    return new Promise((resolve, reject) => {
-        s3.deleteObject(params, function(err, data) {
-            if (err)
-                return reject(err);
-            resolve(data);
-        });
     });
+    return (await s3.send(command));
+}
+
+module.exports.getPreSignedURL = async function(key) {
+    const command = new GetObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+        ResponseContentEncoding: 'identity'
+    });
+    return (await getSignedUrl(s3, command, { expiresIn: 3600 }));
 }

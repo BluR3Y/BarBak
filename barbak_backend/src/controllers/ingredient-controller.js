@@ -95,7 +95,7 @@ module.exports.delete = async (req, res, next) => {
             if (!aclDocument.authorize('delete', { user: req.user }))
                 throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
-            await s3Operations.removeObject(aclDocument.file_path);
+            await s3Operations.deleteObject(aclDocument.file_path);
             await aclDocument.remove();
         }
         await ingredientInfo.remove();
@@ -156,7 +156,7 @@ module.exports.uploadCover = async (req, res, next) => {
                 throw new AppError(403, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
 
             const [,uploadInfo] = await Promise.all([
-                s3Operations.removeObject(aclDocument.file_path),
+                s3Operations.deleteObject(aclDocument.file_path),
                 s3Operations.createObject(ingredientCover, 'assets/ingredients/images')
             ]);
 
@@ -216,7 +216,7 @@ module.exports.deleteCover = async (req, res, next) => {
         if (!aclDocument.authorize('delete', { user: req.user }))
             throw new AppError(404, 'FORBIDDEN', 'Unauthorized to modify ingredient cover image');
         
-        await s3Operations.removeObject(aclDocument.file_path);
+        await s3Operations.deleteObject(aclDocument.file_path);
         await aclDocument.remove();
 
         ingredientInfo.cover = null;

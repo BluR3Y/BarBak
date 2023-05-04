@@ -5,11 +5,14 @@ const s3Operations = require('../../utils/aws-s3-operations');
 const removeS3File = new Queue('remove-s3-file', redisClient);
 removeS3File.process(async (job, done) => {
     try {
-        await s3Operations.removeObject(job.data.filepath);
-        done(null);
+        const removeInfo = await s3Operations.deleteObject(job.data.filepath);
+        done(null, removeInfo);
     } catch(err) {
         done(err);
     }
+});
+removeS3File.on('completed', function(job, result) {
+    console.log('file removed: ', result);
 });
 removeS3File.on('failed', (job, err) => {
     console.error(err);
@@ -25,7 +28,6 @@ module.exports = function(data) {
             }
         })
         .then((job) => {
-            console.log('file removed')
             resolve(job);
         })
         .catch((err) => {

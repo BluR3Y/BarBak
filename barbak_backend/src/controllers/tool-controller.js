@@ -90,7 +90,7 @@ module.exports.delete = async (req, res, next) => {
             .throwUnlessCan('delete', subject('tools', { document: toolInfo }));
 
         if (toolInfo.cover)
-            await s3Operations.removeObject(toolInfo.cover);
+            await s3Operations.deleteObject(toolInfo.cover);
         await toolInfo.delete();
         res.status(204).send();
     } catch(err) {
@@ -136,7 +136,7 @@ module.exports.uploadCover = async (req, res, next) => {
 
         const [uploadInfo] = await Promise.all([
             s3Operations.createObject(toolCover, 'assets/tools/images'),
-            ...(toolInfo.cover ? [s3Operations.removeObject(toolInfo.cover)] : [])
+            ...(toolInfo.cover ? [s3Operations.deleteObject(toolInfo.cover)] : [])
         ]);
         toolInfo.cover = uploadInfo.filepath;
         await toolInfo.save();
@@ -165,7 +165,7 @@ module.exports.deleteCover = async (req, res, next) => {
         if (!toolInfo.cover)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not have a cover image');
 
-        await s3Operations.removeObject(toolInfo.cover);
+        await s3Operations.deleteObject(toolInfo.cover);
         toolInfo.cover = null;
         await toolInfo.save();
         res.status(204).send();

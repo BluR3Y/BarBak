@@ -57,7 +57,7 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
             "_id",
             "username",
             "about_me",
-            "profile_image",
+            "profile_image_url",
             "experiences",
             "achievements",
             "education",
@@ -69,6 +69,16 @@ INSERT INTO role_permissions (`action`, `subject`, `fields`, `conditions`, `desc
         ]', '{
             "public": true
         }', 'Permission to [read] public [user] resources (Public)'),
+        -- Read 'Private' User Resources
+        ('[ "read" ]', '[ "users" ]', '[
+            "_id",
+            "username",
+            "about_me",
+            "profile_image_url",
+            "public"
+        ]', '{
+            "public": false
+        }', 'Permission to [read] private [user] resources'),
     -- Drinkware Permissions
         -- Create Verified Drinkware Resources
         ('[ "create" ]', '[ "drinkware" ]', NULL, '{
@@ -381,36 +391,39 @@ INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
     (@editor_role_id, 40),
     (@editor_role_id, 41),
     (@editor_role_id, 42),
+    (@editor_role_id, 43),
 
     (@standard_role_id, 3),
     (@standard_role_id, 4),
     (@standard_role_id, 5),
-    (@standard_role_id, 7),
+    (@standard_role_id, 6),
     (@standard_role_id, 8),
     (@standard_role_id, 9),
-    (@standard_role_id, 12),
-    (@standard_role_id, 16),
+    (@standard_role_id, 10),
+    (@standard_role_id, 13),
     (@standard_role_id, 17),
     (@standard_role_id, 18),
-    (@standard_role_id, 21),
-    (@standard_role_id, 25),
+    (@standard_role_id, 19),
+    (@standard_role_id, 22),
     (@standard_role_id, 26),
     (@standard_role_id, 27),
-    (@standard_role_id, 30),
-    (@standard_role_id, 34),
+    (@standard_role_id, 28),
+    (@standard_role_id, 31),
     (@standard_role_id, 35),
     (@standard_role_id, 36),
-    (@standard_role_id, 39),
-    (@standard_role_id, 42),
+    (@standard_role_id, 37),
+    (@standard_role_id, 40),
+    (@standard_role_id, 43),
 
     (@guest_role_id, 2),
     (@guest_role_id, 5),
-    (@guest_role_id, 9),
-    (@guest_role_id, 12),
-    (@guest_role_id, 18),
-    (@guest_role_id, 21),
-    (@guest_role_id, 27),
-    (@guest_role_id, 30),
-    (@guest_role_id, 36),
-    (@guest_role_id, 39)
+    (@guest_role_id, 6),
+    (@guest_role_id, 10),
+    (@guest_role_id, 13),
+    (@guest_role_id, 19),
+    (@guest_role_id, 22),
+    (@guest_role_id, 28),
+    (@guest_role_id, 31),
+    (@guest_role_id, 37),
+    (@guest_role_id, 40)
 ;

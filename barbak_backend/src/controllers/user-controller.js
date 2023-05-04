@@ -46,6 +46,7 @@ module.exports.getUser = async (req, res, next) => {
             { name: 'username' },
             { name: 'fullname' },
             { name: 'email' },
+            { name: 'profile_image_url', alias: 'profile_image' },
             { name: 'about_me' },
             { name: 'experience' },
             { name: 'achievements' },
@@ -63,28 +64,6 @@ module.exports.getUser = async (req, res, next) => {
     }
 }
 
-module.exports.getProfileImage = async (req, res, next) => {
-    try {
-        const { user_id } = req.params;
-        const userInfo = await User.findById(user_id);
-        
-        if (!userInfo)
-            throw new AppError(404, 'NOT_FOUND', 'User does not exist');
-        CaslError.from(req.ability)
-            .setMessage('Unauthorized to view user profile')
-            .throwUnlessCan('read', userInfo, 'profile_image');
-
-        if (!userInfo.profile_image)
-            throw new AppError(404, 'NOT_FOUND', 'User does not have a profile image');
-
-        const fileData = await s3Operations.getObject(userInfo.profile_image);
-        res.setHeader('Content-Type', fileData.ContentType);
-        res.send(fileData.Body);
-    } catch(err) {
-        next(err);
-    }
-}
-
 module.exports.getClientInfo = async (req, res, next) => {
     try {
         const userInfo = await User.findById(req.user._id);
@@ -93,6 +72,7 @@ module.exports.getClientInfo = async (req, res, next) => {
             { name: 'username' },
             { name: 'fullname' },
             { name: 'email' },
+            { name: 'profile_image_url', alias: 'profile_image' },
             { name: 'expertise_level' },
             { name: 'role_info', parent_fields: [
                 { name: 'name', alias: 'role' }

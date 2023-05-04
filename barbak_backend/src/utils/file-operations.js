@@ -35,7 +35,7 @@ module.exports.copySingle = function(readPath, writePath = path.dirname(readPath
         } while(fs.existsSync(path.join(writePath, newFileName)));
 
         const fileDest = path.join(writePath, newFileName);
-        console.log(fileDest)
+
         fs.copyFile(readPath, fileDest, (err) => {
             if (err)
                 return reject(err);

@@ -83,7 +83,7 @@ module.exports.delete = async (req, res, next) => {
                 return aclDocument;
             }));
             await Promise.all(galleryACLDocuments.map(async aclDocument => {
-                await s3Operations.removeObject(aclDocument.file_path);
+                await s3Operations.deleteObject(aclDocument.file_path);
                 await aclDocument.remove();
             }));
         }
@@ -215,7 +215,7 @@ module.exports.removeGallery = async (req, res, next) => {
 
         await Promise.all(galleryACLDocuments.map(async ({ value:aclDocument }) => {
             const imageIndex = drinkInfo.assets.gallery.indexOf(aclDocument._id);
-            await s3Operations.removeObject(aclDocument.file_path);
+            await s3Operations.deleteObject(aclDocument.file_path);
             await aclDocument.remove();
             drinkInfo.assets.gallery.splice(imageIndex, 1);
         }));
