@@ -1,6 +1,5 @@
 const { Drinkware, VerifiedDrinkware, UserDrinkware } = require('../models/drinkware-model');
 const { ForbiddenError: CaslError, subject } = require('@casl/ability');
-const { permittedFieldsOf } = require('@casl/ability/extra');
 const AppError = require('../utils/app-error');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
@@ -14,11 +13,6 @@ module.exports.create = async (req, res, next) => {
         CaslError.from(req.ability)
             .setMessage('Unauthorized to create drinkware')
             .throwUnlessCan('create', createdDrinkware);
-
-        createdDrinkware.set({
-            ...req.body,
-            ...(createdDrinkware instanceof UserDrinkware ? { user: req.user._id } : {})
-        });
         await createdDrinkware.save();
 
         const response = await responseObject(createdDrinkware, [
@@ -137,6 +131,7 @@ module.exports.getDrinkware = async (req, res, next) => {
             { name: 'name' },
             { name: 'description' },
             { name: 'verified' },
+            { name: 'cover_url', alias: 'cover' },
             {
                 name: 'user',
                 condition: (document) => document instanceof UserDrinkware

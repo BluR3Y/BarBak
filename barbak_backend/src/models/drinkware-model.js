@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers } = require('../config/config.json');
+const { getPreSignedURL } = require('../utils/aws-s3-operations');
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -39,6 +40,10 @@ drinkwareSchema.path('name').validate(async function(name) {
 
 drinkwareSchema.virtual('verified').get(function() {
     return (this instanceof this.model('Verified Drinkware'));
+});
+
+drinkwareSchema.virtual('cover_url').get(async function() {
+    return (await getPreSignedURL(this.cover ? this.cover : default_covers.drinkware));
 });
 
 drinkwareSchema.pre('save', async function(next) {

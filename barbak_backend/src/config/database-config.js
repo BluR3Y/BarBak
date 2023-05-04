@@ -11,7 +11,21 @@ const mongoConnect = () => {
     mongoose.set('strictQuery', false);
     mongoose.plugin(accessibleRecordsPlugin);
     mongoose.plugin(accessibleFieldsPlugin, {
-        getFields: (schema) => Object.keys({ ...schema.paths, ...schema.virtuals })
+        getFields: (schema) => ([
+            ...Object.keys({
+                ...schema.paths,
+                ...schema.virtuals
+            }),
+            ...Object.entries(schema.discriminators).reduce((accumulator, [key, value]) => {
+                return [
+                    ...accumulator,
+                    ...Object.keys({
+                        ...value.paths,
+                        ...value.virtuals
+                    })
+                ]
+            }, [])
+        ])
     });
     return mongoose.connect(mongoUri, mongoConfig);
 }
