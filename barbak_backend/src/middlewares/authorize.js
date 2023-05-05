@@ -3,7 +3,7 @@ const AppError = require('../utils/app-error');
 const { executeSqlQuery } = require('../config/database-config');
 const { user_roles } = require('../config/config.json');
 
-async function defineUserAbilities({ role = user_roles.guest, _id }) {
+async function defineUserAbilities({ role = user_roles.guest, _id } = {}) {
     const aliasResolver = createAliasResolver({
         create: 'post',
         read: 'get',
@@ -41,11 +41,10 @@ async function defineUserAbilities({ role = user_roles.guest, _id }) {
 
 module.exports = async (req, res, next) => {
     try {
-        const user = req.user;
         const action = req.method.toLowerCase();
         const resource = req.path.split('/')[1];
 
-        const ability = await defineUserAbilities(user);
+        const ability = await defineUserAbilities(req.user);
         if (!ability.can(action, resource))
             throw new AppError(403, 'FORBIDDEN', 'Unauthorized request');
         req.ability = ability;

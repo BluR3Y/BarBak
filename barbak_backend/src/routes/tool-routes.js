@@ -4,8 +4,8 @@ const { imageUpload } = require('../config/multer-config');
 const auth = require('../lib/auth');
 
 module.exports.connect = function(router) {
-    router.post('/tools/:tool_type?', toolController.create);
-    router.post('/tools/copy/:tool_id', toolController.copy);
+    router.post('/tools/:tool_type(user|verified)?', toolController.create);
+    router.post('/tools/:tool_id/copy', toolController.copy);
 
     router.get('/tools/search', toolController.search);
     router.get('/tools/@me', auth.sessionAuthenticationRequired, toolController.clientTools);

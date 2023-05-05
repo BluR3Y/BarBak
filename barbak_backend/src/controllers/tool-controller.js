@@ -1,6 +1,6 @@
 const { Tool, VerifiedTool, UserTool } = require('../models/tool-model');
 // const { VerifiedAssetControl, UserAssetControl } = require('../models/asset-access-control-model');
-const { ForbiddenError: CaslError, subject } = require('@casl/ability');
+const { ForbiddenError: CaslError } = require('@casl/ability');
 const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 const responseObject = require('../utils/response-object');
@@ -48,7 +48,8 @@ module.exports.modify = async (req, res, next) => {
 
         if (!toolInfo)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-        const allowedFields = toolInfo.accessibleFieldsBy(req.ability);
+            
+        const allowedFields = toolInfo.accessibleFieldsBy(req.ability, 'update');
         if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to modify tool');
 
@@ -91,17 +92,20 @@ module.exports.copy = async (req, res, next) => {
     try {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findById(tool_id);
-        const allowedFields = toolInfo.accessibleFieldsBy(req.ability);
 
         if (!toolInfo)
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-        else if (!['name', 'description', 'category', 'cover'].every(field => allowedFields.includes(field)))
+        
+        const allowedFields = toolInfo.accessibleFieldsBy(req.ability, 'read');
+        const requiredFields = ['name', 'description', 'category'];
+        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to copy tool');
 
         const createdTool = new UserTool({
-            name: toolInfo.name,
-            description: toolInfo.description,
-            category: toolInfo.category,
+            ...(requiredFields.reduce((accumulator, current) => ({
+                ...accumulator,
+                [current]: toolInfo[current]
+            }), {})),
             user: req.user._id
         });
         CaslError.from(req.ability)
@@ -149,7 +153,7 @@ module.exports.getTool = async (req, res, next) => {
                 name: 'date_created',
                 ...(toolInfo instanceof VerifiedTool ? { alias: 'date_verified' } : {}),
             }
-        ], toolInfo.accessibleFieldsBy(req.ability));
+        ], toolInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);
     } catch(err) {
         next(err);
@@ -182,12 +186,13 @@ module.exports.search = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category_info', alias: 'category' },
+                { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' },
                 {
                     name: 'user',
                     condition: (document) => document instanceof UserTool
                 }
-            ], doc.accessibleFieldsBy(req.ability)))));
+            ], doc.accessibleFieldsBy(req.ability, 'read')))));
         const response = {
             page,
             page_size,
@@ -203,7 +208,7 @@ module.exports.search = async (req, res, next) => {
 
 module.exports.clientTools = async (req, res, next) => {
     try {
-        const { page, page_size, ordering, categories = [1,2] } = req.query;
+        const { page, page_size, ordering, categories } = req.query;
         var searchFilters;
         try {
             searchFilters = await Tool.searchFilters(categories)
@@ -227,6 +232,7 @@ module.exports.clientTools = async (req, res, next) => {
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
                 { name: 'category_info', alias: 'category' },
+                { name: 'cover_url', alias: 'cover' },
                 { name: 'public'},
                 { name: 'date_created' }
             ]))));

@@ -33,12 +33,7 @@ toolSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({
         name,
         _id: { $ne: this._id },
-        ...(this.verified ? {
-            variant: 'Verified Tool'
-        } : {
-            variant: 'User Tool',
-            user: this.user
-        })
+        ...(!this.verified ? { user: this.user } : {})
     }));
 }, 'Name is already associated with another tool');
 

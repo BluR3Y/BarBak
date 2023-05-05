@@ -57,7 +57,7 @@ module.exports.getUser = async (req, res, next) => {
             { name: 'expertise_level' },
             { name: 'role_info', alias: 'role' },
             { name: 'date_registered' },
-        ], userInfo.accessibleFieldsBy(req.ability));
+        ], userInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);
     } catch(err) {
         next(err);

@@ -45,7 +45,8 @@ module.exports.modify = async (req, res, next) => {
 
         if (!drinkwareInfo)
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
-        const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability);
+
+        const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability, 'update');
         if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to modify drinkware');
 
@@ -88,18 +89,22 @@ module.exports.copy = async (req, res, next) => {
     try {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findById(drinkware_id);
-        const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability);
         
         if (!drinkwareInfo)
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
-        else if (!['name', 'description', 'cover'].every(field => allowedFields.includes(field)))
+        
+        const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability, 'read');
+        const requiredFields = ['name', 'description'];
+        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to copy drinkware');
         
         const createdDrinkware = new UserDrinkware({
-            name: drinkwareInfo.name,
-            description: drinkwareInfo.description,
+            ...(requiredFields.reduce((accumulator, current) => ({
+                ...accumulator,
+                [current]: drinkwareInfo[current]
+            }), {})),
             user: req.user._id
-        });
+        })
         CaslError.from(req.ability)
             .setMessage('Unauthorized to create drinkware')
             .throwUnlessCan('create', createdDrinkware);
@@ -144,7 +149,7 @@ module.exports.getDrinkware = async (req, res, next) => {
                 name: 'date_created',
                 ...(drinkwareInfo instanceof VerifiedDrinkware ? { alias: 'date_verified' } : {})
             },
-        ], drinkwareInfo.accessibleFieldsBy(req.ability));
+        ], drinkwareInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);
     } catch(err) {
         next(err);
@@ -169,12 +174,13 @@ module.exports.search = async (req, res, next) => {
             .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
+                { name: 'cover_url', alias: 'cover' },
                 { name: 'verified' },
                 {
                     name: 'user',
                     condition: (document) => document instanceof UserDrinkware
                 }
-            ], doc.accessibleFieldsBy(req.ability)))));
+            ], doc.accessibleFieldsBy(req.ability, 'read')))));
         const response = {
             page,
             page_size,
@@ -205,6 +211,7 @@ module.exports.clientDrinkware = async (req, res, next) => {
             .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
+                { name: 'cover_url', alias: 'cover' },
                 { name: 'public' },
                 { name: 'date_created' }
             ]))));
