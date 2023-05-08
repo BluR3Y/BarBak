@@ -16,11 +16,11 @@
         ]
     },
     "default_covers": {
-        "drinkware": "drinkware_cover.jpg",
-        "ingredient": "ingredient_cover.jpg",
-        "tool": "barware_cover.jpg",
-        "user": "profile_image.png",
-        "drink": "drink_cover.jpg"
+        "drinkware": "static/drinkware_cover.jpg",
+        "ingredient": "static/ingredient_cover.jpg",
+        "tool": "static/barware_cover.jpg",
+        "user": "static/profile_image.png",
+        "drink": "static/drink_cover.jpg"
     },
     "error_codes": {
         "INVALID_ARGUMENT": 300,
@@ -33,5 +33,11 @@
         "FORBIDDEN": 305,
         "ALREADY_EXIST": 306,
         "INTERNAL": 307
+    },
+    "user_roles": {
+        "admin": 1,
+        "editor": 2,
+        "standard": 3,
+        "guest": 4
     }
 }

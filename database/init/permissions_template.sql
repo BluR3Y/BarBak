@@ -11,7 +11,7 @@ CREATE TABLE user_roles (
 INSERT INTO user_roles (`name`) VALUES
     ('admin'),
     ('editor'),
-    ('user'),
+    ('standard'),
     ('guest')
 ;
 
@@ -19,153 +19,399 @@ INSERT INTO user_roles (`name`) VALUES
 
 SELECT id INTO @admin_role_id FROM user_roles WHERE name = 'admin';
 SELECT id INTO @editor_role_id FROM user_roles WHERE name = 'editor';
-SELECT id INTO @user_role_id FROM user_roles WHERE name = 'user';
+SELECT id INTO @standard_role_id FROM user_roles WHERE name = 'standard';
 SELECT id INTO @guest_role_id FROM user_roles WHERE name = 'guest';
 
 CREATE TABLE role_permissions (
     `id` INT(6) NOT NULL AUTO_INCREMENT,
-    `role_id` INT(6),
-    `action` ENUM ('create','read','update','delete', 'manage') NOT NULL,
-    `subject` VARCHAR(50) NOT NULL,
+    `action` JSON NOT NULL,
+    `subject` JSON NOT NULL,
     `fields` JSON,
-    `conditions` VARCHAR(255),
+    `conditions` JSON,
     `inverted` TINYINT(1) NOT NULL DEFAULT 0,
-    PRIMARY KEY (`id`)
+    `reason` VARCHAR(255),
+    `description` VARCHAR(255),
+    PriMARY KEY(`id`)
 );
 
--- Admin Permissions
-INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
+INSERT INTO role_permissions (`action`,`subject`,`conditions`, `description`) VALUES
     -- Admin has ability to commit any action to any subject
-    (@admin_role_id, 'manage', 'all', NULL)
+        ('[ "manage" ]', '[ "all" ]', NULL, 'Permission to commit any action on any subject'),
+    -- Account Permissions
+        -- Create Account Resources
+        ('[ "create" ]', '[ "accounts" ]', NULL, 'Permission to [create] [account] resources'),
+        -- Modify Own Account Resources
+        ('[ "update", "delete" ]', '[ "accounts" ]', '{
+            "document._id": "USER_ID"
+        }', 'Permission to [update, delete] own [account] resources'),
+    
+    -- User Permissions
+        -- Missing Permission for creating other Users ***
+        -- Read Own User Resources
+        ('[ "read" ]', '[ "users" ]', '{
+            "document._id": "USER_ID",
+            "action_type": { "$in": [ "public", "private" ] }
+        }', 'Permission to [read] own [user] resources'),
+        -- Modify Own User Resources
+        ('[ "update", "delete" ]', '[ "users" ]', '{
+            "document._id": "USER_ID"
+        }', 'Permission to [update, delete] own [user] resources'),
+        -- Read 'Public' User Resources (Public)
+        ('[ "read" ]', '[ "users" ]', '{
+            "action_type": "public",
+            "document.public": true
+        }', 'Permission to [read] public [user] resources (Public)'),
+    -- Drinkware Permissions
+        -- Create Verified Drinkware Resources
+        ('[ "create" ]', '[ "drinkware" ]', '{
+            "subject_type": "verified"
+        }', 'Permission to [create] verified [drinkware] resources'),
+        -- Create User Drinkware Resources
+        ('[ "create" ]', '[ "drinkware" ]', '{
+            "subject_type": "user"
+        }', 'Permission to [create] user [drinkware] resources'),
+        -- Read Own Drinkware Resources
+        ('[ "read" ]', '[ "drinkware" ]', '{
+            "document.variant": "User Drinkware",
+            "document.user": "USER_ID",
+            "action_type": { "$in": [ "public", "private" ] }
+        }', 'Permission to [read] own [drinkware] resources'),
+        -- Modify Own Drinkware Resources
+        ('[ "update", "delete" ]', '[ "drinkware" ]', '{
+            "document.variant": "User Drinkware",
+            "document.user": "USER_ID"
+        }', 'Permission to [update, delete] own [drinkware] resources'),
+        -- Read Verified Drinkware Resources (Public)
+        ('[ "read" ]', '[ "drinkware" ]', '{
+            "document.variant": "Verified Drinkware",
+            "action_type": "public"
+        }', 'Permission to [read] verified [drinkware] resources (Public)'),
+        -- Read Verified Drinkware Resources (Private)
+        ('[ "read" ]', '[ "drinkware" ]', '{
+            "document.variant": "Verified Drinkware",
+            "action_type": "private"
+        }', 'Permission to [read] verified [drinkware] resources (Private)'),
+        -- Modify Verified Drinkware Resources
+        ('[ "update", "delete" ]', '[ "drinkware" ]', '{
+            "document.variant": "Verified Drinkware"
+        }', 'Permission to [update, delete] verified [drinkware] resources'),
+        -- Read 'Public' User Drinkware Resources (Public)
+        ('[ "read" ]', '[ "drinkware" ]', '{
+            "document.variant": "User Drinkware",
+            "document.public": true,
+            "action_type": "public"
+        }', 'Permission to [read] public user [drinkware] resources (Public)'),
+        -- Read 'Public' User Drinkware Resources (Private)
+        ('[ "read" ]', '[ "drinkware" ]', '{
+            "document.variant": "User Drinkware",
+            "document.public": true,
+            "action_type": "private"
+        }', 'Permission to [read] public user [drinkware] resources (Private)'),
+        -- Modify 'Public' User Drinkware Resources
+        ('[ "update", "delete" ]', '[ "drinkware" ]', '{
+            "document.variant": "User Drinkware",
+            "document.public": true
+        }', 'Permission to [update, delete] public user [drinkware] resources'),
+    -- Tool Permissions
+        -- Create Verified Tool Resources
+        ('[ "create" ]', '[ "tools" ]', '{
+            "subject_type": "verified"
+        }', 'Permission to [create] verified [tool] resources'),
+        -- Create User Tool Resources
+        ('[ "create" ]', '[ "tools" ]', '{
+            "subject_type": "user"
+        }', 'Permission to [create] user [tool] resources'),
+        -- Read Own Tool Resources
+        ('[ "read" ]', '[ "tools" ]', '{
+            "document.variant": "User Tool",
+            "document.user": "USER_ID",
+            "action_type": { "$in": [ "public", "private" ] }
+        }', 'Permission to [read] own [tool] resources'),
+        -- Modify Own Tool Resources
+        ('[ "update", "delete" ]', '[ "tools" ]', '{
+            "document.variant": "User Tool",
+            "document.user": "USER_ID"
+        }', 'Permission to [update, delete] own [tool] resources'),
+        -- Read Verified Tool Resources (Public)
+        ('[ "read" ]', '[ "tools" ]', '{
+            "document.variant": "Verified Tool",
+            "action_type": "public"
+        }', 'Permission to [read] verified [tool] resources (Public)'),
+        -- Read Verified Tool Resources (Private)
+        ('[ "read" ]', '[ "tools" ]', '{
+            "document.variant": "Verified Drinkware",
+            "action_type": "private"
+        }', 'Permission to [read] verified [tool] resources (Private)'),
+        -- Modify Verified Tool Resources
+        ('[ "update", "delete" ]', '[ "tools" ]', '{
+            "document.variant": "Verified Tool"
+        }', 'Permission to [update, delete] verified [tool] resources'),
+        -- Read 'Public' User Tool Resources (Public)
+        ('[ "read" ]', '[ "tools" ]', '{
+            "document.variant": "User Tool",
+            "document.public": true,
+            "action_type": "public"
+        }', 'Permission to [read] public user [tool] resources (Public)'),
+        -- Read 'Public' User Tool Resources (Private)
+        ('[ "read" ]', '[ "tools" ]', '{
+            "document.variant": "User Tool",
+            "document.public": true,
+            "action_type": "private"
+        }', 'Permission to [read] public user [tool] resources (Private)'),
+        -- Modify 'Public' User Tool Resources
+        ('[ "update", "delete" ]', '[ "tools" ]', '{
+            "document.variant": "User Tool",
+            "document.public": true
+        }', 'Permission to [update, delete] public user [tool] resources'),
+    -- Ingredient Permissions
+        -- Create Verified Ingredient Resources
+        ('[ "create" ]', '[ "ingredients" ]', '{
+            "subject_type": "verified"
+        }', 'Permission to [create] verified [ingredient] resources'),
+        -- Create User Ingredient Resources
+        ('[ "create" ]', '[ "ingredients" ]', '{
+            "subject_type": "user"
+        }', 'Permission to [create] user [ingredient] resources'),
+        -- Read Own Ingredient Resources
+        ('[ "read" ]', '[ "ingredients" ]', '{
+            "document.variant": "User Ingredient",
+            "document.user": "USER_ID",
+            "action_type": { "$in": [ "public", "private" ] }
+        }', 'Permission to [read] own [ingredient] resources'),
+        -- Modify Own Ingredient Resources
+        ('[ "update", "delete" ]', '[ "ingredients" ]', '{
+            "document.variant": "User Ingredient",
+            "document.user": "USER_ID"
+        }', 'Permission to [update, delete] own [ingredient] resources'),
+        -- Read Verified Ingredient Resources (Public)
+        ('[ "read" ]', '[ "ingredients" ]', '{
+            "document.variant": "Verified Ingredient",
+            "action_type": "public"
+        }', 'Permission to [read] verified [ingredient] resources (Public)'),
+        -- Read Verified Ingredient Resources (Private)
+        ('[ "read" ]', '[ "ingredients" ]', '{
+            "document.variant": "Verified Drinkware",
+            "action_type": "private"
+        }', 'Permission to [read] verified [ingredient] resources (Private)'),
+        -- Modify Verified Ingredient Resources
+        ('[ "update", "delete" ]', '[ "ingredients" ]', '{
+            "document.variant": "Verified Ingredient"
+        }', 'Permission to [update, delete] verified [ingredient] resources'),
+        -- Read 'Public' User Ingredient Resources (Public)
+        ('[ "read" ]', '[ "ingredients" ]', '{
+            "document.variant": "User Ingredient",
+            "document.public": true,
+            "action_type": "public"
+        }', 'Permission to [read] public user [ingredient] resources (Public)'),
+        -- Read 'Public' User Ingredient Resources (Private)
+        ('[ "read" ]', '[ "ingredients" ]', '{
+            "document.variant": "User Ingredient",
+            "document.public": true,
+            "action_type": "private"
+        }', 'Permission to [read] public user [ingredient] resources (Private)'),
+        -- Modify 'Public' User Ingredient Resources
+        ('[ "update", "delete" ]', '[ "ingredients" ]', '{
+            "document.variant": "User Ingredient",
+            "document.public": true
+        }', 'Permission to [update, delete] public user [ingredient] resources'),
+    -- Drink Permissions
+        -- Create Verified Drink Resources
+        ('[ "create" ]', '[ "drinks" ]', '{
+            "subject_type": "verified"
+        }', 'Permission to [create] verified [drink] resources'),
+        -- Create User Drink Resources
+        ('[ "create" ]', '[ "drinks" ]', '{
+            "subject_type": "user"
+        }', 'Permission to [create] user [drink] resources'),
+        -- Read Own Drink Resources
+        ('[ "read" ]', '[ "drinks" ]', '{
+            "document.variant": "User Drink",
+            "document.user": "USER_ID",
+            "action_type": { "$in": [ "public", "private" ] }
+        }', 'Permission to [read] own [drink] resources'),
+        -- Modify Own Drink Resources
+        ('[ "update", "delete" ]', '[ "drinks" ]', '{
+            "document.variant": "User Drink",
+            "document.user": "USER_ID"
+        }', 'Permission to [update, delete] own [drink] resources'),
+        -- Read Verified Drink Resources (Public)
+        ('[ "read" ]', '[ "drinks" ]', '{
+            "document.variant": "Verified Drink",
+            "action_type": "public"
+        }', 'Permission to [read] verified [drink] resources (Public)'),
+        -- Read Verified Drink Resources (Private)
+        ('[ "read" ]', '[ "drinks" ]', '{
+            "document.variant": "Verified Drinkware",
+            "action_type": "private"
+        }', 'Permission to [read] verified [drink] resources (Private)'),
+        -- Modify Verified Drink Resources
+        ('[ "update", "delete" ]', '[ "drinks" ]', '{
+            "document.variant": "Verified Drink"
+        }', 'Permission to [update, delete] verified [drink] resources'),
+        -- Read 'Public' User Drink Resources (Public)
+        ('[ "read" ]', '[ "drinks" ]', '{
+            "document.variant": "User Drink",
+            "document.public": true,
+            "action_type": "public"
+        }', 'Permission to [read] public user [drink] resources (Public)'),
+        -- Read 'Public' User Drink Resources (Private)
+        ('[ "read" ]', '[ "drinks" ]', '{
+            "document.variant": "User Drink",
+            "document.public": true,
+            "action_type": "private"
+        }', 'Permission to [read] public user [drink] resources (Private)'),
+        -- Modify 'Public' User Drink Resources
+        ('[ "update", "delete" ]', '[ "drinks" ]', '{
+            "document.variant": "User Drink",
+            "document.public": true
+        }', 'Permission to [update, delete] public user [drink] resources')
+
+    -- -- Asset Permissions
+    --     -- Create User Asset Resources
+    --     ('[ "create" ]', '[ "assets" ]', '{
+    --         "subject_type": "user"
+    --     }', 'Permission to [create] user [asset] resources'),
+    --     -- Create Verified Asset Resources
+    --     ('[ "create" ]', '[ "assets" ]', '{
+    --         "subject_type": "verified"
+    --     }', 'Permission to [create] verified [asset] resources'),
+    --     -- Read Own Asset Resources
+    --     ('[ "read" ]', '[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.user": "USER_ID"
+    --     }', 'Permission to [read] own [asset] resources'),
+    --     -- Modify Own Asset Resources
+    --     ('[ "update", "delete" ]', '[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.user": "USER_ID"
+    --     }', 'Permission to [update, delete] own [asset] resources'),
+    --     -- Read Verified Asset Resources
+    --     ('[ "read" ]','[ "assets" ]', '{
+    --         "document.variant": "Verified Asset Access Control"
+    --     }', 'Permission to [read] verified [asset] resources'),
+    --     -- Modify Verified Asset Resources
+    --     ('[ "update", "delete" ]','[ "assets" ]', '{
+    --         "document.variant": "Verified Asset Access Control"
+    --     }', 'Permission to [update, delete] verified [asset] resources'),
+    --     -- Read 'Public' User Asset Resources
+    --     ('[ "read" ]','[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.public": true
+    --     }', 'Permission to [read] public user [asset] resources'),
+    --     -- Modify 'Public' User Asset Resources
+    --     ('[ "update", "delete" ]','[ "assets" ]', '{
+    --         "document.variant": "User Asset Access Control",
+    --         "document.public": true
+    --     }', 'Permission to [update, delete] public user [asset] resources')
 ;
 
--- Editor Permissions
-INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
-    -- Account Rules
-    (@editor_role_id, 'update', 'account', NULL),
-    (@editor_role_id, 'delete', 'account', NULL),
+-- User Role Permissions
 
-    -- User Rules
-    (@editor_role_id, 'read', 'users', '{ "_id": "USER_ID" }'),
-    (@editor_role_id, 'update', 'users', '{ "_id": "USER_ID" }'),
-    
-    -- Drinkware Rules
-    (@editor_role_id, 'create', 'drinkware', '{ "verified": false }'),
-    (@editor_role_id, 'read', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
-    (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
-    (@editor_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
+CREATE TABLE user_permissions (
+    `id` INT(6) NOT NULL AUTO_INCREMENT,
+    `role_id` INT(6) NOT NUll,
+    `permission_id` INT(6) NOT NULL,
+    PriMARY KEY (`id`),
+    FOREIGN KEY (`role_id`) REFERENCES user_roles (`id`),
+    FOREIGN KEY (`permission_id`) REFERENCES role_permissions (`id`)
+);
 
-    -- Tool Rules
-    (@editor_role_id, 'create', 'tools', '{ "verified": false }'),
-    (@editor_role_id, 'read', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    (@editor_role_id, 'update', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    
-    -- Ingredient Rules
-    (@editor_role_id, 'create', 'ingredients', '{ "verified": false }'),
-    (@editor_role_id, 'read', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
+INSERT INTO user_permissions (`role_id`, `permission_id`) VALUES
+    (@admin_role_id, 1),
 
-	-- Drink Rules
-    (@editor_role_id, 'create', 'drinks', '{ "verified": false }'),
-    (@editor_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
-    (@editor_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
-    (@editor_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
+    (@editor_role_id, 3),
+    (@editor_role_id, 4),
+    (@editor_role_id, 5),
+    (@editor_role_id, 6),
+    (@editor_role_id, 7),
+    (@editor_role_id, 8),
+    (@editor_role_id, 9),
+    (@editor_role_id, 10),
+    (@editor_role_id, 11),
+    (@editor_role_id, 12),
+    (@editor_role_id, 13),
+    (@editor_role_id, 14),
+    (@editor_role_id, 15),
+    (@editor_role_id, 16),
+    (@editor_role_id, 17),
+    (@editor_role_id, 18),
+    (@editor_role_id, 19),
+    (@editor_role_id, 20),
+    (@editor_role_id, 21),
+    (@editor_role_id, 22),
+    (@editor_role_id, 23),
+    (@editor_role_id, 24),
+    (@editor_role_id, 25),
+    (@editor_role_id, 26),
+    (@editor_role_id, 27),
+    (@editor_role_id, 28),
+    (@editor_role_id, 29),
+    (@editor_role_id, 30),
+    (@editor_role_id, 31),
+    (@editor_role_id, 32),
+    (@editor_role_id, 33),
+    (@editor_role_id, 34),
+    (@editor_role_id, 35),
+    (@editor_role_id, 36),
+    (@editor_role_id, 37),
+    (@editor_role_id, 38),
+    (@editor_role_id, 39),
+    (@editor_role_id, 40),
+    (@editor_role_id, 41),
+    (@editor_role_id, 42),
+    (@editor_role_id, 43),
+    (@editor_role_id, 44),
+    (@editor_role_id, 45),
+    (@editor_role_id, 46),
+    -- (@editor_role_id, 47),
+    -- (@editor_role_id, 48),
+    -- (@editor_role_id, 49),
+    -- (@editor_role_id, 50),
+    -- (@editor_role_id, 51),
+    -- (@editor_role_id, 52),
+    -- (@editor_role_id, 53),
+    -- (@editor_role_id, 54),
 
-    -- Additional Rules
-        -- Verified Drinkware Rules
-	    (@editor_role_id, 'create', 'drinkware', '{ "verified": true }'),
-        (@editor_role_id, 'update', 'drinkware', '{ "model": "Verified Drinkware" }'),
-        (@editor_role_id, 'delete', 'drinkware', '{ "model": "Verified Drinkware" }'),
+    (@standard_role_id, 3),
+    (@standard_role_id, 4),
+    (@standard_role_id, 5),
+    (@standard_role_id, 6),
+    (@standard_role_id, 8),
+    (@standard_role_id, 9),
+    (@standard_role_id, 10),
+    (@standard_role_id, 11),
+    (@standard_role_id, 14),
+    (@standard_role_id, 18),
+    (@standard_role_id, 19),
+    (@standard_role_id, 20),
+    (@standard_role_id, 21),
+    (@standard_role_id, 24),
+    (@standard_role_id, 28),
+    (@standard_role_id, 29),
+    (@standard_role_id, 30),
+    (@standard_role_id, 31),
+    (@standard_role_id, 34),
+    (@standard_role_id, 38),
+    (@standard_role_id, 39),
+    (@standard_role_id, 40),
+    (@standard_role_id, 41),
+    (@standard_role_id, 44),
+    -- (@standard_role_id, 47),
+    -- (@standard_role_id, 49),
+    -- (@standard_role_id, 50),
+    -- (@standard_role_id, 51),
+    -- (@standard_role_id, 53),
 
-        -- Verified Tool Rules
-	    (@editor_role_id, 'create', 'tools', '{ "verified": true }'),
-        (@editor_role_id, 'update', 'tools', '{ "model": "Verified Tool" }'),
-        (@editor_role_id, 'delete', 'tools', '{ "model": "Verified Tool" }'),
-        
-        -- Verified Ingredient Rules
-        (@editor_role_id, 'create', 'ingredients', '{ "verified": true }'),
-        (@editor_role_id, 'update', 'ingredients', '{ "model": "Verified Ingredient" }'),
-        (@editor_role_id, 'delete', 'ingredients', '{ "model": "Verified Ingredient" }'),
-        
-        -- Verified Drink Rules
-        (@editor_role_id, 'create', 'drinks', '{ "verified": true }'),
-        (@editor_role_id, 'update', 'drinks', '{ "model": "Verified Drink" }'),
-        (@editor_role_id, 'delete', 'drinks', '{ "model": "Verified Drink" }'),
-
-        -- Public User Drinkware Rules
-        (@editor_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
-        (@editor_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
-
-		-- Public User Tool Rules
-        (@editor_role_id, 'update', 'tools', '{ "model": "User Tool", "public": true }'),
-        (@editor_role_id, 'delete', 'tools', '{ "model": "User Tool", "public": true }'),
-        
-        -- Public User Ingredient Rules
-        (@editor_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
-        (@editor_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
-        
-        -- Public User Drink Rules
-        (@editor_role_id, 'update', 'drinks', '{ "model": "User Drink", "public": true }'),
-        (@editor_role_id, 'delete', 'drinks', '{ "model": "User Drink", "public": true }')
-;
-
--- User Permissions
-INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
-    -- Account Rules
-    (@user_role_id, 'update', 'account', NULL),
-    (@user_role_id, 'delete', 'account', NULL),
-    
-    -- User Rules
-    (@user_role_id, 'read', 'users', '{ "_id": "USER_ID" }'),
-    (@user_role_id, 'update', 'users', '{ "_id": "USER_ID" }'),
-
-    -- Drinkware Rules
-    (@user_role_id, 'create', 'drinkware', '{ "verified": false }'),
-    (@user_role_id, 'read', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
-    (@user_role_id, 'update', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'drinkware', '{ "model": "User Drinkware", "user": "USER_ID" }'),
-
-    -- Tool Rules
-    (@user_role_id, 'create', 'tools', '{ "verified": false }'),
-    (@user_role_id, 'read', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    (@user_role_id, 'update', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'tools', '{ "model": "User Tool", "user": "USER_ID" }'),
-    
-    -- Ingredient Rules
-    (@user_role_id, 'create', 'ingredients', '{ "verified": false }'),
-    (@user_role_id, 'read', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    (@user_role_id, 'update', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'ingredients', '{ "model": "User Ingredient", "user": "USER_ID" }'),
-    
-    -- Drink Rules
-    (@user_role_id, 'create', 'drinks', '{ "verified": false }'),
-    (@user_role_id, 'read', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
-    (@user_role_id, 'update', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }'),
-    (@user_role_id, 'delete', 'drinks', '{ "model": "User Drink", "user": "USER_ID" }')
-;
-
--- Guest Permissions
-INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
-    (@guest_role_id, 'create', 'account', NULL)
-;
-
--- All Users Permissions
-INSERT INTO role_permissions (`role_id`, `action`, `subject`, `conditions`) VALUES
-    -- Asset Rules
-    (NULL, 'read', 'assets', NULL),
-        
-    -- User Content
-    (NULL, 'read', 'users', '{ "public": true }'),
-    (NULL, 'read', 'drinkware', '{ "model": "User Drinkware", "public": true }'),
-    (NULL, 'read', 'tools', '{ "model": "User Tool", "public": true }'),
-    (NULL, 'read', 'ingredients', '{ "model": "User Ingredient", "public": true }'),
-    (NULL, 'read', 'drinks', '{ "model": "User Drink", "public": true }'),
-
-    -- Verified Content
-    (NULL, 'read', 'drinkware', '{ "model": "Verified Drinkware" }'),
-    (NULL, 'read', 'tools', '{ "model": "Verified Tool" }'),
-    (NULL, 'read', 'ingredients', '{ "model": "Verified Ingredient" }'),
-    (NULL, 'read', 'drinks', '{ "model": "Verified Drink" }')
+    (@guest_role_id, 2),
+    (@guest_role_id, 6),
+    (@guest_role_id, 11),
+    (@guest_role_id, 14),
+    (@guest_role_id, 21),
+    (@guest_role_id, 24),
+    (@guest_role_id, 31),
+    (@guest_role_id, 34),
+    (@guest_role_id, 41),
+    (@guest_role_id, 44)
+    -- (@guest_role_id, 51),
+    -- (@guest_role_id, 53)
 ;

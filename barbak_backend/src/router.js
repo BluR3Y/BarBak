@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const authorize = require('./middleware/authorize');
+const authorize = require('./middlewares/authorize');
 
 router.use(authorize);
 
-require('./routes/asset-routes').connect(router);
 require('./routes/account-routes').connect(router);
 require('./routes/user-routes').connect(router);
 require('./routes/drinkware-routes').connect(router);

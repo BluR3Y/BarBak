@@ -2,12 +2,31 @@ const mongoose = require('mongoose');
 const mysql = require('mysql');
 const redis = require('redis');
 const Promise = require('bluebird');
+const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
 
 // MongoDB Connection
 const mongoConnect = () => {
     const mongoUri = process.env.MONGODB_URI;
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
+    mongoose.plugin(accessibleRecordsPlugin);
+    mongoose.plugin(accessibleFieldsPlugin, {
+        getFields: (schema) => ([
+            ...Object.keys({
+                ...schema.paths,
+                ...schema.virtuals
+            }),
+            ...(schema.discriminators ? Object.entries(schema.discriminators).reduce((accumulator, [key, value]) => {
+                return [
+                    ...accumulator,
+                    ...Object.keys({
+                        ...value.paths,
+                        ...value.virtuals
+                    })
+                ]
+            }, []) : [])
+        ])
+    });
     return mongoose.connect(mongoUri, mongoConfig);
 }
 

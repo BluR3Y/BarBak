@@ -144,7 +144,7 @@ drinkIngredientSchema.path('substitutes').validate(async function(substitutes) {
     return true;
 });
 
-const drinkSchema = new mongoose.Schema({
+const Drink = mongoose.model('Drink', new mongoose.Schema({
     name: {
         type: String,
         minlength: 3,
@@ -217,7 +217,7 @@ const drinkSchema = new mongoose.Schema({
             gallery: {
                 type: [{
                     type: mongoose.Schema.Types.ObjectId,
-                    ref: 'File Access Control',
+                    ref: 'Asset Access Control',
                     required: true
                 }],
                 validate: {
@@ -231,22 +231,26 @@ const drinkSchema = new mongoose.Schema({
             _id: false
         },
         default: Object
+    },
+    date_created: {
+        type: Date,
+        default: () => Date.now()
     }
-},{ collection: 'drinks', discriminatorKey: 'model' });
+},{ collection: 'drinks', discriminatorKey: 'variant' }));
 
-drinkSchema.path('preparation_method').validate(async function(method) {
+Drink.schema.path('preparation_method').validate(async function(method) {
     if (!await this.constructor.validatePreparationMethod(method))
         return this.invalidate('preparation_method', 'Invalid preparation method', method, 'exist');
     return true;
 });
 
-drinkSchema.path('serving_style').validate(async function(style) {
+Drink.schema.path('serving_style').validate(async function(style) {
     if (!await this.constructor.validateServingStyle(style))
         return this.invalidate('serving_style', 'Invalid serving style', style, 'exist');
     return true;
 });
 
-drinkSchema.path('drinkware').validate(async function(drinkware) {
+Drink.schema.path('drinkware').validate(async function(drinkware) {
     const drinkwareInfo = await Drinkware.findOne({ _id: drinkware });
     if (!drinkwareInfo)
         return this.invalidate('drinkware', 'Drinkware does not exist', drinkware, 'exist');
@@ -264,7 +268,7 @@ drinkSchema.path('drinkware').validate(async function(drinkware) {
     return true;
 });
 
-drinkSchema.path('ingredients').validate(function(items) {
+Drink.schema.path('ingredients').validate(function(items) {
     if (items.length < 2 || items.length > 25)
         return this.invalidate('ingredients', 'Drink must contains between 2 and 25 ingredients', items, 'invalid_argument');
 
@@ -275,7 +279,7 @@ drinkSchema.path('ingredients').validate(function(items) {
     return true;
 });
 
-drinkSchema.path('tools').validate(async function(tools) {
+Drink.schema.path('tools').validate(async function(tools) {
     const { user, public } = this;
     await Promise.all(tools.map(async (tool, index) => {
         const toolInfo = await Tool.findOne({ _id: tool });
@@ -294,7 +298,7 @@ drinkSchema.path('tools').validate(async function(tools) {
     return true;
 });
 
-drinkSchema.statics = {
+Drink.schema.statics = {
     getPreparationMethods: async function() {
         const preparationMethods = await executeSqlQuery(`SELECT * FROM drink_preparation_methods`);
         return (await preparationMethods.map(method => ({
@@ -362,46 +366,44 @@ drinkSchema.statics = {
     }
 }
 
-// Drink virtuals
-
-drinkSchema.virtual('verified').get(function() {
+Drink.schema.virtual('verified').get(function() {
     return this instanceof VerifiedDrink;
 });
 
-drinkSchema.virtual('cover_url').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { assets } = this;
-    const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
+// Drink.schema.virtual('cover_url').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     const { assets } = this;
+//     const basePath = `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/`;
 
-    if (assets?.gallery.length)
-        return basePath + 'assets/' + assets.gallery[0];
-    else if (typeof default_covers['drink'] !== 'undefined')
-        return basePath + 'assets/default/' + default_covers['drink'];
-    else
-        return null;
-});
+//     if (assets?.gallery.length)
+//         return basePath + 'assets/' + assets.gallery[0];
+//     else if (typeof default_covers['drink'] !== 'undefined')
+//         return basePath + 'assets/default/' + default_covers['drink'];
+//     else
+//         return null;
+// });
 
-drinkSchema.virtual('gallery_urls').get(function() {
-    const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
-    const { assets } = this;
+// Drink.schema.virtual('gallery_urls').get(function() {
+//     const { HOSTNAME, PORT, HTTP_PROTOCOL } = process.env;
+//     const { assets } = this;
 
-    return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
-});
+//     return assets.gallery.map(imagePath => `${HTTP_PROTOCOL}://${HOSTNAME}:${PORT}/assets/` + imagePath);
+// });
 
-drinkSchema.virtual('drinkware_info', {
+Drink.schema.virtual('drinkware_info', {
     ref: 'Drinkware',
     localField: 'drinkware',
     foreignField: '_id',
     justOne: true
 });
 
-drinkSchema.virtual('tool_info', {
+Drink.schema.virtual('tool_info', {
     ref: 'Tool',
     localField: 'tools',
     foreignField: '_id'
 });
 
-drinkSchema.virtual('preparation_method_info').get(async function() {
+Drink.schema.virtual('preparation_method_info').get(async function() {
     const [{ id, name }] = await executeSqlQuery(`
         SELECT
             id,
@@ -413,7 +415,7 @@ drinkSchema.virtual('preparation_method_info').get(async function() {
     return { id, name };
 });
 
-drinkSchema.virtual('serving_style_info').get(async function() {
+Drink.schema.virtual('serving_style_info').get(async function() {
     const [{ id, name }] = await executeSqlQuery(`
         SELECT
             id,
@@ -425,17 +427,7 @@ drinkSchema.virtual('serving_style_info').get(async function() {
     return { id, name };
 });
 
-const Drink = mongoose.model('Drink', drinkSchema);
-
-const verifiedSchema = new mongoose.Schema({
-    date_verified: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
-    }
-});
-
-const VerifiedDrink = Drink.discriminator('Verified Drink', verifiedSchema);
+const verifiedSchema = new mongoose.Schema();
 
 const userSchema = new mongoose.Schema({
     user: {
@@ -447,18 +439,11 @@ const userSchema = new mongoose.Schema({
     public: {
         type: Boolean,
         default: false
-    },
-    date_created: {
-        type: Date,
-        immutable: true,
-        default: () => Date.now()
     }
 });
 
-const UserDrink = Drink.discriminator('User Drink', userSchema);
-
 module.exports = {
     Drink,
-    VerifiedDrink,
-    UserDrink
+    VerifiedDrink: Drink.discriminator('Verified Drink', verifiedSchema),
+    UserDrink: Drink.discriminator('User Drink', userSchema)
 };
