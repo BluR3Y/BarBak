@@ -95,26 +95,6 @@ const drinkSchema = new mongoose.Schema({
         },
         default: Array
     },
-    // assets: {
-    //     type: {
-    //         cover: {
-    //             type: String,
-    //             default: null
-    //         },
-    //         gallery: {
-    //             type: [String],
-    //             validate: {
-    //                 validator: function(items) {
-    //                     return items && items.length <= 10;
-    //                 },
-    //                 message: 'Maximum of 10 images per drink'
-    //             },
-    //             default: Array,
-    //         },
-    //         _id: false
-    //     },
-    //     default: Object
-    // },
     date_created: {
         type: Date,
         immutable: true,
@@ -192,6 +172,10 @@ drinkSchema.virtual('verified').get(function() {
 
 drinkSchema.virtual('cover_url').get(async function() {
     return (await getPreSignedURL(this.cover || default_covers.drink));
+});
+
+drinkSchema.virtual('gallery_urls').get(async function() {
+    return (Promise.all(this.gallery.map(img => getPreSignedURL(img.file_path))));
 });
 
 drinkSchema.virtual('drinkware_info', {

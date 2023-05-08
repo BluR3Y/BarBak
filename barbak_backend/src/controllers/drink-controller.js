@@ -149,7 +149,89 @@ module.exports.copy = async (req, res, next) => {
 
 module.exports.getDrink = async (req, res, next) => {
     try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink
+            .findById(drink_id)
+            .populate([
+                {
+                    path: 'ingredients',
+                    populate: 'ingredient_info substitutes.ingredient_info'
+                },
+                { path: 'drinkware_info' },
+                { path: 'tool_info' }
+            ]);
 
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to view drink')
+            .throwUnlessCan('read', drinkInfo);
+
+        const response = await responseObject(drinkInfo, [
+            { name: '_id', alias: 'id' },
+            { name: 'name' },
+            { name: 'description' },
+            { name: 'preparation_method_info', alias: 'preparation_method' },
+            { name: 'serving_style_info', alias: 'serving_style' },
+            { name: 'preparation' },
+            { name: 'ingredients', child_fields: [
+                { name: 'ingredient_info', alias: 'ingredient', child_fields: [
+                    { name: '_id', alias: 'id' },
+                    { name: 'name' },
+                    { name: 'description' },
+                    { name: 'classification_info', parent_fields: [
+                        { name: 'category' },
+                        { name: 'sub_category' },
+                    ] },
+                    { name: 'cover_url', alias: 'cover' }
+                ] },
+                { name: 'measure_info', alias: 'measure' },
+                { name: 'substitutes', child_fields: [
+                    { name: 'ingredient_info', alias: 'ingredient', child_fields: [
+                        { name: '_id', alias: 'id' },
+                        { name: 'name' },
+                        { name: 'description' },
+                        { name: 'classification_info', parent_fields: [
+                            { name: 'category' },
+                            { name: 'sub_category' },
+                        ] },
+                        { name: 'cover_url', alias: 'cover' }
+                    ] },
+                    { name: 'measure_info', alias: 'measure' }
+                ] },
+                { name: 'optional' },
+                { name: 'garnish' }
+            ] },
+            { name: 'drinkware_info', alias: 'drinkware', child_fields: [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'description' },
+                { name: 'cover_url', alias: 'cover' },
+            ] },
+            { name: 'tool_info', alias: 'tools', child_fields: [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'description' },
+                { name: 'category_info' },
+                { name: 'cover_url', alias: 'cover' }
+            ] },
+            { name: 'tags' },
+            { name: 'verified' },
+            {
+                name: 'user',
+                condition: (document) => document instanceof UserDrink
+            },
+            {
+                name: 'public',
+                condition: (document) => document instanceof UserDrink
+            },
+            {
+                name: 'date_created',
+                ...(drinkInfo instanceof VerifiedDrink ? { alias: 'date_verified' } : {})
+            },
+            { name: 'gallery_urls', alias: 'gallery' }
+        ], drinkInfo.accessibleFieldsBy(req.ability, 'read'));
+        res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -157,7 +239,50 @@ module.exports.getDrink = async (req, res, next) => {
 
 module.exports.search = async (req, res, next) => {
     try {
+        const { query, page, page_size, ordering, preparation_methods, serving_styles } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Drink.searchFilters(preparation_methods, serving_styles);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
+        const searchQuery = Drink
+            .where({
+                name: { $regex: query },
+                ...(searchFilters.length ? { $and: searchFilters } : {})
+            })
+            .accessibleBy(req.ability);
+        const totalDocuments = await Drink.countDocuments(searchQuery);
+        const responseDocuments = await Drink
+            .find(searchQuery)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'tags' },
+                { name: 'verified' },
+                { 
+                    name: 'user',
+                    condition: (document) => document instanceof UserDrink
+                },
+                {
+                    name: 'public',
+                    condition: (document) => document instanceof UserDrink
+                },
+                { name: 'cover_url', alias: 'cover' },
+            ], doc.accessibleFieldsBy(req.ability)))));
+
+            const response = {
+                page,
+                page_size,
+                total_pages: Math.ceil(totalDocuments / page_size),
+                total_results: totalDocuments,
+                data: responseDocuments
+            };
+            res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -165,7 +290,43 @@ module.exports.search = async (req, res, next) => {
 
 module.exports.clientDrinks = async (req, res, next) => {
     try {
+        const { page, page_size, ordering, preparation_methods, serving_styles } = req.query;
+        var searchFilters;
+        try {
+            searchFilters = await Drink.searchFilters(preparation_methods, serving_styles);
+        } catch(err) {
+            throw new AppError(400, 'INVALID_ARGUMENT', err.message, err.errors);
+        }
 
+        const searchQuery = Drink
+            .where({
+                variant: 'User Drink',
+                user: req.user._id,
+                ...(searchFilters.length ? { $and: searchFilters } : {})
+            });
+        const totalDocuments = await Drink.countDocuments(searchQuery);
+        const responseDocuments = await Drink
+            .find(searchQuery)
+            .sort(ordering)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+            .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
+                { name: '_id', alias: 'id' },
+                { name: 'name' },
+                { name: 'tags' },
+                { name: 'verified' },
+                { name: 'cover_url', alias: 'cover' },
+                { name: 'public' }
+            ]))));
+
+            const response = {
+                page,
+                page_size,
+                total_pages: Math.ceil(totalDocuments / page_size),
+                total_results: totalDocuments,
+                data: responseDocuments
+            };
+            res.status(200).send(response);
     } catch(err) {
         next(err);
     }
@@ -173,7 +334,8 @@ module.exports.clientDrinks = async (req, res, next) => {
 
 module.exports.getPreparationMethods = async (req, res, next) => {
     try {
-
+        const drinkPreparationMethods = await Drink.getPreparationMethods();
+        res.status(200).send(drinkPreparationMethods);
     } catch(err) {
         next(err);
     }
@@ -181,7 +343,8 @@ module.exports.getPreparationMethods = async (req, res, next) => {
 
 module.exports.getServingStyles = async (req, res, next) => {
     try {
-
+        const drinkServingStyles = await Drink.getServingStyles();
+        res.status(200).send(drinkServingStyles);
     } catch(err) {
         next(err);
     }
