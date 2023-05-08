@@ -76,27 +76,45 @@ const drinkSchema = new mongoose.Schema({
             message: 'Number of tags cannot be greater than 10'
         }
     },
-    assets: {
-        type: {
-            cover: {
-                type: String,
-                default: null
-            },
-            gallery: {
-                type: [String],
-                validate: {
-                    validator: function(items) {
-                        return items && items.length <= 10;
-                    },
-                    message: 'Maximum of 10 images per drink'
-                },
-                default: Array,
-            },
-            _id: false
-        },
-        default: Object
+    cover: {
+        type: String,
+        default: null
     },
-    // Last Thinking of modifying assets
+    gallery: {
+        type: [{
+            file_path: {
+                type: String,
+                required: true
+            }
+        }],
+        validate: {
+            validator: function(items) {
+                return items && items.length <= 10;
+            },
+            message: 'Limited to 10 images per drink'
+        },
+        default: Array
+    },
+    // assets: {
+    //     type: {
+    //         cover: {
+    //             type: String,
+    //             default: null
+    //         },
+    //         gallery: {
+    //             type: [String],
+    //             validate: {
+    //                 validator: function(items) {
+    //                     return items && items.length <= 10;
+    //                 },
+    //                 message: 'Maximum of 10 images per drink'
+    //             },
+    //             default: Array,
+    //         },
+    //         _id: false
+    //     },
+    //     default: Object
+    // },
     date_created: {
         type: Date,
         immutable: true,
@@ -214,17 +232,24 @@ drinkSchema.virtual('serving_style_info').get(async function() {
 });
 
 drinkSchema.pre('save', async function(next) {
-    const { cover } = await this.constructor.findById(this._id) || {};
+    const { cover, gallery } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
     if (modifiedFields.includes('cover') && cover)
         await s3FileRemoval({ filepath: cover });
+    if (modifiedFields.includes('gallery')) {
+        const removedImages = gallery.filter(img => !this.gallery.find(galleryImg => galleryImg._id.equals(img._id)));
+        await Promise.all(removedImages.map(file => s3FileRemoval({ filepath: file.file_path })));
+    }
     next();
 });
 
 drinkSchema.pre('remove', async function(next) {
     if (this.cover)
         await s3FileRemoval({ filepath: this.cover });
+    if (this.gallery.length) {
+        await Promise.all(this.gallery.map(file => s3FileRemoval({ filepath: file.file_path })));
+    }
     next();
 });
 

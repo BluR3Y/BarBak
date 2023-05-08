@@ -20,7 +20,7 @@ module.exports = (err, req, res, next) => {
             return (new AppError(403, 'FORBIDDEN', err.message).errorResponse(res));
             
         case err instanceof MulterError:
-            return (new AppError(400, err.code, 'File format is not supported', err.message).errorResponse(res));
+            return (new AppError(400, err.code, 'Invalid file upload', err.message).errorResponse(res));
         
         default:
             console.log(err)

@@ -30,7 +30,10 @@ module.exports.connect = function(router) {
     router.get('/drinks/serving-styles', drinkController.getServingStyles);
     router.get('/drinks/drink_id', drinkController.getDrink);
 
-    router.patch('/drinks/:drink_id', imageUpload.single('cover'), drinkController.modify);
+    router.patch('/drinks/:drink_id', imageUpload.fields([
+        { name: 'cover', maxCount: 1 },
+        { name: 'gallery', maxCount: 10 }
+    ]), drinkController.modify);
 
     router.delete('/drinks/:drink_id', drinkController.delete);
 }
