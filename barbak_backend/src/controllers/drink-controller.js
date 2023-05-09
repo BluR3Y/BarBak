@@ -5,7 +5,7 @@ const fileOperations = require('../utils/file-operations');
 const s3Operations = require('../utils/aws-s3-operations');
 const AppError = require('../utils/app-error');
 
-module.exports.create = async (req, res, next) => {
+module.exports.createDrink = async (req, res, next) => {
     try {
         const createdDrink = req.params.drink_type === 'verified' ?
             new VerifiedDrink(req.body) :
@@ -57,6 +57,24 @@ module.exports.modifyDocument = async (req, res, next) => {
     }
 }
 
+module.exports.deleteDrink = async (req, res, next) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        CaslError.from(req.ability)
+            .setMessage('Unauthorized to delete drink')
+            .throwUnlessCan('delete', drinkInfo);
+
+        await drinkInfo.remove();
+        res.status(204).send();
+    } catch(err) {
+        next(err);
+    }
+}
+
 module.exports.galleryUpload = async (req, res, next) => {
     try {
         const { drink_id } = req.params;
@@ -75,7 +93,7 @@ module.exports.galleryUpload = async (req, res, next) => {
         drinkInfo.gallery.push(...(uploadInfo.map(file => ({ file_path: file.filepath }))));
         
         await drinkInfo.save();
-        res.status(204).send();
+        res.status(201).send();
     } catch(err) {
         next(err);
     } finally {
@@ -108,25 +126,109 @@ module.exports.galleryRemoval = async (req, res, next) => {
     }
 }
 
-module.exports.delete = async (req, res, next) => {
+module.exports.createIngredient = async (req, res, next) => {
     try {
         const { drink_id } = req.params;
         const drinkInfo = await Drink.findById(drink_id);
-
+        
         if (!drinkInfo)
             throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
-        CaslError.from(req.ability)
-            .setMessage('Unauthorized to delete drink')
-            .throwUnlessCan('delete', drinkInfo);
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('ingredients'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
 
-        await drinkInfo.remove();
+        drinkInfo.ingredients.push(req.body);
+        await drinkInfo.save();
+        res.status(201).send();
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.modifyIngredient = async (req, res, next) => {
+    try {
+        const { drink_id, ingredient_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+        
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('ingredients'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+
+        const ingredientInfo = drinkInfo.ingredients.id(ingredient_id);
+        if (!ingredientInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient not found in drink');
+
+        ingredientInfo.set(req.body);
+        await drinkInfo.save();
         res.status(204).send();
     } catch(err) {
         next(err);
     }
 }
 
-module.exports.copy = async (req, res, next) => {
+module.exports.deleteIngredient = async (req, res, next) => {
+    try {
+        const { drink_id, ingredient_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+        
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('ingredients'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+
+        const ingredientInfo = drinkInfo.ingredients.id(ingredient_id);
+        if (!ingredientInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Ingredient not found in drink');
+
+        ingredientInfo.remove();
+        await drinkInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.createTool = async (req, res, next) => {
+    try {
+        const { drink_id, tool_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('tools'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+
+        drinkInfo.tools.push(tool_id);
+        await drinkInfo.save();
+        res.status(201).send();
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.deleteTool = async (req, res, next) => {
+    try {
+        const { drink_id, tool_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+        
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('tools'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+
+        const toolIndex = drinkInfo.tools.indexOf(tool_id);
+        if (toolIndex === -1)
+            throw new AppError(404, 'NOT_FOUND', 'Tool not found in drink');
+
+        drinkInfo.tools.splice(toolIndex, 1);
+        await drinkInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports.copyDrink = async (req, res, next) => {
     try {
         const { drink_id } = req.params;
         const drinkInfo = await Drink.findById(drink_id);
@@ -155,7 +257,7 @@ module.exports.copy = async (req, res, next) => {
             createdDrink.cover = copyInfo.filepath;
         }
         await createdDrink.save();
-        res.status(204).send();
+        res.status(201).send();
     } catch(err) {
         next(err);
     }

@@ -9,12 +9,13 @@ module.exports = (err, req, res, next) => {
             return err.errorResponse(res);
 
         case err instanceof MongooseError.ValidationError:
-            return (new AppError(400, 'INVALID_ARGUMENT', 'Invalid field values', Object.entries(err.errors).reduce((accumulator, [key, value]) => {
-                return {
-                    ...accumulator,
-                    [key]: value.message
+            return (new AppError(400, 'INVALID_ARGUMENT', 'Invalid field values', Object.entries(err.errors).reduce((accumulator, [key, value]) => ({
+                ...accumulator,
+                [key]: {
+                    message: value.message,
+                    type: value.kind
                 }
-            }, {})).errorResponse(res));
+            }), {})).errorResponse(res));
 
         case err instanceof CaslError:
             return (new AppError(403, 'FORBIDDEN', err.message).errorResponse(res));

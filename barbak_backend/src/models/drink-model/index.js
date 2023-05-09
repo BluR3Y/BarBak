@@ -121,16 +121,16 @@ drinkSchema.path('serving_style').validate(async function(style) {
 drinkSchema.path('drinkware').validate(async function(drinkware) {
     const drinkwareInfo = await Drinkware.findOne({ _id: drinkware });
     if (!drinkwareInfo)
-        return this.invalidate('drinkware', 'Drinkware does not exist', drinkware, 'exist');
+        return this.invalidate('drinkware', 'Drinkware does not exist', drinkware, 'NOT_FOUND');
     
     const { user, public } = this;
     if (this instanceof this.model('Verified Drink') && drinkwareInfo instanceof UserDrinkware)
-        return this.invalidate('drinkware', 'Verified drinks must contain verified drinkware', drinkware, 'valid');
+        return this.invalidate('drinkware', 'Verified drinks must contain verified drinkware', drinkware, 'INVALID_ARGUMENT');
     else if (this instanceof this.model('User Drink') && drinkwareInfo instanceof UserDrinkware) {
         if (!drinkwareInfo.user.equals(user))
-            return this.invalidate('drinkware', 'Drink must contain a drinkware that is verified or your', drinkware, 'valid');
+            return this.invalidate('drinkware', 'Drink must contain a drinkware that is verified or your', drinkware, 'INVALID_ARGUMENT');
         else if (public && !drinkwareInfo.public)
-            return this.invalidate('drinkware', 'Drinkware must be public to include in public drinks');
+            return this.invalidate('drinkware', 'Drinkware must be public to include in public drinks', 'INVALID_ARGUMENT');
     }
 
     return true;
@@ -138,29 +138,34 @@ drinkSchema.path('drinkware').validate(async function(drinkware) {
 
 drinkSchema.path('ingredients').validate(function(items) {
     if (items.length < 2 || items.length > 25)
-        return this.invalidate('ingredients', 'Drink must contains between 2 and 25 ingredients', items, 'invalid_argument');
+        return this.invalidate('ingredients', 'Drink must contains between 2 and 25 ingredients', items, 'INVALID_ARGUMENT');
 
     const ingredientIds = new Set(items.map(({ ingredient }) => ingredient.toString()));
     if (ingredientIds.size !== items.length)
-        return this.invalidate('ingredients', 'Ingredient list must not contain multiple of the same ingredient', items, 'invalid_argument');
+        return this.invalidate('ingredients', 'Ingredient list must not contain multiple of the same ingredient', items, 'ALREADY_EXIST');
 
     return true;
 });
 
 drinkSchema.path('tools').validate(async function(tools) {
     const { user, public } = this;
+    const toolIds = new Set(tools.map(tool => tool.toString()));
+
+    if (toolIds.size !== tools.length)
+        return this.invalidate('tools', 'Tool list must not contain duplicates', tools, 'ALREADY_EXIST');
+
     await Promise.all(tools.map(async (tool, index) => {
         const toolInfo = await Tool.findOne({ _id: tool });
         if (!toolInfo)
-            return this.invalidate(`tools.${index}`, 'Tool does not exist', tool, 'exist');
+            return this.invalidate(`tools.${index}`, 'Tool does not exist', tool, 'NOT_FOUND');
 
         if (this instanceof this.model('Verified Drink') && toolInfo instanceof UserTool)
-            return this.invalidate(`tools.${index}`, 'Verified drinks must contain verified tools', tool, 'valid');
+            return this.invalidate(`tools.${index}`, 'Verified drinks must contain verified tools', tool, 'INVALID_ARGUMENT');
         else if (this instanceof this.model('User Drink') && toolInfo instanceof UserTool) {
             if (!toolInfo.user.equals(user))
-                return this.invalidate(`tools.${index}`, 'Drink must contain tools that are verified or yours', tool, 'valid');
+                return this.invalidate(`tools.${index}`, 'Drink must contain tools that are verified or yours', tool, 'INVALID_ARGUMENT');
             else if (public && !toolInfo.public)
-                return this.invalidate(`tools.${index}`, 'Tool must be public to include in public drinks');
+                return this.invalidate(`tools.${index}`, 'Tool must be public to include in public drinks', 'INVALID_ARGUMENT');
         }
     }));
     return true;
