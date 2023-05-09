@@ -28,69 +28,83 @@ module.exports.create = async (req, res, next) => {
     }
 }
 
-module.exports.modify = async (req, res, next) => {
+module.exports.modifyDocument = async (req, res, next) => {
     try {
         const { drink_id } = req.params;
-        const gallery = JSON.parse(req.body.gallery)
         const drinkInfo = await Drink.findById(drink_id);
 
         if (!drinkInfo)
             throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
-
+        
         const allowedFields = drinkInfo.accessibleFieldsBy(req.ability, 'update');
-        if (![...Object.keys(req.body), ...(Object.keys(req.files))].every(field => allowedFields.includes(field)))
+        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
             throw new CaslError().setMessage('Unauthorized to modify drink');
 
-        const modifiedGallery = gallery.reduce((accumulator, { action, images }, index) => {
-            const invalidImages = images.filter(img => !accumulator.find(storedImg => storedImg._id.equals(img)));
-            if (invalidImages.length)
-                throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid image identifiers', { [index]: { images } });
-            switch (action) {
-                case 'remove':
-                    accumulator = accumulator.filter(img => !images.includes(img._id.toString()));
-                    break;
-                case 're-order':
-                    if (images.length !== accumulator.length)
-                        throw new AppError(400, 'INVALID_ARGUMENT', 'Not all images were accounted for in re-ordering');
-
-                    const indexMap = images.reduce((mapAccumulator, currentImg, imgIndex) => mapAccumulator.set(currentImg, imgIndex), new Map);
-                    accumulator = accumulator.sort((a, b) => indexMap.get(a._id.toString()) - indexMap.get(b._id.toString()));
-                    break;
-                default:
-                    throw new AppError(400, 'INVALID_ARGUMENT', 'Invalid gallery operation', { [index]: { action } });
-            }
-            return accumulator;
-        }, drinkInfo.gallery);
-
-        drinkInfo.set({
-            ...req.body,
-            gallery: modifiedGallery
-        });
-
-        if (req.files.cover) {
-            const uploadInfo = await s3Operations.createObject(req.files.cover[0], 'assets/drinks/images/cover');
+        drinkInfo.set(req.body);
+        if (req.file) {
+            const uploadInfo = await s3Operations.createObject(req.file, 'assets/drinks/images/cover');
             drinkInfo.cover = uploadInfo.filepath;
         }
-        
-        if (req.files.gallery) {
-            if (req.files.gallery.length + drinkInfo.gallery.length > 10)
-                throw new AppError(413, 'MAX_UPLOAD_LIMIT', 'Adding uploads to drink gallery exceeds limit');
-
-            const uploadInfo = await Promise.all(req.files.gallery.map(file => s3Operations.createObject(file, 'assets/drinks/images/gallery')));
-            drinkInfo.gallery.push(...(uploadInfo.map(file => ({ file_path: file.filepath }))));
+        await drinkInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        next(err);
+    } finally {
+        if (req.file) {
+            fileOperations.deleteSingle(req.file.path)
+            .catch(err => console.error(err));
         }
+    }
+}
 
+module.exports.galleryUpload = async (req, res, next) => {
+    try {
+        const { drink_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('gallery'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+        else if (!req.files)
+            throw new AppError(400, 'MISSING_REQUIRED_FILE', 'No image was uploaded');
+        else if (req.files.length + drinkInfo.gallery.length > 10)
+            throw new AppError(413, 'FILE_LIMIT_EXCEEDED', 'Each drink is only permitted 10 gallery images');
+
+        const uploadInfo = await Promise.all(req.files.map(file => s3Operations.createObject(file, 'assets/drinks/images/gallery')));
+        drinkInfo.gallery.push(...(uploadInfo.map(file => ({ file_path: file.filepath }))));
+        
         await drinkInfo.save();
         res.status(204).send();
     } catch(err) {
         next(err);
     } finally {
         if (req.files) {
-            Promise.all(Object.entries(req.files).map(([, values]) => {
-                return Promise.all(values.map(file => fileOperations.deleteSingle(file.path)));
-            }))
+            Promise.all(req.files.map(file => fileOperations.deleteSingle(file.path)))
             .catch(err => console.error(err));
         }
+    }
+}
+
+module.exports.galleryRemoval = async (req, res, next) => {
+    try {
+        const { drink_id, image_id } = req.params;
+        const drinkInfo = await Drink.findById(drink_id);
+
+        if (!drinkInfo)
+            throw new AppError(404, 'NOT_FOUND', 'Drink does not exist');
+        else if (!drinkInfo.accessibleFieldsBy(req.ability, 'update').includes('gallery'))
+            throw new CaslError().setMessage('Unauthorized to modify drink');
+
+        const imageIndex = drinkInfo.gallery.findIndex(storedImg => storedImg._id.equals(image_id));
+        if (imageIndex === -1)
+            throw new AppError(404, 'NOT_FOUND', 'Gallery image was not found');
+
+        drinkInfo.gallery.splice(imageIndex, 1);
+        await drinkInfo.save();
+        res.status(204).send();
+    } catch(err) {
+        next(err);
     }
 }
 
