@@ -1,0 +1,61 @@
+version: '3'
+services:
+  webserver:
+    container_name: webserver
+    depends_on:
+      - barbak_client
+      - barbak_backend
+    build:
+      dockerfile: Dockerfile
+      context: ./webserver
+    restart: always # because it is routing traffic to our entire app
+    ports:
+      - 80:80
+    
+  barbak_client:
+    container_name: barbak_client
+    build:
+      dockerfile: Dockerfile
+      context: ./barbak_client
+    restart: on-failure
+    volumes:
+      - /app/node_modules
+    env_file:
+      - ./env/barbak_client/production.env
+    
+  barbak_backend:
+    container_name: barbak_backend
+    depends_on:
+      - mongo
+      - mysql
+    build:
+      dockerfile: Dockerfile
+      context: ./barbak_backend
+    restart: on-failure
+    volumes:
+      - /app/node_modules
+      - assets:/app/assets
+    env_file:
+      - ./env/barbak_backend/production.env
+
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - ./env/database/production.env
+
+  # mongo:
+  #   container_name: mongo
+  #   image: 'mongo'
+  #   volumes:
+  #     - ./db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+  #     - ./db/mongo-volume:/data/db
+
+
+volumes:
+  assets:
