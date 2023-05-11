@@ -36,11 +36,9 @@ exports.authenticate = {
 
 function authenticationStrategyCallback(req, res, next) {
     return (err, user, info) => {
-        if (err)
-            return next(new AppError(400, 'INVALID_ARGUMENT', 'Invalid login credentials'));
-        req.logIn(user, function(err) {
-            if (err)
-                return next(new Error('Internal server error'));
+        if (err) return next(err);
+        req.login(user, function(err) {
+            if (err) return next(err);
             responseObject(user, [
                 { name: '_id', alias: 'id' },
                 { name: 'username' },
@@ -54,7 +52,7 @@ function authenticationStrategyCallback(req, res, next) {
             .then(response => {
                 res.status(200).send(response);
             });
-        })
+        });
     }
 }
 

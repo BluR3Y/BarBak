@@ -1,8 +1,7 @@
 const Queue = require('bull');
-const { redisClient } = require('../../config/database-config');
 const s3Operations = require('../../utils/aws-s3-operations');
 
-const removeS3File = new Queue('remove-s3-file', redisClient);
+const removeS3File = new Queue('remove-s3-file', `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`);
 removeS3File.process(async (job, done) => {
     try {
         const removeInfo = await s3Operations.deleteObject(job.data.filepath);
