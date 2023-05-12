@@ -5,7 +5,6 @@ Sources:
     - https://www.youtube.com/watch?v=GQhnMSnaWUo&ab_channel=NightlifeBartenders
     - http://www.cocktailhunter.com/wp-content/uploads/2014/05/Cocktail-Preparation.pdf
 
-
 Types of alcohol:
     - Ethanol - The only type that humans can safely drink
         - It is produced by the fermentation of yeast, and starches
