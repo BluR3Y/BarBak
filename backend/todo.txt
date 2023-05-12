@@ -1,6 +1,0 @@
-- Create new JOI validation schemas
-- Restructure User/Account models and controllers
-- Modify route paths
-
-extras:
-    - Modify search filters to take in strings and integers, ex: category, preparation_method, etc.
