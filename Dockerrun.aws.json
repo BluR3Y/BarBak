@@ -1,0 +1,54 @@
+{
+    "AWSEBDockerrunVersion": 2,
+    "containerDefinitions": [
+      {
+        "name": "webserver",
+        "image": "reyhec/barbak-webserver",
+        "hostname": "webserver",
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": 80,
+            "containerPort": 80
+          }
+        ],
+        "links": ["client", "backend"],
+        "memory": 100
+      },
+      {
+        "name": "client",
+        "image": "reyhec/barbak-client",
+        "hostname": "client",
+        "essential": false,
+        "memory": 300
+      },
+      {
+        "name": "backend",
+        "image": "reyhec/barbak-backend",
+        "hostname": "backend",
+        "essential": false,
+        "memory": 300
+      },
+      {
+        "name": "mongo",
+        "image": "reyhec/barbak-mongo",
+        "hostname": "mongo",
+        "essential": false,
+        "memory": 300
+      },
+      {
+        "name": "mysql",
+        "image": "reyhec/barbak-mysql",
+        "hostname": "mysql",
+        "essential": false,
+        "memory": 300
+      },
+      {
+        "name": "redis",
+        "image": "reyhec/barbak-redis",
+        "hostname": "redis",
+        "essential": false,
+        "memory": 300
+      }
+    ]
+}
