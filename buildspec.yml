@@ -16,8 +16,8 @@ phases:
     - docker tag barbak-webserver reyhec/barbak-webserver
     - docker build -t barbak-client ./client
     - docker tag barbak-client reyhec/barbak-client
-    - docker build -t barbak-backend ./backend
-    - docker tag barbak-backend reyhec/barbak-backend
+    # - docker build -t barbak-backend ./backend
+    # - docker tag barbak-backend reyhec/barbak-backend
     # - docker build -t barbak-mongo ./mongo
     # - docker build -t barbak-mysql ./mysql
     # - docker build -t barbak-redis ./redis
@@ -29,7 +29,7 @@ phases:
     - echo Pushing to Docker images...
     - docker push reyhec/barbak-webserver
     - docker push reyhec/barbak-client
-    - docker push reyhec/barbak-backend
+    # - docker push reyhec/barbak-backend
     # - docker push reyhec/barbak-mongo
     # - docker push reyhec/barbak-mysql
     # - docker push reyhec/barbak-redis
