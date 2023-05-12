@@ -1,7 +1,6 @@
 sources:
     - https://www.geeksforgeeks.org/difference-between-app-use-and-app-get-in-express-js/
 
-
 definition: Express
     A small framework that sits on top of Node.js’s web server functionality to simplify its APIs and add helpful new features
 
