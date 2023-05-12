@@ -19,8 +19,7 @@ phases:
     - docker build -t reyhec/barbak-mysql ./mysql
     - docker build -t reyhec/barbak-redis ./redis
     # Log In to the Docker CLI
-    # - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
-    - docker login --username $DOCKER_ID --password $DOCKER_PW
+    - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
     commands:
     # Take these images and push them to Docker hub
