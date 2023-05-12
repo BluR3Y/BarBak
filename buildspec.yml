@@ -2,8 +2,11 @@ version: 0.2
 env:
   secrets-manager:
     DOCKER_ID: "barbak-build-secrets:docker_id"
-    DOCKER_PW: "barbak-build-secrets:docker_password"
+    DOCKER_PW: "barbak-build-secrets:docker_access_token"
 phases:
+  # install:
+  #   runtime-versions:
+  #     docker: 18
   build:
     commands:
     - echo Build started on `date`
@@ -16,7 +19,6 @@ phases:
     - docker build -t reyhec/barbak-mysql ./mysql
     - docker build -t reyhec/barbak-redis ./redis
     # Log In to the Docker CLI
-    - echo Logging into "$DOCKER_ID" docker account...
     - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
     commands:
