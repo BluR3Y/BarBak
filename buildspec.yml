@@ -1,7 +1,7 @@
 version: 0.2
 env:
   secrets-manager:
-    DOCKER_ID: "barbak-build-secrets:DOCKER_ID",
+    DOCKER_ID: "barbak-build-secrets:DOCKER_ID"
     DOCKER_PW: "barbak-build-secrets:DOCKER_PW"
 phases:
   install:
