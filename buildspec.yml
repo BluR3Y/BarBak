@@ -16,6 +16,7 @@ phases:
     - docker build -t reyhec/barbak-mysql ./mysql
     - docker build -t reyhec/barbak-redis ./redis
     # Log In to the Docker CLI
+    - echo Logging into "$DOCKER_ID" docker account...
     - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
     commands:
