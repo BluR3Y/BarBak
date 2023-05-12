@@ -1,8 +1,8 @@
 version: 0.2
 env:
   secrets-manager:
-    DOCKER_ID: "barbak-build-secrets:DOCKER_ID"
-    DOCKER_PW: "barbak-build-secrets:DOCKER_PW"
+    DOCKER_ID: "arn:aws:secretsmanager:us-east-1:637574709554:secret:barbak-build-secrets-T9xpsL:docker_id"
+    DOCKER_PW: "arn:aws:secretsmanager:us-east-1:637574709554:secret:barbak-build-secrets-T9xpsL:docker_password"
 phases:
   install:
     runtime-versions:
