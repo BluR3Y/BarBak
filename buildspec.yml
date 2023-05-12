@@ -12,21 +12,24 @@ phases:
     - echo Build started on `date`
     # Build the Docker images
     - echo Building the production Docker images...
-    - docker build -t $DOCKER_ID/barbak-webserver ./webserver
-    - docker build -t $DOCKER_ID/barbak-client ./client
-    - docker build -t $DOCKER_ID/barbak-backend ./backend
-    - docker build -t $DOCKER_ID/barbak-mongo ./mongo
-    - docker build -t $DOCKER_ID/barbak-mysql ./mysql
-    - docker build -t $DOCKER_ID/barbak-redis ./redis
+    - docker build -t barbak-webserver ./webserver
+    - docker tag barbak-webserver reyhec/barbak-webserver
+    - docker build -t barbak-client ./client
+    - docker tag barbak-client reyhec/barbak-client
+    - docker build -t barbak-backend ./backend
+    - docker tag barbak-backend reyhec/barbak-backend
+    # - docker build -t barbak-mongo ./mongo
+    # - docker build -t barbak-mysql ./mysql
+    # - docker build -t barbak-redis ./redis
     # Log In to the Docker CLI
     - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
     commands:
     # Take these images and push them to Docker hub
     - echo Pushing to Docker images...
-    - docker push $DOCKER_ID/barbak-webserver
-    - docker push $DOCKER_ID/barbak-client
-    - docker push $DOCKER_ID/barbak-backend
-    - docker push $DOCKER_ID/barbak-mongo
-    - docker push $DOCKER_ID/barbak-mysql
-    - docker push $DOCKER_ID/barbak-redis
+    - docker push reyhec/barbak-webserver
+    - docker push reyhec/barbak-client
+    - docker push reyhec/barbak-backend
+    # - docker push reyhec/barbak-mongo
+    # - docker push reyhec/barbak-mysql
+    # - docker push reyhec/barbak-redis
