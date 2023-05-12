@@ -6,7 +6,8 @@ const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongo
 
 // MongoDB Connection
 const mongoConnect = () => {
-    const mongoUri = process.env.MONGODB_URI;
+    const { MONGO_HOST, MONGO_USER, MONGO_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
+    const mongoUri = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
     mongoose.plugin(accessibleRecordsPlugin);
@@ -36,7 +37,7 @@ const mysqlConnection = mysql.createConnection({
     port: process.env.MYSQL_PORT,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
-    database: 'barbak'
+    database: process.env.MYSQL_DATABASE
 });
 const executeSqlQuery = function(query, values) {
     return new Promise((resolve, reject) => {
@@ -49,8 +50,7 @@ const executeSqlQuery = function(query, values) {
 
 // Redis Connection
 const redisClient = redis.createClient({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT
+    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 
 const ready = Promise.all([
