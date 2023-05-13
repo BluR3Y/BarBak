@@ -1,5 +1,6 @@
 {
   "AWSEBDockerrunVersion": 2,
+  "taskRoleArn": "arn:aws:iam::637574709554:role/ecsTaskExecutionRole",
   "executionRoleArn": "arn:aws:iam::637574709554:role/ecsTaskExecutionRole",
   "volumes": [
     {
