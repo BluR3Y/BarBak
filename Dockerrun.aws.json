@@ -1,5 +1,6 @@
 {
   "AWSEBDockerrunVersion": 2,
+  "executionRoleArn": "arn:aws:iam::637574709554:role/service-role/aws-elasticbeanstalk-service-role",
   "volumes": [
     {
       "name": "mongo-init",
