@@ -1,5 +1,7 @@
 {
   "AWSEBDockerrunVersion": 2,
+  "taskRoleArn": "arn:aws:iam::637574709554:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::637574709554:role/ecsTaskExecutionRole",
   "volumes": [
     {
       "name": "mongo-init",
@@ -24,6 +26,9 @@
     {
       "name": "webserver",
       "image": "reyhec/barbak-webserver",
+      "repositoryCredentials": {
+          "credentialsParameter": "arn:aws:secretsmanager:us-east-1:637574709554:secret:barbak-build-secrets-T9xpsL:docker_access_token"
+      },
       "hostname": "webserver",
       "essential": true,
       "portMappings": [
@@ -38,6 +43,9 @@
     {
       "name": "client",
       "image": "reyhec/barbak-client",
+      "repositoryCredentials": {
+          "credentialsParameter": "arn:aws:secretsmanager:us-east-1:637574709554:secret:barbak-build-secrets-T9xpsL:docker_access_token"
+      },
       "hostname": "client",
       "essential": false,
       "memory": 300,
@@ -51,6 +59,9 @@
     {
       "name": "backend",
       "image": "reyhec/barbak-backend",
+      "repositoryCredentials": {
+          "credentialsParameter": "arn:aws:secretsmanager:us-east-1:637574709554:secret:barbak-build-secrets-T9xpsL:docker_access_token"
+      },
       "hostname": "backend",
       "essential": false,
       "memory": 300,
