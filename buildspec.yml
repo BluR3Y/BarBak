@@ -27,3 +27,6 @@ phases:
     - docker push reyhec/barbak-webserver
     - docker push reyhec/barbak-client
     - docker push reyhec/barbak-backend
+artifacts:
+  files:
+    - '**/*'
