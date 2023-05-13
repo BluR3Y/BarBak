@@ -4,9 +4,6 @@ env:
     DOCKER_ID: "barbak-build-secrets:docker_id"
     DOCKER_PW: "barbak-build-secrets:docker_access_token"
 phases:
-  # install:
-  #   runtime-versions:
-  #     docker: 18
   build:
     commands:
     - echo Build started on `date`
