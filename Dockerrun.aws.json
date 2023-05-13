@@ -76,7 +76,7 @@
       "mountPoints": [
         {
           "sourceVolume": "mongo-init",
-          "containerPath": "/docker-entrypoint-initdb.d/",
+          "containerPath": "/docker-entrypoint-initdb.d/init-mongo.js",
           "readOnly": true
         }
       ]
@@ -96,12 +96,12 @@
       "mountPoints": [
         {
           "sourceVolume": "mysql-init-barware",
-          "containerPath": "/docker-entrypoint-initdb.d/",
+          "containerPath": "/docker-entrypoint-initdb.d/init-barware.sql",
           "readOnly": true
         },
         {
           "sourceVolume": "mysql-init-permissions",
-          "containerPath": "/docker-entrypoint-initdb.d/",
+          "containerPath": "/docker-entrypoint-initdb.d/init-permissions.sql",
           "readOnly": true
         }
       ]
