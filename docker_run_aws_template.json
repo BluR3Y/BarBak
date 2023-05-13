@@ -43,7 +43,7 @@
       },
       {
         "name": "mongo",
-        "image": "mongo:latest",
+        "image": "reyhec/barbak-mongo",
         "hostname": "mongo",
         "essential": false,
         "memory": 300,
@@ -52,18 +52,11 @@
             "value": "arn:aws:s3:::barbak-application/env/mongo.env",
             "type": "s3"
           }
-        ],
-        "mountPoints": [
-          {
-            "sourceVolume": "mongo-init",
-            "containerPath": "/docker-entrypoint-initdb.d",
-            "readOnly": true
-          }
         ]
       },
       {
         "name": "mysql",
-        "image": "mysql:latest",
+        "image": "reyhec/barbak-mysql",
         "hostname": "mysql",
         "essential": false,
         "memory": 300,
@@ -72,46 +65,14 @@
             "value": "arn:aws:s3:::barbak-application/env/mysql.env",
             "type": "s3"
           }
-        ],
-        "mountPoints": [
-          {
-            "sourceVolume": "mysql-init-barware",
-            "containerPath": "/docker-entrypoint-initdb.d",
-            "readOnly": true
-          },
-          {
-            "sourceVolume": "mysql-init-permissions",
-            "containerPath": "/docker-entrypoint-initdb.d",
-            "readOnly": true
-          }
         ]
       },
       {
         "name": "redis",
-        "image": "redis:latest",
+        "image": "reyhec/barbak-redis",
         "hostname": "redis",
         "essential": false,
         "memory": 300
       }
-    ],
-    "volumes": [
-      {
-        "name": "mongo-init",
-        "host": {
-          "sourcePath": "/var/app/current/database/mongo/init-mongo.js"
-        }
-      },
-      {
-        "name": "mysql-init-barware",
-        "host": {
-          "sourcePath": "/var/app/current/database/mysql/init-barware.sql"
-        }
-      },
-      {
-        "name": "mysql-init-permissions",
-        "host": {
-          "sourcePath": "/var/app/current/database/mysql/init-permissions.sql"
-        }
-      }
     ]
-  }
+}
