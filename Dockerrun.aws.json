@@ -41,6 +41,7 @@
       "hostname": "client",
       "essential": false,
       "memory": 300,
+      "links": ["backend"],
       "environmentFiles": [
         {
           "value": "arn:aws:s3:::barbak-application/env/client.env",
@@ -54,6 +55,7 @@
       "hostname": "backend",
       "essential": false,
       "memory": 300,
+      "links": ["mongo","mysql","redis"],
       "environmentFiles": [
         {
           "value": "arn:aws:s3:::barbak-application/env/backend.env",
