@@ -1,5 +1,5 @@
 {
-  "AWSEBDockerrunVersion": 3,
+  "AWSEBDockerrunVersion": 2,
   "volumes": [
     {
       "name": "mongo-init",
@@ -23,7 +23,7 @@
   "containerDefinitions": [
     {
       "name": "webserver",
-      "image": "reyhec/barbak-webserver",
+      "image": "reyhec/barbak-webserver:latest",
       "hostname": "webserver",
       "essential": true,
       "portMappings": [
@@ -37,7 +37,7 @@
     },
     {
       "name": "client",
-      "image": "reyhec/barbak-client",
+      "image": "reyhec/barbak-client:latest",
       "hostname": "client",
       "essential": false,
       "memory": 300,
@@ -51,7 +51,7 @@
     },
     {
       "name": "backend",
-      "image": "reyhec/barbak-backend",
+      "image": "reyhec/barbak-backend:latest",
       "hostname": "backend",
       "essential": false,
       "memory": 300,
