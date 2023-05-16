@@ -28,7 +28,6 @@ Measures of alcohol content:
     - Alcohol proof
         - It is twice the percentage of alcohol by volume
 
-
 Types of Alcoholic drinks by alcohol content:
     - Undistilled Drinks :
         - Beer:
