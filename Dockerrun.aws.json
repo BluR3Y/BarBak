@@ -22,20 +22,6 @@
   ],
   "containerDefinitions": [
     {
-      "name": "webserver",
-      "image": "reyhec/barbak-webserver:latest",
-      "hostname": "webserver",
-      "essential": true,
-      "portMappings": [
-        {
-          "hostPort": 80,
-          "containerPort": 80
-        }
-      ],
-      "links": ["client", "backend"],
-      "memory": 100
-    },
-    {
       "name": "client",
       "image": "reyhec/barbak-client:latest",
       "hostname": "client",
@@ -114,6 +100,20 @@
       "hostname": "redis",
       "essential": false,
       "memory": 300
+    },
+    {
+      "name": "webserver",
+      "image": "reyhec/barbak-webserver:latest",
+      "hostname": "webserver",
+      "essential": true,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 80
+        }
+      ],
+      "links": ["client", "backend"],
+      "memory": 100
     }
   ]
 }
