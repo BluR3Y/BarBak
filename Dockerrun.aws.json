@@ -22,22 +22,6 @@
   ],
   "containerDefinitions": [
     {
-      "name": "client",
-      "image": "reyhec/barbak-client:latest",
-      "hostname": "client",
-      "essential": false,
-      "links": ["backend"],
-      "memory": 300
-    },
-    {
-      "name": "backend",
-      "image": "reyhec/barbak-backend:latest",
-      "hostname": "backend",
-      "essential": false,
-      "links": ["mysql","redis"],
-      "memory": 300
-    },
-    {
       "name": "mysql",
       "image": "mysql:latest",
       "hostname": "mysql",
@@ -61,6 +45,22 @@
       "image": "redis:latest",
       "hostname": "redis",
       "essential": false,
+      "memory": 300
+    },
+    {
+      "name": "backend",
+      "image": "reyhec/barbak-backend:latest",
+      "hostname": "backend",
+      "essential": false,
+      "links": ["mysql","redis"],
+      "memory": 300
+    },
+    {
+      "name": "client",
+      "image": "reyhec/barbak-client:latest",
+      "hostname": "client",
+      "essential": false,
+      "links": ["backend"],
       "memory": 300
     },
     {
