@@ -26,6 +26,7 @@
       "image": "reyhec/barbak-client:latest",
       "hostname": "client",
       "essential": false,
+      "links": ["backend"],
       "memory": 300
     },
     {
@@ -33,6 +34,7 @@
       "image": "reyhec/barbak-backend:latest",
       "hostname": "backend",
       "essential": false,
+      "links": ["mysql","redis"],
       "memory": 300
     },
     {
