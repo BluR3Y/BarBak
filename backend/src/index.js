@@ -19,7 +19,7 @@ connectDB.ready.then(_ => {
     // for parsing application/x-www-form-urlencoded
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cors({
-        origin: 'http://localhost:8000',    // replaced with WEB_SERVER_URI
+        origin: '*',    // replaced with WEB_SERVER_URI
         credentials: true,
     }));
     // for parsing cookies
@@ -53,7 +53,7 @@ connectDB.ready.then(_ => {
     // Setup Error Handler
     app.use(errorHandler);
     // Start the web server
-    app.listen(PORT, () => console.log(`Server is listening on http://localhost:${PORT}`));
+    app.listen(3000, () => console.log(`Server is listening on http://localhost:3000`));
 })
 .catch(err => {
     console.log('Error occurred while connecting to Database', err);

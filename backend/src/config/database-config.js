@@ -6,8 +6,11 @@ const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongo
 
 // MongoDB Connection
 const mongoConnect = () => {
-    const { MONGO_HOST, MONGO_USER, MONGO_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
-    const mongoUri = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
+    const { NODE_ENV, MONGO_HOST, MONGO_USER, MONGO_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
+    // const mongoUri = `mongodb${NODE_ENV === 'production' ? '+srv' : ''}://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
+    const mongoUri = NODE_ENV === 'production' ?
+        `mongodb+srv://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}/${MONGO_DATABASE}` :
+        `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
     mongoose.plugin(accessibleRecordsPlugin);
