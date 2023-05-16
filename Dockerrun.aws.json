@@ -36,20 +36,6 @@
       "memory": 300
     },
     {
-      "name": "mongo",
-      "image": "mongo:latest",
-      "hostname": "mongo",
-      "essential": false,
-      "memory": 300,
-      "mountPoints": [
-        {
-          "sourceVolume": "mongo-init",
-          "containerPath": "/docker-entrypoint-initdb.d/init-mongo.js",
-          "readOnly": true
-        }
-      ]
-    },
-    {
       "name": "mysql",
       "image": "mysql:latest",
       "hostname": "mysql",
