@@ -9,9 +9,12 @@ phases:
     - echo Build started on `date`
     # Build the Docker images
     - echo Building the production Docker images...
-    - docker build -t reyhec/barbak-webserver ./webserver
-    - docker build -t reyhec/barbak-client ./client
-    - docker build -t reyhec/barbak-backend ./backend
+    - docker build -t barbak-webserver ./webserver
+    - docker tag barbak-webserver reyhec/barbak-webserver
+    - docker build -t barbak-client ./client
+    - docker tag barbak-client reyhec/barbak-client
+    - docker build -t barbak-backend ./backend
+    - docker tag barbak-backend reyhec/barbak-backend
     # Log In to the Docker CLI
     - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
