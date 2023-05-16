@@ -53,7 +53,7 @@ connectDB.ready.then(_ => {
     // Setup Error Handler
     app.use(errorHandler);
     // Start the web server
-    app.listen(3000, () => console.log(`Server is listening on http://localhost:3000`));
+    app.listen(3001, () => console.log(`Server is listening on http://localhost:3001`));
 })
 .catch(err => {
     console.log('Error occurred while connecting to Database', err);
