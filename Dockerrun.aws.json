@@ -27,13 +27,7 @@
       "hostname": "client",
       "essential": false,
       "memory": 300,
-      "links": ["backend"],
-      "environmentFiles": [
-        {
-          "value": "arn:aws:s3:::barbak-application/env/client.env",
-          "type": "s3"
-        }
-      ]
+      "links": ["backend"]
     },
     {
       "name": "backend",
@@ -41,13 +35,7 @@
       "hostname": "backend",
       "essential": false,
       "memory": 300,
-      "links": ["mongo","mysql","redis"],
-      "environmentFiles": [
-        {
-          "value": "arn:aws:s3:::barbak-application/env/backend.env",
-          "type": "s3"
-        }
-      ]
+      "links": ["mongo","mysql","redis"]
     },
     {
       "name": "mongo",
@@ -55,12 +43,7 @@
       "hostname": "mongo",
       "essential": false,
       "memory": 300,
-      "environmentFiles": [
-        {
-          "value": "arn:aws:s3:::barbak-application/env/mongo.env",
-          "type": "s3"
-        }
-      ],
+
       "mountPoints": [
         {
           "sourceVolume": "mongo-init",
@@ -75,12 +58,7 @@
       "hostname": "mysql",
       "essential": false,
       "memory": 300,
-      "environmentFiles": [
-        {
-          "value": "arn:aws:s3:::barbak-application/env/mysql.env",
-          "type": "s3"
-        }
-      ],
+
       "mountPoints": [
         {
           "sourceVolume": "mysql-init-barware",
