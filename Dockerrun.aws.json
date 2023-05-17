@@ -3,8 +3,18 @@
   "containerDefinitions": [
     {
       "name": "mysql",
-      "image": "reyhec/barbak-mysql:latest",
+      "image": "mysql:latest",
       "hostname": "mysql",
+      "environment": [
+        {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "value": "Password@1234"
+        },
+        {
+          "name": "MYSQL_PASSWORD",
+          "value": "Password@1234"
+        }
+      ],
       "essential": false,
       "memory": 300
     },
