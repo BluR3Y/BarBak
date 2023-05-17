@@ -9,10 +9,6 @@
         {
           "name": "MYSQL_ROOT_PASSWORD",
           "value": "Password@1234"
-        },
-        {
-          "name": "MYSQL_PASSWORD",
-          "value": "Password@1234"
         }
       ],
       "essential": false,
