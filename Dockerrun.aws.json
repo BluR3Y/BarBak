@@ -2,12 +2,6 @@
   "AWSEBDockerrunVersion": 2,
   "volumes": [
     {
-      "name": "mongo-init",
-      "host": {
-        "sourcePath": "/var/app/current/database/mongo/init-mongo.js"
-      }
-    },
-    {
       "name": "mysql-init-barware",
       "host": {
         "sourcePath": "/var/app/current/database/mysql/init-barware.sql"
@@ -30,12 +24,12 @@
       "mountPoints": [
         {
           "sourceVolume": "mysql-init-barware",
-          "containerPath": "/docker-entrypoint-initdb.d/init-barware.sql",
+          "containerPath": "/docker-entrypoint.d/init-barware.sql",
           "readOnly": true
         },
         {
           "sourceVolume": "mysql-init-permissions",
-          "containerPath": "/docker-entrypoint-initdb.d/init-permissions.sql",
+          "containerPath": "/docker-entrypoint.d/init-permissions.sql",
           "readOnly": true
         }
       ]
