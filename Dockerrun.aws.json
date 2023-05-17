@@ -3,7 +3,7 @@
   "containerDefinitions": [
     {
       "name": "mysql",
-      "image": "reyhec/barbak-mysql:latest",
+      "image": "mysql:latest",
       "hostname": "mysql",
       "essential": false,
       "memory": 300
