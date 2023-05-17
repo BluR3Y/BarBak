@@ -12,7 +12,6 @@ phases:
     - docker build -t reyhec/barbak-webserver ./webserver
     - docker build -t reyhec/barbak-client ./client
     - docker build -t reyhec/barbak-backend ./backend
-    # - docker build -t reyhec/barbak-mysql ./mysql
     # Log In to the Docker CLI
     - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
   post_build:
@@ -22,7 +21,6 @@ phases:
     - docker push reyhec/barbak-webserver
     - docker push reyhec/barbak-client
     - docker push reyhec/barbak-backend
-    # - docker push reyhec/barbak-mysql
 artifacts:
   files:
     - '**/*'
