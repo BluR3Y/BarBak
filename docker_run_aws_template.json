@@ -2,12 +2,6 @@
   "AWSEBDockerrunVersion": 2,
   "volumes": [
     {
-      "name": "mongo-init",
-      "host": {
-        "sourcePath": "/var/app/current/database/mongo/init-mongo.js"
-      }
-    },
-    {
       "name": "mysql-init-barware",
       "host": {
         "sourcePath": "/var/app/current/database/mysql/init-barware.sql"
@@ -21,34 +15,6 @@
     }
   ],
   "containerDefinitions": [
-    {
-      "name": "client",
-      "image": "reyhec/barbak-client:latest",
-      "hostname": "client",
-      "essential": false,
-      "memory": 300
-    },
-    {
-      "name": "backend",
-      "image": "reyhec/barbak-backend:latest",
-      "hostname": "backend",
-      "essential": false,
-      "memory": 300
-    },
-    {
-      "name": "mongo",
-      "image": "mongo:latest",
-      "hostname": "mongo",
-      "essential": false,
-      "memory": 300,
-      "mountPoints": [
-        {
-          "sourceVolume": "mongo-init",
-          "containerPath": "/docker-entrypoint-initdb.d/init-mongo.js",
-          "readOnly": true
-        }
-      ]
-    },
     {
       "name": "mysql",
       "image": "mysql:latest",
@@ -72,6 +38,20 @@
       "name": "redis",
       "image": "redis:latest",
       "hostname": "redis",
+      "essential": false,
+      "memory": 300
+    },
+    {
+      "name": "backend",
+      "image": "reyhec/barbak-backend:latest",
+      "hostname": "backend",
+      "essential": false,
+      "memory": 300
+    },
+    {
+      "name": "client",
+      "image": "reyhec/barbak-client:latest",
+      "hostname": "client",
       "essential": false,
       "memory": 300
     },

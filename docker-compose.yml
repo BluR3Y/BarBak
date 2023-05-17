@@ -30,23 +30,21 @@ services:
     env_file:
       - ./env/backend/production.env
 
+  mysql:
+    container_name: mysql
+    build:
+      dockerfile: Dockerfile
+      context: ./mysql
+    env_file:
+      - ./env/database/mysql/production.env
+
   mongo:
     container_name: mongo
     image: mongo:latest
     env_file:
       - ./env/database/mongo/production.env
     volumes:
-      - ./database/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-
-  mysql:
-    container_name: mysql
-    image: mysql:latest
-    command: --default-authentication-plugin=mysql_native_password
-    volumes:
-      - ./database/mysql/init-barware.sql:/docker-entrypoint-initdb.d/init-barware.sql:ro
-      - ./database/mysql/init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro
-    env_file:
-      - ./env/database/mysql/production.env
+      - ./mongo/init/roles.js:/docker-entrypoint-initdb.d/roles.js:ro
 
   redis:
     container_name: redis
