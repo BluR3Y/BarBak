@@ -1,8 +1,8 @@
 FROM mysql:latest
 
-# RUN chown -R mysql:root /var/lib/mysql/
+RUN chown -R mysql:root /var/lib/mysql/
 
-# ARG MYSQL_ROOT_PASSWORD
+ARG MYSQL_ROOT_PASSWORD
 
 ENV MYSQL_ROOT_PASSWORD=AWS@1234
 
