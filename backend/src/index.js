@@ -12,7 +12,7 @@ const connectDB = require('./config/database-config');
 const errorHandler = require('./middlewares/error-handler');
 
 connectDB.ready.then(_ => {
-    const { PORT, WEB_SERVER_URI, SESSION_SECRET } = process.env;
+    const { PORT, WEB_SERVER_URI, EXPRESS_SESSION_SECRET } = process.env;
 
     // for parsing application/json
     app.use(bodyParser.json());
@@ -23,12 +23,12 @@ connectDB.ready.then(_ => {
         credentials: true,
     }));
     // for parsing cookies
-    app.use(cookieParser(SESSION_SECRET));
+    app.use(cookieParser(EXPRESS_SESSION_SECRET));
 
     // setup app session
     app.use(session({
         name: 'session',
-        secret: SESSION_SECRET,
+        secret: EXPRESS_SESSION_SECRET,
         // Forces the session to be saved back to the session store,
         // even if the session was never modified during the request
         resave: true,

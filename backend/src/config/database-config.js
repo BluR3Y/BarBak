@@ -6,11 +6,11 @@ const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongo
 
 // MongoDB Connection
 const mongoConnect = () => {
-    const { NODE_ENV, MONGO_HOST, MONGO_USER, MONGO_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
+    const { NODE_ENV, MONGO_HOST, MONGO_ACCESS_USER, MONGO_ACCESS_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
     // const mongoUri = `mongodb${NODE_ENV === 'production' ? '+srv' : ''}://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
     const mongoUri = NODE_ENV === 'production' ?
-        `mongodb+srv://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}/${MONGO_DATABASE}` :
-        `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
+        `mongodb+srv://${MONGO_ACCESS_USER}:${encodeURIComponent(MONGO_ACCESS_PASSWORD)}@${MONGO_HOST}/${MONGO_DATABASE}` :
+        `mongodb://${MONGO_ACCESS_USER}:${encodeURIComponent(MONGO_ACCESS_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
     const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
     mongoose.set('strictQuery', false);
     mongoose.plugin(accessibleRecordsPlugin);
@@ -38,9 +38,9 @@ const mongoConnect = () => {
 const mysqlConnection = mysql.createConnection({
     host: process.env.MYSQL_HOST,
     port: process.env.MYSQL_PORT,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+    database: process.env.MYSQL_DATABASE,
+    user: process.env.MYSQL_ACCESS_USER,
+    password: process.env.MYSQL_ACCESS_PASSWORD
 });
 const executeSqlQuery = function(query, values) {
     return new Promise((resolve, reject) => {
@@ -57,9 +57,9 @@ const redisClient = redis.createClient({
 });
 
 const ready = Promise.all([
-    // mongoConnect(), 
-    // mysqlConnection.connect(), 
-    // redisClient.connect()
+    mongoConnect(), 
+    mysqlConnection.connect(), 
+    redisClient.connect()
 ]);
 
 module.exports = {

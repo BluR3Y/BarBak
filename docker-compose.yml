@@ -36,15 +36,14 @@ services:
     env_file:
       - ./env/database/mongo/production.env
     volumes:
-      - ./database/mongo/init/roles.js:/docker-entrypoint-initdb.d/roles.js:ro
+      - ./database/mongo/init:/docker-entrypoint-initdb.d:ro
 
   mysql:
     container_name: mysql
     image: mysql:latest
     command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - ./database/mysql/init/barware.sql:/docker-entrypoint-initdb.d/init-barware.sql:ro
-      - ./database/mysql/init/permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro
+      - ./database/mysql/init:/docker-entrypoint-initdb.d:ro
     env_file:
       - ./env/database/mysql/production.env
 

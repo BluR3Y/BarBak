@@ -1,4 +1,4 @@
-CREATE DATABASE barbak;
+-- CREATE DATABASE barbak;
 USE barbak;
 
 -- Tools
