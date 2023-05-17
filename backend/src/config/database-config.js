@@ -57,9 +57,9 @@ const redisClient = redis.createClient({
 });
 
 const ready = Promise.all([
-    mongoConnect(), 
-    mysqlConnection.connect(), 
-    redisClient.connect()
+    // mongoConnect(), 
+    // mysqlConnection.connect(), 
+    // redisClient.connect()
 ]);
 
 module.exports = {
