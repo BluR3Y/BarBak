@@ -46,6 +46,8 @@ services:
       - ./database/mysql/init:/docker-entrypoint-initdb.d:ro
     env_file:
       - ./env/database/mysql/production.env
+    ports:
+      - 1010:3306
 
   redis:
     container_name: redis

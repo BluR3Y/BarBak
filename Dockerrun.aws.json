@@ -14,7 +14,14 @@
       "image": "mysql:latest",
       "hostname": "mysql",
       "essential": false,
-      "memory": 512
+      "memory": 512,
+      "mountPoints": [
+        {
+          "sourceVolume": "mysql-init",
+          "containerPath": "/docker-entrypoint-initdb.d",
+          "readOnly": true
+        }
+      ]
     },
     {
       "name": "redis",
@@ -28,6 +35,7 @@
       "image": "reyhec/barbak-backend:latest",
       "hostname": "backend",
       "essential": false,
+      "links": ["mysql","redis"],
       "memory": 300
     },
     {
