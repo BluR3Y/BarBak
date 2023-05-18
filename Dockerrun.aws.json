@@ -2,15 +2,9 @@
   "AWSEBDockerrunVersion": 2,
   "volumes": [
     {
-      "name": "mysql-init-barware",
+      "name": "mysql-init",
       "host": {
-        "sourcePath": "/var/app/current/database/mysql/init/barware.sql"
-      }
-    },
-    {
-      "name": "mysql-init-permissions",
-      "host": {
-        "sourcePath": "/var/app/current/database/mysql/init/permissions.sql"
+        "sourcePath": "/var/app/current/database/mysql/init"
       }
     }
   ],
@@ -23,13 +17,8 @@
       "memory": 300,
       "mountPoints": [
         {
-          "sourceVolume": "mysql-init-barware",
-          "containerPath": "/docker-entrypoint-initdb.d/init-barware.sql",
-          "readOnly": true
-        },
-        {
-          "sourceVolume": "mysql-init-permissions",
-          "containerPath": "/docker-entrypoint-initdb.d/init-permissions.sql",
+          "sourceVolume": "mysql-init",
+          "containerPath": "/docker-entrypoint-initdb.d",
           "readOnly": true
         }
       ]
