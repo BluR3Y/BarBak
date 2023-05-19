@@ -31,7 +31,7 @@ class Login extends React.Component {
     }
 
     static async getInitialProps(ctx) {
-        const barbak_backend_uri = process.env.BARBAK_BACKEND;
+        const barbak_backend_uri = process.env.BACKEND_URI;
         return { barbak_backend_uri };
     }
 
@@ -63,56 +63,97 @@ class Login extends React.Component {
                 throw errorObj;
             }
 
-            const {data} = await axios.post(`${barbak_backend_uri}/users/login`, {
+            const { data } = await axios.post(`${barbak_backend_uri}/accounts/login`, {
                 username: email,
                 password
-            }, {
-                withCredentials: true,
+            },{
+
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 }
             });
             updateUserInfo(data);
-            if (data.profile_image)
-                await this.fetchProfileImage(barbak_backend_uri + data.profile_image);
-
+            await this.fetchProfileImage(data.profile_image)
             // To prevent users from returning to login page, replace login page path with home page path in browser's history
             window.history.replaceState({}, '', '/');
             Router.push('/');
         } catch(err) {
-            if (err.name === "AxiosError") {
+            if (err.name === 'AxiosError') {
                 const errorResponse = err.response;
-                if (errorResponse.status === 400) {
-                    const { data } = errorResponse;
-                    switch (data.path) {
-                        case 'user':
-                            this.setState({ emailError: data.message });
-                            break;
-                        case 'password':
-                            this.setState({ passwordError: data.message });
-                            break;
-                    }
-                } else if (errorResponse.status === 500) {
-                    this.setState({ otherError: 'An error occured while processing your request' });
-                }
-            } else {
-                const errors = err.errors;
-                for (const error in errors) {
-                    switch (errors[error].path) {
-                        case 'user':
-                            this.setState({ emailError: errors[error].message });
-                            break;
-                        case 'password':
-                            this.setState({ passwordError: errors[error].message });
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                console.log(errorResponse)
             }
+            console.log(err)
+            // Last Here
         }
     }
+
+    // handleSubmit = async (event) => {
+    //     try {
+    //         event.preventDefault();
+    //         const { email, password } = this.state;
+    //         const { barbak_backend_uri, updateUserInfo } = this.props;
+
+    //         if (!email.length || !password.length) {
+    //             const errorObj = new Error('Empty Fields');
+    //             errorObj.errors = [];
+    //             if (!email.length)
+    //                 errorObj.errors.push({ path: 'user', type: 'empty', message: 'Field is empty' });
+    //             if (!password.length)
+    //                 errorObj.errors.push({ path: 'password', type: 'empty', message: 'Field is empty' });
+    //             throw errorObj;
+    //         }
+
+    //         const {data} = await axios.post(`${barbak_backend_uri}/users/login`, {
+    //             username: email,
+    //             password
+    //         }, {
+    //             withCredentials: true,
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'Accept': 'application/json'
+    //             }
+    //         });
+    //         updateUserInfo(data);
+    //         if (data.profile_image)
+    //             await this.fetchProfileImage(barbak_backend_uri + data.profile_image);
+
+    //         // To prevent users from returning to login page, replace login page path with home page path in browser's history
+    //         window.history.replaceState({}, '', '/');
+    //         Router.push('/');
+    //     } catch(err) {
+    //         if (err.name === "AxiosError") {
+    //             const errorResponse = err.response;
+    //             if (errorResponse.status === 400) {
+    //                 const { data } = errorResponse;
+    //                 switch (data.path) {
+    //                     case 'user':
+    //                         this.setState({ emailError: data.message });
+    //                         break;
+    //                     case 'password':
+    //                         this.setState({ passwordError: data.message });
+    //                         break;
+    //                 }
+    //             } else if (errorResponse.status === 500) {
+    //                 this.setState({ otherError: 'An error occured while processing your request' });
+    //             }
+    //         } else {
+    //             const errors = err.errors;
+    //             for (const error in errors) {
+    //                 switch (errors[error].path) {
+    //                     case 'user':
+    //                         this.setState({ emailError: errors[error].message });
+    //                         break;
+    //                     case 'password':
+    //                         this.setState({ passwordError: errors[error].message });
+    //                         break;
+    //                     default:
+    //                         break;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     fetchProfileImage = async (url) => {
         try {
