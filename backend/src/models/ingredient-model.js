@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { executeSqlQuery } = require('../config/database-config');
 const { default_covers } = require('../config/config.json');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
+const barwarePlugin = require('./plugins/barware');
 
 const ingredientSchema = new mongoose.Schema({
     name: {
@@ -31,6 +32,7 @@ const ingredientSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 },{ collection: 'ingredients', discriminatorKey: 'variant' });
+ingredientSchema.plugin(barwarePlugin);
 
 ingredientSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({

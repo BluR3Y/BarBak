@@ -12,7 +12,7 @@ const connectDB = require('./config/database-config');
 const errorHandler = require('./middlewares/error-handler');
 
 connectDB.ready.then(_ => {
-    const { PORT, WEB_SERVER_URI, EXPRESS_SESSION_SECRET } = process.env;
+    const { EXPRESS_SESSION_SECRET } = process.env;
 
     // for parsing application/json
     app.use(bodyParser.json());

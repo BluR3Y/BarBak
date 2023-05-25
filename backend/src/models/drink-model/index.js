@@ -7,6 +7,7 @@ const { Drinkware, UserDrinkware } = require('./../drinkware-model');
 const { Tool, UserTool } = require('./../tool-model');
 const ingredientSchema = require('./ingredient-schema');
 const { getPreSignedURL } = require('../../utils/aws-s3-operations');
+const barwarePlugin = require('../plugins/barware');
 
 const drinkSchema = new mongoose.Schema({
     name: {
@@ -101,6 +102,7 @@ const drinkSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 },{ collection: 'drinks', discriminatorKey: 'variant' });
+drinkSchema.plugin(barwarePlugin);
 
 drinkSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({

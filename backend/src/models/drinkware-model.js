@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers } = require('../config/config.json');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
+const barwarePlugin = require('./plugins/barware');
 
 const drinkwareSchema = new mongoose.Schema({
     name: {
@@ -24,6 +25,7 @@ const drinkwareSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 },{ collection: 'drinkware', discriminatorKey: 'variant' });
+drinkwareSchema.plugin(barwarePlugin);
 
 drinkwareSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({
