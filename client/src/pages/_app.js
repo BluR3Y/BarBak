@@ -28,7 +28,8 @@ export default function App({ Component, pageProps }) {
   }
 
   return <Provider store={store}>
-    <PersistGate loading={<h1>Loading...</h1>} persistor={persistor}>
+    {/* <PersistGate loading={<h1>Loading...</h1>} persistor={persistor}> */}
+    <PersistGate persistor={persistor} >
       <ThemeProvider theme={siteThemes[activeTheme]}>
         <GlobalStyles/>
         <Component {...pageProps} />

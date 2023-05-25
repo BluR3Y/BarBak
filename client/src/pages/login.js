@@ -66,15 +66,8 @@ class Login extends React.Component {
             const { data } = await axios.post(`${barbak_backend_uri}/accounts/login`, {
                 username: email,
                 password
-            },{
-
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
+            },{ withCredentials: true });
             updateUserInfo(data);
-            await this.fetchProfileImage(data.profile_image)
             // To prevent users from returning to login page, replace login page path with home page path in browser's history
             window.history.replaceState({}, '', '/');
             Router.push('/');
@@ -155,21 +148,6 @@ class Login extends React.Component {
     //     }
     // }
 
-    fetchProfileImage = async (url) => {
-        try {
-            const { updateUserProfileImage } = this.props;
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                updateUserProfileImage(reader.result);
-            };
-
-            const { data } = await axios.get(url, { withCredentials: true, responseType: 'blob' });
-            reader.readAsDataURL(data);
-        } catch(err) {
-            console.log('error fetching profile image');
-        }
-    }
-
     render() {
         const { emailCallback, passwordCallback, handleSubmit } = this;
         const { email, emailError, password, passwordError, otherError } = this.state;
@@ -228,8 +206,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo)),
-        updateUserProfileImage: (profileImage) => dispatch(setUserProfileImage(profileImage))
+        updateUserInfo: (userInfo) => dispatch(setUserInfo(userInfo))
     }
 }
 
