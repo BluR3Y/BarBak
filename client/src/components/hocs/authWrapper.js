@@ -1,6 +1,6 @@
 import React from 'react';
 import Router from 'next/router';
-import { getCookie } from '@/utils/component/methods';
+import { getCookie } from '@/utils/methods';
 import { connect } from 'react-redux';
 import { setUserInfo } from '@/redux/actions';
 import axios from 'axios';

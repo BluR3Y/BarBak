@@ -18,8 +18,13 @@ class Register extends React.Component {
         super(props);
         this.state = {
             registrationStep: 0,
-            registrationInfo: new Array()
+            registrationInfo: null
         }
+    }
+
+    static async getInitialProps(ctx) {
+        const barbak_backend_uri = process.env.BACKEND_URI;
+        return { barbak_backend_uri };
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -73,6 +78,7 @@ class Register extends React.Component {
                             updateActiveRegistration={updateActiveRegistration}
                             updateRegistrationInfo={updateRegistrationInfo}
                             registrationInfo={registrationInfo}
+                            { ...this.props }
                         />
                     ))}
                 </div>

@@ -5,7 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 
 import { connect } from 'react-redux';
-import { setUserInfo, setUserProfileImage } from '@/redux/actions';
+import { setUserInfo } from '@/redux/actions';
 
 import { StyledLogin, AssistLink } from '@/styles/pages/login';
 import { AuthenticationForm } from '@/styles/components/shared/authForm';
@@ -16,6 +16,7 @@ import { StyledLogo } from '@/styles/components/shared/logo';
 import SlideShow from '@/components/shared/slideshow';
 import AuthInput from '@/components/shared/authInput';
 import { withOutAuth } from '@/components/hocs/authWrapper';
+import { loginValidator } from '@/lib/validations/user-validations';
 
 
 class Login extends React.Component {
@@ -53,16 +54,10 @@ class Login extends React.Component {
             const { email, password } = this.state;
             const { barbak_backend_uri, updateUserInfo } = this.props;
 
-            if (!email.length || !password.length) {
-                const errorObj = new Error('Empty Fields');
-                errorObj.errors = [];
-                if (!email.length)
-                    errorObj.errors.push({ path: 'user', type: 'empty', message: 'Field is empty' });
-                if (!password.length)
-                    errorObj.errors.push({ path: 'password', type: 'empty', message: 'Field is empty' });
-                throw errorObj;
-            }
-
+            // Validate input data with joi validation object
+            const { error } = loginValidator.validate({ username: email, password },{ abortEarly: false, allowUnknown: false });
+            if (error) throw error;
+            // Make api call to log in user with passed credentials
             const { data } = await axios.post(`${barbak_backend_uri}/accounts/login`, {
                 username: email,
                 password
@@ -72,81 +67,38 @@ class Login extends React.Component {
             window.history.replaceState({}, '', '/');
             Router.push('/');
         } catch(err) {
+            // Resolving error relating to http request
             if (err.name === 'AxiosError') {
-                const errorResponse = err.response;
-                console.log(errorResponse)
+                const { data, status } = err.response;
+                switch (status) {
+                    case 404:
+                        this.setState({ emailError: data.message });
+                        break;
+                    case 401:
+                        this.setState({ passwordError: data.message });
+                        break;
+                    default:
+                        this.setState({ otherError: data.message });
+                        break;
+                }
             }
-            console.log(err)
-            // Last Here
+            // Resolving error relating to field validation
+            if (err.name === 'ValidationError') {
+                const { details } = err;
+                for (const { message, path, type } of details) {
+                    switch (path[0]) {
+                        case 'username':
+                            this.setState(prevState => ({ emailError: prevState.emailError || message }));
+                            break;
+                        case 'password':
+                            this.setState(prevState => ({ passwordError: prevState.passwordError || message }));
+                        default:
+                            break;
+                    }
+                }
+            }
         }
     }
-
-    // handleSubmit = async (event) => {
-    //     try {
-    //         event.preventDefault();
-    //         const { email, password } = this.state;
-    //         const { barbak_backend_uri, updateUserInfo } = this.props;
-
-    //         if (!email.length || !password.length) {
-    //             const errorObj = new Error('Empty Fields');
-    //             errorObj.errors = [];
-    //             if (!email.length)
-    //                 errorObj.errors.push({ path: 'user', type: 'empty', message: 'Field is empty' });
-    //             if (!password.length)
-    //                 errorObj.errors.push({ path: 'password', type: 'empty', message: 'Field is empty' });
-    //             throw errorObj;
-    //         }
-
-    //         const {data} = await axios.post(`${barbak_backend_uri}/users/login`, {
-    //             username: email,
-    //             password
-    //         }, {
-    //             withCredentials: true,
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 'Accept': 'application/json'
-    //             }
-    //         });
-    //         updateUserInfo(data);
-    //         if (data.profile_image)
-    //             await this.fetchProfileImage(barbak_backend_uri + data.profile_image);
-
-    //         // To prevent users from returning to login page, replace login page path with home page path in browser's history
-    //         window.history.replaceState({}, '', '/');
-    //         Router.push('/');
-    //     } catch(err) {
-    //         if (err.name === "AxiosError") {
-    //             const errorResponse = err.response;
-    //             if (errorResponse.status === 400) {
-    //                 const { data } = errorResponse;
-    //                 switch (data.path) {
-    //                     case 'user':
-    //                         this.setState({ emailError: data.message });
-    //                         break;
-    //                     case 'password':
-    //                         this.setState({ passwordError: data.message });
-    //                         break;
-    //                 }
-    //             } else if (errorResponse.status === 500) {
-    //                 this.setState({ otherError: 'An error occured while processing your request' });
-    //             }
-    //         } else {
-    //             const errors = err.errors;
-    //             for (const error in errors) {
-    //                 switch (errors[error].path) {
-    //                     case 'user':
-    //                         this.setState({ emailError: errors[error].message });
-    //                         break;
-    //                     case 'password':
-    //                         this.setState({ passwordError: errors[error].message });
-    //                         break;
-    //                     default:
-    //                         break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 
     render() {
         const { emailCallback, passwordCallback, handleSubmit } = this;

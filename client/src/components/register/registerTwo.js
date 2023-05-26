@@ -28,7 +28,12 @@ function RegistrationTwo(props) {
     const resendVerificationCode = async (event) => {
         try {
             event.preventDefault();
-            await axios.get(`http://localhost:3000/users/register/resend`);
+            // await axios.post(`${props.barbak_backend_uri}/accounts/register/resend`,);
+            await axios({
+                method: 'post',
+                url: `${props.barbak_backend_uri}/accounts/register/resend`,
+                withCredentials: true
+            });
         } catch(err) {
             setError('An issue occured while processing your request');
         }
@@ -39,9 +44,14 @@ function RegistrationTwo(props) {
             event.preventDefault();
             const code = digits.join('');
 
-            await axios.post('http://localhost:3000/users/register/verify', {
-                registration_code: code
-            }, {
+            // await axios.post(`${props.barbak_backend_uri}/accounts/register/verify`, {
+            //     registration_code: code
+            // }, {
+            //     withCredentials: true
+            // });
+            await axios({
+                method: 'post',
+                url: `${props.barbak_backend_uri}/accounts/register/validate/${code}`,
                 withCredentials: true
             });
             props.updateActiveRegistration('next');

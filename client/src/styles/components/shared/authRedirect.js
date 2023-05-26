@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { hexToRgba } from "@/utils/style/color_conversion";
+import { hexToRgba } from "@/utils/color_conversion";
 
 export const RedirectContainer = styled.div`
     margin-top: 10px;

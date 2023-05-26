@@ -9,7 +9,6 @@ export default class AuthInput extends React.Component {
         super(props);
         this.state = {
             labelText: props.labelText || '',
-            // errorText: props.errorText || '',
             isFocused: false,
         }
     }
@@ -44,11 +43,15 @@ export default class AuthInput extends React.Component {
                     type="button"
                     onClick={() => this.setState(prevState => ({ passwordVisible: !prevState.passwordVisible }))}
                 >
-                    { passwordVisible ? <EyeOpen/> : <EyeClose/> }
+                    { passwordVisible ? <EyeClose/> : <EyeOpen/> }
                 </button>) }
             </div>
             { errorText && (
-                <h1>{errorText}</h1>
+                <div className="errorContainer">
+                    { errorText.split('\n').map((item, key) => {
+                        return <h1 key={key}>{item}</h1>
+                    }) }
+                </div>
             ) }
         </StyledInput>;
     }

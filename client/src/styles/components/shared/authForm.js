@@ -1,7 +1,7 @@
 import styled, { css } from "styled-components";
 import { StyledLogo } from "./logo";
 import { StyledInput } from "./authInput";
-import { hexToRgba } from "@/utils/style/color_conversion";
+import { hexToRgba } from "@/utils/color_conversion";
 
 export const AuthenticationForm = styled.form`
     max-width: 400px;

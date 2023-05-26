@@ -75,14 +75,20 @@ export const StyledInput = styled.div`
         }
     }
 
-    h1 {
-        font-size: 14px;
-        font-family: 'Poppins';
-        font-weight: 300;
-        top: 100%;
-        color: #e82113;
-        line-height: 18px;
-        margin-left: 8px;
+    .errorContainer {
+        h1 {
+            font-size: 14px;
+            font-family: 'Poppins';
+            font-weight: 300;
+            top: 100%;
+            color: #e82113;
+            line-height: 18px;
+            margin-left: 8px;
+        }
+        h1:not(:first-child) {
+            padding-left: 25px;
+            text-indent: -10px;
+        }
     }
     
     input:focus,
@@ -91,13 +97,4 @@ export const StyledInput = styled.div`
     button:focus {
         outline: none;
     }
-/* 
-    ${props => props.theme.type === 'dark' && css`
-        label {
-            color: ${props.theme.secondary};
-        }
-        input {
-            background-color: ${props.theme.accent};
-        }
-    `} */
 `;

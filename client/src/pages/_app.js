@@ -1,7 +1,7 @@
-import GlobalStyles from "@/utils/style/Global";
+import GlobalStyles from "@/config/Global";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "styled-components";
-import { siteThemes } from "@/utils/style/themes";
+import { siteThemes } from "@/config/themes";
 
 // React Redux Imports
 import { PersistGate } from "redux-persist/integration/react";

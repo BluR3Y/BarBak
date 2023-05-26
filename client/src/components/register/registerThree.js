@@ -21,7 +21,7 @@ function RegistrationThree(props) {
             if (!username.length) 
                 return setUsernameError('Username Field Is Empty')
 
-            const { data } = await axios.post('http://localhost:3000/users/register/username', {
+            const { data } = await axios.post(`${props.barbak_backend_uri}/accounts/register/username`, {
                 username
             }, { withCredentials: true });
             dispatch(setUserInfo(data))

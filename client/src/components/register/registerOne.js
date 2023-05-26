@@ -31,8 +31,9 @@ function RegistrationOne(props) {
                     errorObj.errors.push({ path: 'password', type: 'valid', message: 'Password field is empty'});
                 throw errorObj;
             }
+            // Last Here
 
-            await axios.post(`http://localhost:3000/users/register`, {
+            await axios.post(`${props.barbak_backend_uri}/accounts/register`, {
                 fullname,
                 email,
                 password
