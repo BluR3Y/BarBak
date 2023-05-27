@@ -3,7 +3,7 @@ export const siteThemes = {
     classic: {
         type: 'classic',
         primary: '#FF5733',
-        secondary: '#bbc4c4',
+        secondary: '#385ddf',
         accent: '#41495a',
         background: '#fafafa'
     },

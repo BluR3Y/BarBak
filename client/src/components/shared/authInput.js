@@ -1,14 +1,14 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 import { StyledInput } from '@/styles/components/shared/authInput';
 import EyeClose from 'public/icons/eye-close.js';
 import EyeOpen from 'public/icons/eye-open.js';
 
-export default class AuthInput extends React.Component {
+class AuthInput extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            labelText: props.labelText || '',
             isFocused: false,
         }
     }
@@ -20,12 +20,12 @@ export default class AuthInput extends React.Component {
     }
 
     render() {
-        const { labelText, isFocused, passwordVisible } = this.state;
-        const { inputValue, inputCallback, errorText, inputType } = this.props;
+        const { isFocused, passwordVisible } = this.state;
+        const { inputValue, inputCallback, errorText, inputType, labelText } = this.props;
         return <StyledInput 
             isFocused={isFocused} 
             isEmpty={!inputValue.length}  
-            emptyError={!errorText || !errorText.length}
+            isInvalid={!!errorText}
         >
             <div className="inputContainer">
                 <label htmlFor="input">{labelText}</label>
@@ -56,3 +56,13 @@ export default class AuthInput extends React.Component {
         </StyledInput>;
     }
 }
+
+AuthInput.propTypes = {
+    inputType: PropTypes.oneOf(['text','password']),
+    inputValue: PropTypes.string.isRequired,
+    labelText: PropTypes.string,
+    errorText: PropTypes.string,
+    inputCallback: PropTypes.func.isRequired
+}
+
+export default AuthInput;

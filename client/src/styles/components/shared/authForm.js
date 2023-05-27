@@ -10,7 +10,7 @@ export const AuthenticationForm = styled.form`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 30px 40px;
     border: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
     background-color: ${props => hexToRgba(props.theme.accent, 0.05)};
@@ -21,6 +21,9 @@ export const AuthenticationForm = styled.form`
     }
     & ${StyledInput} {
         margin-bottom: 10px;
+        input {
+            border-color: ${props => hexToRgba(props.theme.accent, 0.5)};
+        }
     }
 
     .otherError {
