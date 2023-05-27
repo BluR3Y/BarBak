@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
-
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import { RedirectContainer } from "@/styles/components/shared/authRedirect";
 
 import { StyledLogo } from "@/styles/components/shared/logo";
 import AuthInput from "../shared/authInput";
+import { registerFirstValidator } from '@/lib/validations/user-validations';
 
 function RegistrationOne(props) {
     const [email, setEmail] = useState('');
@@ -19,19 +19,29 @@ function RegistrationOne(props) {
     const [fullnameError, setFullNameError] = useState('');
     const [otherError, setOtherError] = useState('');
 
+    const fullnameCallback = (fullname) => {
+        if (fullnameError)
+            setFullNameError('');
+        setFullName(fullname);
+    }
+
+    const emailCallback = (email) => {
+        if (emailError)
+            setEmailError('');
+        setEmail(email);
+    }
+
+    const passwordCallback = (password) => {
+        if (passwordError)
+            setPasswordError('');
+        setPassword(password);
+    }
+
     const handleSubmit = async (event) => {
         try {
             event.preventDefault();
-            if (!email.length || !password.length) {
-                const errorObj = new Error('Empty Fields');
-                errorObj.errors = [];
-                if (!email.length)
-                    errorObj.errors.push({ path: 'email', type: 'valid', message: 'Email field is empty' });
-                if (!password.length)
-                    errorObj.errors.push({ path: 'password', type: 'valid', message: 'Password field is empty'});
-                throw errorObj;
-            }
-            // Last Here
+            const { error } = registerFirstValidator.validate({ fullname, email, password }, { abortEarly: false, allowUnknown: false });
+            if (error) throw error;
 
             await axios.post(`${props.barbak_backend_uri}/accounts/register`, {
                 fullname,
@@ -43,34 +53,32 @@ function RegistrationOne(props) {
             props.updateRegistrationInfo({ fullname, email, password });
             props.updateActiveRegistration('next');
         } catch(err) {
+            // Resolving error relating to http request
             if (err.name === "AxiosError") {
-                const errorResponse = err.response;
-                console.log(errorResponse)
-                if (errorResponse.status === 400) {
-                    const { data } = errorResponse;
-                    switch (data.path) {
-                        case 'email':
-                            setEmailError(data.message);
-                            break;
-                        default:
-                            break;
-                    }
-                } else if (errorResponse.status === 500) {
-                    setOtherError('An error occured while processing your request');
+                const { data, status } = err.response;
+                switch (status) {
+                    case 409:
+                        setEmailError(data.message);
+                        break;
+                    default:
+                        setOtherError(data.message);
+                        break;
                 }
-            } else {
-                const errors = err.errors;
-                for (const error in errors) {
-                    switch (errors[error].path) {
+            }
+            // Resolving error relating to field validation
+            if (err.name === "ValidationError") {
+                const { details } = err;
+                for (const { message, path, type } of details) {
+                    console.log(type)
+                    switch (path[0]) {
+                        case 'fullname':
+                            setFullNameError(fullnameError.length ? fullnameError : message);
+                            break;
                         case 'email':
-                            setEmailError(errors[error].message);
+                            setEmailError(emailError.length ? emailError : message);
                             break;
                         case 'password':
-                            setPasswordError(errors[error].message);
-                            break;
-                        case 'fullname':
-                            setFullNameError(errors[error].message);
-                            break;
+                            setPasswordError(passwordError.length ? passwordError : message);
                         default:
                             break;
                     }
@@ -80,7 +88,7 @@ function RegistrationOne(props) {
     }
 
     return <>
-        <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
+        <AuthenticationForm onSubmit={handleSubmit}>
             <StyledLogo/>
             { otherError && <h1 className='otherError'>{otherError}</h1> }
             <AuthInput
@@ -88,21 +96,21 @@ function RegistrationOne(props) {
                 errorText={fullnameError}
                 inputValue={fullname}
                 inputType={'text'}
-                inputCallback={(val) => setFullName(val)}
+                inputCallback={fullnameCallback}
             />
             <AuthInput
                 labelText={'Email'}
                 errorText={emailError}
                 inputValue={email}
                 inputType={'text'}
-                inputCallback={(val) => setEmail(val)}
+                inputCallback={emailCallback}
             />
             <AuthInput
                 labelText={'Password'}
                 errorText={passwordError}
                 inputValue={password}
                 inputType={'password'}
-                inputCallback={(val) => setPassword(val)}
+                inputCallback={passwordCallback}
             />
             <StyledSubmitBtn value='Next' />
         </AuthenticationForm>

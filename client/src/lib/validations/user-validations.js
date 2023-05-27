@@ -31,8 +31,35 @@ const passwordSchema = Joi
         • Atleast one special character from the set #?!@$%^&*-
         `
     });
+const fullnameSchema = Joi
+    .string()
+    .allow('')
+    .max(30)
+    .pattern(new RegExp('^[A-Za-z ]+$'))
+    .messages({
+        'string.base': 'Name must be a string',
+        'string.max': 'Name length must not exceed {#limit} characters',
+        'string.pattern.base': 'Name can only contain letters'
+    });
+
+const emailSchema = Joi
+    .string()
+    .email({ tlds: { allow: false } })
+    .messages({
+        'string.base': 'Email must be a string',
+        'string.empty': 'Email cannot be an empty field',
+        'string.email': 'Invalid email address',
+    });
 
 export const loginValidator = Joi.object({
     username: usernameSchema.required(),
     password: passwordSchema.required()
 });
+
+export const registerFirstValidator = Joi.object({
+    fullname: fullnameSchema,
+    email: emailSchema.required(),
+    password: passwordSchema.required()
+});
+
+export const registerThirdValidator = usernameSchema.required();

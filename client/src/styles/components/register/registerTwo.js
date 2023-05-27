@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { hexToRgba } from "@/utils/color_conversion";
 
-
 export const FormHeaders = styled.div`
     width: 100%;
     margin-top: -5px;
@@ -42,7 +41,7 @@ export const DigitInput = styled.input.attrs(() => ({
     height: 80%;
     aspect-ratio: 1;
     border-radius: 5px;
-    border: 0;
+    border: 2px solid ${props => props.isInvalid ? '#e82113' : 'transparent'};
 
     font-family: 'Open Sans';
     font-size: 20px;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import { StyledLogo } from "@/styles/components/shared/logo";
@@ -7,6 +7,7 @@ import { StyledSubmitBtn } from "@/styles/components/register/submitBtn";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "@/redux/actions";
+import { registerThirdValidator } from "@/lib/validations/user-validations";
 
 function RegistrationThree(props) {
     const [username, setUsername] = useState('');
@@ -14,12 +15,31 @@ function RegistrationThree(props) {
     const [otherError, setOtherError] = useState('');
     const dispatch = useDispatch();
 
+    useEffect(() => {
+        // Warn user of progress loss if page is left
+        const handleBeforeUpload = (event) => {
+            event.preventDefault();
+            // Required for Chrome compatibility
+            event.returnValue = '';
+        }
+        window.addEventListener('beforeunload', handleBeforeUpload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUpload);
+        }
+    }, []);
+
+    const usernameCallback = (username) => {
+        if (usernameError.length) {
+            setUsernameError('');
+        }
+        setUsername(username);
+    }
+
     const handleSubmit = async (event) => {
         try {
             event.preventDefault();
-
-            if (!username.length) 
-                return setUsernameError('Username Field Is Empty')
+            const { error } = registerThirdValidator.validate(username);
+            if (error) throw error;
 
             const { data } = await axios.post(`${props.barbak_backend_uri}/accounts/register/username`, {
                 username
@@ -27,33 +47,32 @@ function RegistrationThree(props) {
             dispatch(setUserInfo(data))
             props.updateActiveRegistration('next');
         } catch(err) {
-            if (err.name === "AxiosError") {
-                console.log(err)
-                const errorResponse = err.response;
-                if (errorResponse.status === 400) {
-                    const { data } = errorResponse;
-                    switch (data.path) {
-                        case 'username':
-                            setUsernameError(data.message);
-                            break;
-                    }
-                } else if (errorResponse.status === 401) {
-                    setOtherError('You are not authorized to make this request')
-                } else if (errorResponse.status === 500) {
-                    setOtherError('An error occured while processing your request');
+            if (err.name === 'AxiosError') {
+                const { status, data: { errors } } = err.response;
+                switch (status) {
+                    case 400:
+                        setUsernameError(errors.username.message)
+                        break;
+                    default:
+                        setOtherError(data.message);
+                        break;
                 }
+            }
+            if (err.name === 'ValidationError') {
+                const { details: [info] } = err;
+                setUsernameError(info.message);
             }
         }
     }
 
-    return <AuthenticationForm onSubmit={handleSubmit} activeForm={props.activeForm}>
+    return <AuthenticationForm onSubmit={handleSubmit}>
         <StyledLogo/>
         <AuthInput
             labelText={'Username'}
             errorText={usernameError}
             inputValue={username}
             inputType={'text'}
-            inputCallback={(val) => setUsername(val)}
+            inputCallback={usernameCallback}
         />
             { otherError && <h1 className="otherError">{otherError}</h1> }
         <StyledSubmitBtn value='Sign Up' />

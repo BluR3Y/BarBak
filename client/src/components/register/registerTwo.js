@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { AuthenticationForm } from "@/styles/components/shared/authForm";
 import { StyledLogo } from "@/styles/components/shared/logo";
@@ -7,28 +7,68 @@ import { FormHeaders, CodeContainer, DigitInput, ResendLink, ErrorMessage } from
 import axios from "axios";
 
 function RegistrationTwo(props) {
-    const [digits, setDigits] = useState(['', '', '', '', '', '']);
+    const numDigits = 6;
+    const [digits, setDigits] = useState(Array(numDigits).fill(''));
     const inputRefs = useRef([]);
+    const [invalidDigits, setInvalidDigits] = useState(new Set());
     const [error, setError] = useState('');
-
     const { registrationInfo } = props;
 
+    useEffect(() => {
+        // Warn user of progress loss if page is left
+        const handleBeforeUpload = (event) => {
+            event.preventDefault();
+            // Required for Chrome compatibility
+            event.returnValue = '';
+        }
+        window.addEventListener('beforeunload', handleBeforeUpload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUpload);
+        }
+    }, []);
+
     const handleInputChange = (event, index) => {
+        if (!/^\d*$/.test(event.target.value)) {
+            return;
+        }
+        if (invalidDigits.size) {
+            setInvalidDigits(new Set());
+        }
+
         const newDigits = [...digits];
         newDigits[index] = event.target.value;
+        setDigits(newDigits);
     
         // Move focus to the next input field
-        if (event.target.value !== '' && !isNaN(event.target.value) && index < 5) {
+        if (event.target.value !== '' && index < numDigits - 1) {
           inputRefs.current[index + 1].focus();
         }
-    
+    }
+
+    const handleKeyDown = (event, index) => {
+        if (event.key === 'Backspace' && index > 0 && digits[index] === '') {
+            // Move focus to the previous input field
+            inputRefs.current[index - 1].focus();
+        }
+    }
+
+    const handlePaste = (event) => {
+        event.preventDefault();
+        const pastedData = event.clipboardData.getData('text/plain').slice(0, numDigits);
+        const newDigits = [...digits];
+        for (let i = 0; i < numDigits; i++) {
+            newDigits[i] = /^\d*$/.test(pastedData[i]) ? pastedData[i] : '';
+        }
         setDigits(newDigits);
+    }
+
+    const handleFocus = (index) => {
+        inputRefs.current[index].select();
     }
 
     const resendVerificationCode = async (event) => {
         try {
             event.preventDefault();
-            // await axios.post(`${props.barbak_backend_uri}/accounts/register/resend`,);
             await axios({
                 method: 'post',
                 url: `${props.barbak_backend_uri}/accounts/register/resend`,
@@ -42,13 +82,20 @@ function RegistrationTwo(props) {
     const handleSubmit = async (event) => {
         try {
             event.preventDefault();
-            const code = digits.join('');
+            let code = '';
+            const invalidFields = new Set();
+            for (let i = 0; i < numDigits; i++) {
+                if (!/^\d+$/.test(digits[i])) {
+                    invalidFields.add(i);
+                    continue;
+                }
+                code += digits[i];
+            }
+            if (invalidFields.size) {
+                setInvalidDigits(invalidFields);
+                return setError('Invalid verification code');
+            }
 
-            // await axios.post(`${props.barbak_backend_uri}/accounts/register/verify`, {
-            //     registration_code: code
-            // }, {
-            //     withCredentials: true
-            // });
             await axios({
                 method: 'post',
                 url: `${props.barbak_backend_uri}/accounts/register/validate/${code}`,
@@ -56,34 +103,21 @@ function RegistrationTwo(props) {
             });
             props.updateActiveRegistration('next');
         } catch(err) {
-            console.log(err)
             if (err.name === "AxiosError") {
-                const errorResponse = err.response;
-                if (errorResponse.status === 400) {
-                    const { data } = errorResponse;
-                    switch (data.path) {
-                        case 'code':
-                            setError('Invalid Validation Code');
-                            break;
-                        default:
-                            break;
-                    }
-                } else if (errorResponse.status === 500) {
-                    setOtherError('An issue occured while processing your request');
-                }
-            } else {
-                const errors = err.errors;
-                for (const error in errors) {
-
+                const { status } = err.response;
+                switch (status) {
+                    case 400:
+                        setError('Invalid verification Code');
+                        break;
+                    default:
+                        setError('An issue occured while processing your request');
+                        break;
                 }
             }
         }
     }
 
-    return <AuthenticationForm 
-        activeForm={props.activeForm}
-        onSubmit={handleSubmit}
-    >
+    return <AuthenticationForm onSubmit={handleSubmit}>
         <StyledLogo/>
             <FormHeaders>
                 <h1>Check your inbox</h1>
@@ -96,12 +130,15 @@ function RegistrationTwo(props) {
                         key={index}
                         value={digit}
                         onChange={(event) => handleInputChange(event, index)}
+                        onKeyDown={(event) => handleKeyDown(event, index)}
+                        onFocus={() => handleFocus(index)}
+                        onPaste={handlePaste}
                         ref={(ref) => inputRefs.current[index] = ref}
+                        isInvalid={invalidDigits.has(index)}
                     />
                 )) }
             </CodeContainer>
             <ResendLink onClick={resendVerificationCode}>Resend Code</ResendLink>
-            {/* { error && <h1 className="otherError">{error}</h1> } */}
             { error && <ErrorMessage>{error}</ErrorMessage> }
         <StyledSubmitBtn value='Next' />
     </AuthenticationForm>;

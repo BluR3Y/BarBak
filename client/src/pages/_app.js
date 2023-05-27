@@ -13,7 +13,7 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     const preferedColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    // setActiveTheme(preferedColorScheme.matches ? 'dark' : 'classic');
+    setActiveTheme(preferedColorScheme.matches ? 'dark' : 'classic');
 
     preferedColorScheme.addEventListener('change', changeColorScheme);
 
