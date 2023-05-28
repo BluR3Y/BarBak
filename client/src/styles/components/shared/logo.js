@@ -1,6 +1,7 @@
 import styled from "styled-components";
+import Link from "next/link";
 
-export const StyledLogo = styled.a.attrs(() => ({
+export const StyledLogo = styled(Link).attrs(() => ({
     href: '/',
     children: 'barbak'
 }))`

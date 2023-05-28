@@ -8,7 +8,6 @@ export const StyledInput = styled.div`
 
     .inputContainer {
         position: relative;
-        border: 1px solid ${props => props.theme.secondary};
         border-radius: 6px;
 
         label {
@@ -21,31 +20,35 @@ export const StyledInput = styled.div`
             user-select: none;
             transition-duration: 0.2s;
             font-family: 'Poppins';
-            color: ${props => !props.isEmpty || props.isFocused ? props.theme.accent : props.theme.secondary };
+            color: ${props => props.theme.accent};
 
             ${props => props.isFocused || !props.isEmpty ? css`
                 top: -22px;
+                opacity: 0.85;
                 left: 0;
             ` : css `
                 left: 8px;
-                opacity: 0.8;
+                opacity: 0.7;
                 top: 50%;
                 transform: translateY(-50%);
             `}
         }
         input {
-            font-size: 16px;
+            font-size: 15px;
             font-family: 'Open Sans';
             font-weight: 400;
             height: 35px;
             width: 100%;
             padding-left: 8px;
             border-radius: 5px;
+            box-sizing: border-box;
+            border-style: solid;
+            border-width: 1px;
+            background-color: transparent;
+            color: ${props => props.theme.accent};
 
-            ${props => props.emptyError ? css`
-                border: none;
-            ` : css`
-                border: 2px solid rgba(232, 33, 19, 0.8);
+            ${({isInvalid}) => isInvalid && css`
+                border-color: rgba(232, 33, 19, 0.8) !important;
             `}
         }
 
@@ -60,29 +63,38 @@ export const StyledInput = styled.div`
             cursor: pointer;
             border-radius: 5px;
             height: fit-content;
+            width: 32px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 3px 2px;
+            align-items: center;
 
             svg {
                 height: 22px;
                 width: auto;
+                fill: ${props => props.theme.accent};
             }
         }
-        .passwordVisibility:focus {
+        .passwordVisibility:focus-visible {
             border: 2px solid ${props => props.theme.secondary};   
         }
     }
 
-    h1 {
-        font-size: 14px;
-        font-family: 'Poppins';
-        font-weight: 300;
-        top: 100%;
-        color: #e82113;
-        line-height: 18px;
-        margin-left: 8px;
+    .errorContainer {
+        padding: 4px 0;
+        h1 {
+            font-size: 14px;
+            font-family: 'Poppins';
+            font-weight: 300;
+            top: 100%;
+            color: #e82113;
+            line-height: 18px;
+            margin: 0 0 0 8px;
+        }
+        h1:not(:first-child) {
+            padding-left: 25px;
+            text-indent: -10px;
+        }
     }
     
     input:focus,
@@ -91,13 +103,4 @@ export const StyledInput = styled.div`
     button:focus {
         outline: none;
     }
-/* 
-    ${props => props.theme.type === 'dark' && css`
-        label {
-            color: ${props.theme.secondary};
-        }
-        input {
-            background-color: ${props.theme.accent};
-        }
-    `} */
 `;

@@ -11,19 +11,18 @@ import RegistrationOne from '@/components/register/registerOne';
 import RegistrationTwo from '@/components/register/registerTwo';
 import RegistrationThree from '@/components/register/registerThree';
 
-const registrationSteps = [RegistrationOne, RegistrationTwo, RegistrationThree]
-
 class Register extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            registrationStep: 0,
-            registrationInfo: new Array()
+            activeStep: 0,
+            registrationInfo: null,
+            registrationSteps: [RegistrationOne, RegistrationTwo, RegistrationThree]
         }
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if (this.state.registrationStep === 3) {
+        if (this.state.activeStep === 3) {
             // To prevent users from returning to registration page, replace registration page path with home page path in browser's history
             window.history.replaceState({}, '', '/');
             Router.push('/');
@@ -32,9 +31,9 @@ class Register extends React.Component {
 
     updateActiveRegistration = (direction) => {
         if (direction === 'next')
-            this.setState(prevState => ({ registrationStep: prevState.registrationStep + 1 }));
+            this.setState(prevState => ({ activeStep: prevState.activeStep + 1 }));
         else if (direction === 'prev')
-            this.setState(prevState => ({ registrationStep: prevState.registrationStep - 1 }));
+            this.setState(prevState => ({ activeStep: prevState.activeStep - 1 }));
     }
 
     updateRegistrationInfo = (info) => {
@@ -45,7 +44,7 @@ class Register extends React.Component {
     }
 
     render() {
-        const { registrationStep, registrationInfo } = this.state;
+        const { activeStep, registrationInfo, registrationSteps } = this.state;
         const { updateRegistrationInfo, updateActiveRegistration } = this;
         const images = [
             '/test/test-1.jpg',
@@ -66,15 +65,18 @@ class Register extends React.Component {
                     images={images}
                 />
                 <div className='authentication'>
-                    { registrationSteps.map((Component, index) => (
-                        <Component 
-                            key={index} 
-                            activeForm={registrationStep === index}
-                            updateActiveRegistration={updateActiveRegistration}
-                            updateRegistrationInfo={updateRegistrationInfo}
-                            registrationInfo={registrationInfo}
-                        />
-                    ))}
+                    { registrationSteps.map((Component, index) => {
+                        if (index === activeStep) {
+                            return <Component
+                                key={index}
+                                updateActiveRegistration={updateActiveRegistration}
+                                updateRegistrationInfo={updateRegistrationInfo}
+                                registrationInfo={registrationInfo}
+                                { ...this.props }
+                            />
+                        }
+                        return null;
+                    }) }
                 </div>
             </StyledRegister>
         </>

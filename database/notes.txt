@@ -1,0 +1,11 @@
+Create a MYSQL docker container:
+docker run -d -p 3306:3306 --name barbak_mysql_container --hostname mysql --env-file D:/Programming/GitHub/BarBak/env/database/mysql/development.env -v D:/Programming/GitHub/BarBak/database/mysql/init:/docker-entrypoint-initdb.d mysql
+
+Create a MongoDB docker container:
+docker run -d -p 27017:27017 --name barbak_mongo_container --hostname mongo --env-file D:/Programming/GitHub/BarBak/env/database/mongo/development.env -v D:/Programming/GitHub/BarBak/database/mongo/init:/docker-entrypoint-initdb.d mongo:latest
+
+Create a Redis docker container:
+docker run -d -p 6379:6379 --name barbak_redis_container --hostname redis redis:latest
+
+Create a Backend docker container:
+docker run -d -p 3000:3000 --name barbak_backend_container --hostname backend --env-file D:/Programming/GitHub/BarBak/env/backend/production.env barbak-backend

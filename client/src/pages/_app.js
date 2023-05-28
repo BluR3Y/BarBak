@@ -1,7 +1,7 @@
-import GlobalStyles from "@/utils/style/Global";
+import GlobalStyles from "@/config/Global";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "styled-components";
-import { siteThemes } from "@/utils/style/themes";
+import { siteThemes } from "@/config/themes";
 
 // React Redux Imports
 import { PersistGate } from "redux-persist/integration/react";
@@ -13,7 +13,7 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     const preferedColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    // setActiveTheme(preferedColorScheme.matches ? 'dark' : 'classic');
+    setActiveTheme(preferedColorScheme.matches ? 'dark' : 'classic');
 
     preferedColorScheme.addEventListener('change', changeColorScheme);
 
@@ -28,7 +28,8 @@ export default function App({ Component, pageProps }) {
   }
 
   return <Provider store={store}>
-    <PersistGate loading={<h1>Loading...</h1>} persistor={persistor}>
+    {/* <PersistGate loading={<h1>Loading...</h1>} persistor={persistor}> */}
+    <PersistGate persistor={persistor} >
       <ThemeProvider theme={siteThemes[activeTheme]}>
         <GlobalStyles/>
         <Component {...pageProps} />

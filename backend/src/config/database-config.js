@@ -2,35 +2,22 @@ const mongoose = require('mongoose');
 const mysql = require('mysql');
 const redis = require('redis');
 const Promise = require('bluebird');
-const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
+const { accessibleRecordsPlugin } = require('@casl/mongoose');
 
 // MongoDB Connection
 const mongoConnect = () => {
     const { NODE_ENV, MONGO_HOST, MONGO_ACCESS_USER, MONGO_ACCESS_PASSWORD, MONGO_PORT, MONGO_DATABASE } = process.env;
-    // const mongoUri = `mongodb${NODE_ENV === 'production' ? '+srv' : ''}://${MONGO_USER}:${encodeURIComponent(MONGO_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
     const mongoUri = NODE_ENV === 'production' ?
         `mongodb+srv://${MONGO_ACCESS_USER}:${encodeURIComponent(MONGO_ACCESS_PASSWORD)}@${MONGO_HOST}/${MONGO_DATABASE}` :
         `mongodb://${MONGO_ACCESS_USER}:${encodeURIComponent(MONGO_ACCESS_PASSWORD)}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
-    const mongoConfig = { useNewUrlParser: true, useUnifiedTopology: true };
-    mongoose.set('strictQuery', false);
+    const mongoConfig = {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    };
+    // Throw mongoose error if querying fields aren't defined
+    mongoose.set('strictQuery', true);
+    // Attaching a global mongoose plugin
     mongoose.plugin(accessibleRecordsPlugin);
-    mongoose.plugin(accessibleFieldsPlugin, {
-        getFields: (schema) => ([
-            ...Object.keys({
-                ...schema.paths,
-                ...schema.virtuals
-            }),
-            ...(schema.discriminators ? Object.entries(schema.discriminators).reduce((accumulator, [key, value]) => {
-                return [
-                    ...accumulator,
-                    ...Object.keys({
-                        ...value.paths,
-                        ...value.virtuals
-                    })
-                ]
-            }, []) : [])
-        ])
-    });
     return mongoose.connect(mongoUri, mongoConfig);
 }
 

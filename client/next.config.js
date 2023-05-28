@@ -1,5 +1,6 @@
-if (process.env.NODE_ENV !== 'production')
-  require('dotenv').config({ path: './env/development.env' });
+if (process.env.NODE_ENV === 'development') {
+  require('dotenv').config({ path: '../env/client/development.env' });
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

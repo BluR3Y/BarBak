@@ -144,34 +144,6 @@ class Testing extends React.Component {
         // console.log(this.props.userProfileImage)
     }
 
-    getProfileImage = async () => {
-        try {
-            // const { userInfo, barbak_backend_uri } = this.props;
-            // const res = await axios.get( barbak_backend_uri + '/assets/' + userInfo.profile_image, {
-            //     withCredentials: true,
-            //     responseType: 'blob'
-            // });
-            // const blob = new Blob([res.data], { type: 'image/jpeg' });
-            // const url = URL.createObjectURL(blob);
-            // this.setState({ profile_image: url });
-            const { barbak_backend_uri, userInfo, updateUserProfileImage } = this.props;
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                console.log('lol')
-                updateUserProfileImage(reader.result);
-            }
-
-            const {data} = await axios.get(barbak_backend_uri + userInfo.profile_image, {
-                withCredentials: true,
-                responseType: 'blob'
-            });
-            console.log(data)
-            reader.readAsDataURL(data);
-        } catch(err) {
-            console.log(err)
-        }
-    }
-
     render() {
         const { userInfo, userProfileImage } = this.props;
         return <StyledTesting>
@@ -180,7 +152,7 @@ class Testing extends React.Component {
             <TestRedux>
                 {userInfo && Object.keys(userInfo).map((item,index) => <h1 key={index}>{`${item} : ${userInfo[item]}`}</h1>)}
             </TestRedux>
-            { userProfileImage && <TestImageDownload src={userProfileImage} /> }
+            { userInfo && <TestImageDownload src={userInfo.profile_image} /> }
             <TestImageDownload src='/images/cocktail-1.jpg' />
         </StyledTesting>;
     }

@@ -3,6 +3,7 @@ const { executeSqlQuery } = require('../config/database-config');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers } = require('../config/config.json');
+const barwarePlugin = require('./plugins/barware');
 
 const toolSchema = new mongoose.Schema({
     name: {
@@ -28,6 +29,7 @@ const toolSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 },{ collection: 'tools', discriminatorKey: 'variant' });
+toolSchema.plugin(barwarePlugin);
 
 toolSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({

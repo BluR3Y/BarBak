@@ -256,6 +256,4 @@ userSchema.statics.__resourceType = function() {
     return 'users';
 }
 
-userSchema.plugin(accessibleRecordsPlugin, { modelName: 'boof' })
-
 module.exports = mongoose.model('User', userSchema);

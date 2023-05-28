@@ -12,14 +12,16 @@ const connectDB = require('./config/database-config');
 const errorHandler = require('./middlewares/error-handler');
 
 connectDB.ready.then(_ => {
-    const { PORT, WEB_SERVER_URI, EXPRESS_SESSION_SECRET } = process.env;
+    const { NODE_ENV, EXPRESS_SESSION_SECRET } = process.env;
 
     // for parsing application/json
     app.use(bodyParser.json());
     // for parsing application/x-www-form-urlencoded
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cors({
-        origin: '*',    // replaced with WEB_SERVER_URI
+        origin: NODE_ENV === 'development'
+            ? 'http://localhost:3001'
+            : 'http://example.com',
         credentials: true,
     }));
     // for parsing cookies
