@@ -3,14 +3,23 @@ import { StyledHome } from '@/styles/pages';
 
 import Navigation from '@/components/navigation/navigation';
 
-export default function Home() {
+export function getServerSideProps() {
+    const { BACKEND_URI } = process.env;
+    return {
+        props: {
+            barbak_backend_uri: BACKEND_URI
+        }
+    }
+}
+
+export default function Home(props) {
 
     return <>
         <Head>
             <title>BarBak | Home</title>
         </Head>
         <StyledHome>
-            <Navigation/>
+            <Navigation {...props} />
             <div style={{ height:'20px', backgroundColor:'transparent' }}/>
             <div style={{ height:'100vh', backgroundColor:'transparent' }}/>
         </StyledHome>

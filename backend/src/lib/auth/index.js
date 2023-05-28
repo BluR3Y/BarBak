@@ -41,7 +41,9 @@ function authenticationStrategyCallback(req, res, next) {
             if (err) return next(err);
             responseObject(user, [
                 { name: '_id', alias: 'id' },
+                { name: 'fullname' },
                 { name: 'username' },
+                { name: 'about_me' },
                 { name: 'profile_image_url', alias: 'profile_image' },
                 { name: 'role_info', parent_fields: [
                     { name: 'name', alias: 'role' }
