@@ -1,4 +1,5 @@
 import { hexToRgba } from "@/utils/color_conversion";
+import Link from "next/link";
 import styled, { css } from "styled-components";
 
 export const StyledUserProfile = styled.div`
@@ -22,7 +23,7 @@ export const UserMenuButton = styled.button.attrs((props) => ({
     cursor: pointer;
 
     img {
-        width: 80%;
+        width: 85%;
         height: auto;
         border-radius: 50%;
     }
@@ -51,6 +52,7 @@ export const UserMenu = styled.div`
         padding: 2px 6px;
         border: 1px solid ${props => props.theme.primary};
         border-radius: 12px 12px;
+        margin-bottom: 10px;
         
         font-family: 'Montserrat';
         font-weight: 500;
@@ -101,15 +103,27 @@ export const UserInfoContainer = styled.div`
 `;
 
 export const MenuSection = styled.div`
-    height: 100px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 5px;
+    padding: 3px 0 2px 0;
 
-    background-color: red;
+    .sectionLabel {
+        font-family: 'Poppins';
+        font-weight: 500;
+        font-size: 1.1em;
+        color: ${props => props.theme.accent};
+    }
+
+    border-bottom: 1px solid ${props => hexToRgba(props.theme.accent, 0.5)};
 `;
 
-export const SectionItem = styled.a`
+export const SectionItem = styled(Link)`
     font-family: 'Poppins'; 
-    font-weight: 400;
-    font-size: 1em;
-
-    background-color: green;
+    font-weight: 300;
+    font-size: 0.92em;
+    color: ${props => hexToRgba(props.theme.accent, 0.65)};
+    cursor: pointer;
+    padding: 2px 0;
+    text-decoration: none;
 `;
