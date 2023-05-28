@@ -8,14 +8,12 @@ import GuestAuth from "./guestAuth";
 class Navigation extends React.Component {
 
     render() {
-        const { userInfo, barbak_backend_uri } = this.props;
+        const { userInfo } = this.props;
         return <StyledNavigation>
             <NavLogo/>
             <NavContent>
                 { userInfo
-                    ? <UserProfile
-                        userInfo={userInfo}
-                        barbak_backend_uri={barbak_backend_uri}/>
+                    ? <UserProfile userInfo={userInfo}/>
                     : <GuestAuth /> }
             </NavContent>
         </StyledNavigation>;

@@ -12,7 +12,7 @@ export const withOutAuth = ( WrappedComponent, redirectPath = '/', inverted = fa
                 const sessionToken = getCookie(ctx.req.headers.cookie, 'session');
                 if (!sessionToken)
                     throw new Error('User Not Authenticated');
-                const { data } = await axios.get(process.env.BACKEND_URI + '/users/@me', {
+                const { data } = await axios.get(process.env.NEXT_PUBLIC_BACKEND_URI + '/users/@me', {
                     headers: {
                         'cookie': `session=${sessionToken}`
                     }

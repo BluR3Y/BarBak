@@ -71,7 +71,7 @@ function RegistrationTwo(props) {
             event.preventDefault();
             await axios({
                 method: 'post',
-                url: `${props.barbak_backend_uri}/accounts/register/resend`,
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/register/resend`,
                 withCredentials: true
             });
         } catch(err) {
@@ -98,7 +98,7 @@ function RegistrationTwo(props) {
 
             await axios({
                 method: 'post',
-                url: `${props.barbak_backend_uri}/accounts/register/validate/${code}`,
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/register/validate/${code}`,
                 withCredentials: true
             });
             props.updateActiveRegistration('next');

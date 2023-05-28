@@ -31,11 +31,6 @@ class Login extends React.Component {
         }
     }
 
-    static async getInitialProps(ctx) {
-        const barbak_backend_uri = process.env.BACKEND_URI;
-        return { barbak_backend_uri };
-    }
-
     emailCallback = (email) => {
         if (this.state.emailError)
             this.setState({ emailError: '' });
@@ -52,13 +47,13 @@ class Login extends React.Component {
         try {
             event.preventDefault();
             const { email, password } = this.state;
-            const { barbak_backend_uri, updateUserInfo } = this.props;
+            const { updateUserInfo } = this.props;
 
             // Validate input data with joi validation object
             const { error } = loginValidator.validate({ username: email, password },{ abortEarly: false, allowUnknown: false });
             if (error) throw error;
             // Make api call to log in user with passed credentials
-            const { data } = await axios.post(`${barbak_backend_uri}/accounts/login`, {
+            const { data } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/login`, {
                 username: email,
                 password
             },{ withCredentials: true });

@@ -12,18 +12,18 @@ import {
     UserMenuButton
 } from "@/styles/components/navigation/userProfile";
 
-function UserProfile({ barbak_backend_uri, userInfo }) {
+function UserProfile({ userInfo }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef(null);
     const dispatch = useDispatch();
     const profileLink = 'https://www.reyhector.com';
-
+    
     const logoutUser = async (event) => {
         event.preventDefault();
 
         await axios({
             method: 'delete',
-            url: `${barbak_backend_uri}/accounts/logout`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/logout`,
             withCredentials: true
         });
         dispatch({ type: 'SIGNOUT_REQUEST' });

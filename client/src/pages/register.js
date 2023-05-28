@@ -21,11 +21,6 @@ class Register extends React.Component {
         }
     }
 
-    static async getInitialProps(ctx) {
-        const barbak_backend_uri = process.env.BACKEND_URI;
-        return { barbak_backend_uri };
-    }
-
     componentDidUpdate(prevProps, prevState) {
         if (this.state.activeStep === 3) {
             // To prevent users from returning to registration page, replace registration page path with home page path in browser's history
