@@ -23,7 +23,7 @@ function UserProfile({ userInfo }) {
 
         await axios({
             method: 'delete',
-            url: `${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/logout`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/accounts/logout`,
             withCredentials: true
         });
         dispatch({ type: 'SIGNOUT_REQUEST' });

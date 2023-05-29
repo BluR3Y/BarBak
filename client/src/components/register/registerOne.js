@@ -43,7 +43,7 @@ function RegistrationOne(props) {
             const { error } = registerFirstValidator.validate({ fullname, email, password }, { abortEarly: false, allowUnknown: false });
             if (error) throw error;
 
-            await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/register`, {
+            await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/accounts/register`, {
                 fullname,
                 email,
                 password

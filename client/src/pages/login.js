@@ -53,7 +53,7 @@ class Login extends React.Component {
             const { error } = loginValidator.validate({ username: email, password },{ abortEarly: false, allowUnknown: false });
             if (error) throw error;
             // Make api call to log in user with passed credentials
-            const { data } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/login`, {
+            const { data } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/accounts/login`, {
                 username: email,
                 password
             },{ withCredentials: true });
