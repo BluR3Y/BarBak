@@ -41,7 +41,7 @@ function RegistrationThree(props) {
             const { error } = registerThirdValidator.validate(username);
             if (error) throw error;
 
-            const { data } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URI}/accounts/register/username`, {
+            const { data } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/accounts/register/username`, {
                 username
             }, { withCredentials: true });
             dispatch(setUserInfo(data))

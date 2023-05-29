@@ -21,7 +21,7 @@ connectDB.ready.then(_ => {
     app.use(cors({
         origin: NODE_ENV === 'development'
             ? 'http://localhost:3001'
-            : 'http://example.com',
+            : 'http://client:3000',
         credentials: true,
     }));
     // for parsing cookies
