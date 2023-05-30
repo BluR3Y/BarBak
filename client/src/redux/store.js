@@ -1,13 +1,33 @@
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
 import { createStore, combineReducers, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 
 import userReducer from './reducers';
+import createWebStorage from 'redux-persist/lib/storage/createWebStorage';
+
+const createPersistStorage = () => {
+    const isServer = typeof window === "undefined";
+
+    if (isServer) {
+        return {
+            getItem(_key) {
+                return Promise.resolve(null);
+            },
+            setItem(_key, value) {
+                return Promise.resolve(value);
+            },
+            removeItem(_key) {
+                return Promise.resolve();
+            }
+        }
+    }
+
+    return createWebStorage("local");
+}
 
 const persistConfig = {
     key: 'root',
-    storage
+    storage: createPersistStorage()
 };
 
 const appReducer = combineReducers({
