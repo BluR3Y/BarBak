@@ -24,6 +24,9 @@ class HomeSection extends React.Component {
             </SectionHeader>
             <SectionContainer>
                 <HomeItem/>
+                <HomeItem/>
+                <HomeItem/>
+                <HomeItem/>
             </SectionContainer>
         </StyledHomeSection>
     }

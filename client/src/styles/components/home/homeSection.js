@@ -4,6 +4,8 @@ export const StyledHomeSection = styled.div`
     display: flex;
     flex-direction: column;
     font-size: 19px;
+    color: ${props => props.theme.type === 'classic' ? '#000' : '#fff'};
+    user-select: none;
 `;
 
 export const SectionHeader = styled.div`
@@ -13,10 +15,10 @@ export const SectionHeader = styled.div`
     padding: 10px 0;
     overflow: hidden;
     height: 30px;
+    margin-bottom: 5px;
 
     font-family: 'Poppins';
     font-weight: 600;
-    color: ${props => props.theme.accent};
     h1 {
         flex: 1 1 auto;
         font-size: 1em;
@@ -70,6 +72,5 @@ export const SectionContainer = styled.div`
     display: flex;
     flex-direction: row;
     height: 300px;
-
-    background-color: blue;
+    gap: 15px;
 `;
