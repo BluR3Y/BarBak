@@ -1,7 +1,8 @@
 import Head from 'next/head';
-import { StyledHome } from '@/styles/pages';
+import { MainContainer, StyledHome } from '@/styles/pages';
 
 import Navigation from '@/components/navigation/navigation';
+import HomeSection from '@/components/home/homeSection';
 
 export default function Home(props) {
 
@@ -11,8 +12,9 @@ export default function Home(props) {
         </Head>
         <StyledHome>
             <Navigation/>
-            <div style={{ height:'20px', backgroundColor:'transparent' }}/>
-            <div style={{ height:'100vh', backgroundColor:'transparent' }}/>
+            <MainContainer>
+                <HomeSection/>
+            </MainContainer>
         </StyledHome>
     </>
 }

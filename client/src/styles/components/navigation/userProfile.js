@@ -34,7 +34,7 @@ export const UserMenu = styled.div`
     height: auto;
     position: absolute;
     right: 0;
-    top: calc(100% + 5px);
+    top: calc(100% + 10px);
     border-radius: 4px;
     display: flex;
     flex-direction: column;
