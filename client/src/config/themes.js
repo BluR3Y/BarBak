@@ -5,7 +5,7 @@ export const siteThemes = {
         primary: '#FF5733',
         secondary: '#385ddf',
         accent: '#41495a',
-        background: '#f3f2ef',
+        background: '#fbfbfc',
         container: '#ffffff'
     },
     dark: {

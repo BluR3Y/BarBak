@@ -10,9 +10,10 @@ export const StyledHome = styled.div`
 export const MainContainer = styled.div`
     margin-top: 50px;
     flex-basis: 100%;
-    padding: 0 300px;        // Value needs adjusting
     overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 30px;
+
+    max-width: 1160px;  // testing
 `;

@@ -1,9 +1,13 @@
 import styled from "styled-components";
 
+import Carousel from "react-multi-carousel";
+import 'react-multi-carousel/lib/styles.css';
+
 export const StyledHomeSection = styled.div`    
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     font-size: 19px;
+    position: relative;
     color: ${props => props.theme.type === 'classic' ? '#000' : '#fff'};
     user-select: none;
 `;
@@ -67,10 +71,38 @@ export const SectionHeader = styled.div`
         }
     }
 `;
+// Last Here ***
+const responsiveCarousel = {
+    superLargeDesktop: {
+        // the naming can be any, depends on you.
+        breakpoint: { max: 4000, min: 3000 },
+        items: 5
+      },
+      desktop: {
+        breakpoint: { max: 3000, min: 1024 },
+        items: 4
+      },
+      tablet: {
+        breakpoint: { max: 1024, min: 464 },
+        slidesToSlide: 3,
+        items: 2
+      },
+      mobile: {
+        breakpoint: { max: 464, min: 0 },
+        items: 1
+      }
+}
 
-export const SectionContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    height: 300px;
-    gap: 15px;
+export const SectionContainer = styled(Carousel).attrs(() => ({
+    responsive: responsiveCarousel,
+    renderButtonGroupOutside: true,
+    arrows: false,
+    draggable: false,
+    itemClass: 'carouselItems',
+
+}))`
+    
+    .carouselItems {
+        height: 260px;
+    }
 `;
