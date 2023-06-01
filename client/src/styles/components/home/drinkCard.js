@@ -4,22 +4,15 @@ import styled, { css } from "styled-components";
 
 export const StyledDrinkCard = styled.div`
     height: 100%;
-    aspect-ratio: 1;
+    width: 95%;
     overflow: hidden;
     font-size: 0.85em;
     flex-shrink: 0;
     border-radius: 4px;
-    ${props => css`
-        background-color: ${props.theme.container};
-        border: 1px solid ${hexToRgba(props.theme.accent, 0.15)};
-
-        &:hover {
-            border: 1px solid ${hexToRgba(props.theme.accent, 0.3)};
-        }
-    `}
+    display: flex;
+    flex-direction: column;
 
     .drinkInfo {
-        height: inherit;
         font-family: 'Poppins';
         cursor: pointer;
         padding: 4px 6px;
@@ -76,13 +69,19 @@ export const StyledDrinkCard = styled.div`
             margin-top: 7px;
         }
     }
+    ${props => css`
+        background-color: ${props.theme.container};
+        border: 1px solid ${hexToRgba(props.theme.accent, 0.15)};
+
+        &:hover {
+            border: 1px solid ${hexToRgba(props.theme.accent, 0.3)};
+        }
+    `}
 `;
 
 export const CoverContainer = styled(Link)`
-    width: 100%;
-    aspect-ratio: 1.75;
     overflow: hidden;
-    display: flex;
+    flex-basis: 100%;
     
     background-image: url(${props => props.imgSrc});
     background-size: cover;

@@ -34,6 +34,11 @@ class HomeSection extends React.Component {
                 <DrinkCard/>
                 <DrinkCard/>
                 <DrinkCard/>
+                <DrinkCard/>
+                <DrinkCard/>
+                <DrinkCard/>
+                <DrinkCard/>
+                <DrinkCard/>
             </SectionContainer>
         </StyledHomeSection>
     }

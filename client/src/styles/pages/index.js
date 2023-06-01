@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { extraLarge, extraSmall } from "@/config/breakpoints";
 
 export const StyledHome = styled.div`
     min-height: 100vh;
@@ -14,6 +15,9 @@ export const MainContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 30px;
+    max-width: 1160px;
 
-    max-width: 1160px;  // testing
+    @media screen and (max-width: ${extraLarge.min}px) {
+        flex-basis: 94%;
+    }
 `;

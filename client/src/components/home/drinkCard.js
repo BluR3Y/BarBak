@@ -9,7 +9,7 @@ class DrinkCard extends React.Component {
         this.state = {
             drinkId: 123,
             drinkName: "Moscow Mule Cocktail",
-            drinkCover: "https://burrataandbubbles.com/wp-content/uploads/2022/07/strawberry-mojito-featured-image.jpg",
+            drinkCover: "https://cocktailsdistilled.com/wp-content/uploads/2018/06/Dirty-martini-565x565.jpg",
             drinkRating: 3.8,
             numRatings: 189,
             drinkDescription: "A Moscow mule is a cocktail made with vodka, ginger beer and lime juice, garnished with a slice or wedge of lime and a sprig of mint. The drink is a type of buck and is sometimes called a vodka buck. The Moscow mule is popularly served in a copper mug, which takes on the cold temperature of the liquid.",

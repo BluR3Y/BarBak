@@ -3,6 +3,8 @@ import styled from "styled-components";
 import Carousel from "react-multi-carousel";
 import 'react-multi-carousel/lib/styles.css';
 
+import { extraLarge, extraSmall, large, medium, small } from "@/config/breakpoints";
+
 export const StyledHomeSection = styled.div`    
     display: flex;
     flex-direction: column-reverse;
@@ -73,24 +75,21 @@ export const SectionHeader = styled.div`
 `;
 // Last Here ***
 const responsiveCarousel = {
-    superLargeDesktop: {
-        // the naming can be any, depends on you.
-        breakpoint: { max: 4000, min: 3000 },
-        items: 5
-      },
-      desktop: {
-        breakpoint: { max: 3000, min: 1024 },
-        items: 4
-      },
-      tablet: {
-        breakpoint: { max: 1024, min: 464 },
-        slidesToSlide: 3,
-        items: 2
-      },
-      mobile: {
-        breakpoint: { max: 464, min: 0 },
-        items: 1
-      }
+    small: {
+        breakpoint: { min: extraSmall.min, max: small.max },
+        items: 2,
+        slidesToSlide: 2
+    },
+    medium: {
+        breakpoint: medium,
+        items: 3,
+        slidesToSlide: 3
+    },
+    large: {
+        breakpoint: { min: large.min, max: extraLarge.max },
+        items: 4,
+        slidesToSlide: 4
+    }
 }
 
 export const SectionContainer = styled(Carousel).attrs(() => ({
@@ -98,10 +97,8 @@ export const SectionContainer = styled(Carousel).attrs(() => ({
     renderButtonGroupOutside: true,
     arrows: false,
     draggable: false,
-    itemClass: 'carouselItems',
-
+    itemClass: 'carouselItems'
 }))`
-    
     .carouselItems {
         height: 260px;
     }
