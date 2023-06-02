@@ -427,6 +427,7 @@ module.exports.clientDrinks = async (req, res, next) => {
             .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
+                { name: 'description' },
                 { name: 'preparation_method_info', alias: 'preparation_method' },
                 { name: 'serving_style_info', alias: 'serving_style' },
                 { name: 'public' },

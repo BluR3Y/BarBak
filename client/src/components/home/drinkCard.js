@@ -1,4 +1,5 @@
 import { CoverContainer, StyledDrinkCard } from "@/styles/components/home/drinkCard";
+import Router from "next/router";
 import Star from "public/icons/star";
 import React from "react";
 
@@ -18,14 +19,16 @@ class DrinkCard extends React.Component {
     }
 
     render() {
-        const { drinkName, drinkCover, drinkRating, numRatings, drinkDescription, drinkUrl } = this.state; //replace with props
-        return <StyledDrinkCard>
+        const { id, name, cover, description } = this.props;
+        const drinkPage = `/drinks?drinkId=${id}`;
+        const {drinkRating, numRatings} = this.state;
+        return <StyledDrinkCard onClick={() => Router.push(drinkPage)}>
             <CoverContainer 
-                href={drinkUrl}
-                imgSrc={drinkCover}
+                href={drinkPage}
+                src={cover}
             />
             <div className="drinkInfo">
-                <h1>{drinkName}</h1>
+                <h1>{name}</h1>
                 <div className="drinkRating">
                     <div className="ratingValue">
                         <h1>{drinkRating}</h1>
@@ -33,7 +36,7 @@ class DrinkCard extends React.Component {
                     </div>
                     <h1>{`${numRatings} ratings`}</h1>
                 </div>
-                <h2>{drinkDescription}</h2>
+                <h2>{description}</h2>
             </div>
         </StyledDrinkCard>
     }

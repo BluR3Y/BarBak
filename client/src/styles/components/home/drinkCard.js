@@ -83,7 +83,7 @@ export const CoverContainer = styled(Link)`
     overflow: hidden;
     flex-basis: 100%;
     
-    background-image: url(${props => props.imgSrc});
+    background-image: url(${props => props.src});
     background-size: cover;
     background-position: center;
     background-color: #fff;

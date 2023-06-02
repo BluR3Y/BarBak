@@ -5,7 +5,7 @@ import 'react-multi-carousel/lib/styles.css';
 
 import { extraLarge, extraSmall, large, medium, small } from "@/config/breakpoints";
 
-export const StyledHomeSection = styled.div`    
+export const StyledDrinkSection = styled.div`    
     display: flex;
     flex-direction: column-reverse;
     font-size: 19px;
