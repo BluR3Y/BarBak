@@ -14,6 +14,8 @@ export default function Home(props) {
             <Navigation/>
             <MainContainer>
                 <HomeSection/>
+                <HomeSection/>
+                <HomeSection/>
             </MainContainer>
         </StyledHome>
     </>

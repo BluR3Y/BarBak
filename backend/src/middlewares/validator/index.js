@@ -1,13 +1,12 @@
 const Schemas = {
-    account: require('./account-schemas'),
+    accounts: require('./account-schemas'),
     users: require('./user-schemas'),
     assets: require('./asset-schemas'),
     drinkware: require('./drinkware-schemas'),
     tools: require('./tool-schemas'),
-    ingredients: require('./ingredient-schemas')
+    ingredients: require('./ingredient-schemas'),
+    drinks: require('./drink-schemas')
 };
-
-// **** Joi Validation needs major restructuring and debugging ****
 
 module.exports = (req, res, next) => {
         // Joi validation options

@@ -73,7 +73,7 @@ export const SectionHeader = styled.div`
         }
     }
 `;
-// Last Here ***
+
 const responsiveCarousel = {
     small: {
         breakpoint: { min: extraSmall.min, max: small.max },

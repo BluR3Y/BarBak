@@ -4,7 +4,7 @@ const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/send-email');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers, user_roles } = require('../config/config.json');
-const { accessibleRecordsPlugin } = require('@casl/mongoose');
+const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
 
 const durationSchema = new mongoose.Schema({
@@ -166,6 +166,14 @@ const userSchema = new mongoose.Schema({
         default: () => Date.now()
     }
 } , { collection: 'users' });
+
+userSchema.plugin(accessibleFieldsPlugin, {
+    // Adding a plugin to the schema that will prevent access to unauthorized field
+    getFields: (schema) => Object.keys({
+        ...schema.paths,
+        ...schema.virtuals
+    })
+});
 
 userSchema.path('username').validate(async function(username) {
     return (!await this.constructor.exists({ username, _id: { $ne: this._id } }));

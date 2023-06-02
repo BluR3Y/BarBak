@@ -4,8 +4,15 @@ const mongoIdSchema =  Joi.string().hex().length(24).required();
 const nameSchema = Joi.string().lowercase().min(3).max(30).pattern(new RegExp(/^[A-Za-z0-9\- ]+$/));
 const descriptionSchema = Joi.string().max(600);
 
+const nullSchema = Joi.string().custom((value, helpers) => {
+    if (value === 'null') {
+        return null;
+    }
+    return helpers.error('any.invalid');
+});
+
 // search
-const querySchema = Joi.string().max(30);
+const querySchema = Joi.string().max(100);
 const pageSchema = Joi.number().min(1).max(100);
 const pageSizeSchema = Joi.number().min(1).max(20);
 const orderingSchema = Joi.string().custom((value, helpers) => {
@@ -45,5 +52,6 @@ module.exports = {
     pageSchema,
     pageSizeSchema,
     orderingSchema,
+    nullSchema,
     arrLimit
 }

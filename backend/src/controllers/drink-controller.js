@@ -378,16 +378,14 @@ module.exports.search = async (req, res, next) => {
             .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
-                { name: 'tags' },
-                { name: 'verified' },
+                { name: 'description' },
+                { name: 'preparation_method_info', alias: 'preparation_method' },
+                { name: 'serving_style_info', alias: 'serving_style' },
                 { 
                     name: 'user',
                     condition: (document) => document instanceof UserDrink
                 },
-                {
-                    name: 'public',
-                    condition: (document) => document instanceof UserDrink
-                },
+                { name: 'verified' },
                 { name: 'cover_url', alias: 'cover' },
             ], doc.accessibleFieldsBy(req.ability)))));
 
@@ -429,10 +427,10 @@ module.exports.clientDrinks = async (req, res, next) => {
             .then(documents => Promise.all(documents.map(doc => responseObject(doc, [
                 { name: '_id', alias: 'id' },
                 { name: 'name' },
-                { name: 'tags' },
-                { name: 'verified' },
+                { name: 'preparation_method_info', alias: 'preparation_method' },
+                { name: 'serving_style_info', alias: 'serving_style' },
+                { name: 'public' },
                 { name: 'cover_url', alias: 'cover' },
-                { name: 'public' }
             ]))));
 
             const response = {

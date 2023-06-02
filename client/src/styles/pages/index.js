@@ -14,7 +14,7 @@ export const MainContainer = styled.div`
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 35px;
     max-width: 1160px;
 
     @media screen and (max-width: ${extraLarge.min}px) {
