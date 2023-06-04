@@ -1,0 +1,4 @@
+documentation:
+    - Getting Started: https://docs.localstack.cloud/getting-started/installation/#docker
+    - S3 Guide: https://docs.localstack.cloud/user-guide/aws/s3/
+    - Medium Article Tutorial: https://medium.com/geekculture/localstack-full-local-aws-stack-for-development-and-tests-in-docker-dd19ba2cecc2
