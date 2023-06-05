@@ -23,7 +23,12 @@ const s3 = new S3Client({
         accessKeyId: config.accessKey,
         secretAccessKey: config.secretKey
     },
-    region: config.region
+    region: config.region,
+    ...(process.env.NODE_ENV !== 'production' && {
+        endpoint: process.env.S3_ENDPOINT_URL,
+        forcePathStyle: true, // Required for LocalStack
+        sslEnabled: false // Required for LocalStack
+    })
 });
 
 module.exports.getObjectMetadata = async function(key) {

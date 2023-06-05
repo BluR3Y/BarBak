@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
       context: ./client
     restart: on-failure
-    env_file: ./env/client/production.env
+    env_file: ./env/client/.env.production
   
   backend:
     container_name: backend
@@ -23,29 +23,43 @@ services:
       - mongo
       - mysql
       - redis
+      - localstack
     build:
       dockerfile: Dockerfile
       context: ./backend
     restart: on-failure
     env_file:
-      - ./env/backend/production.env
+      - ./env/backend/.env.test
+    ports:
+      - 3000:3000  # Debugging
 
   mongo:
     container_name: mongo
     image: mongo:latest
     env_file:
-      - ./env/database/mongo/production.env
+      - ./env/database/mongo/.env.production
     volumes:
       - ./database/mongo/init:/docker-entrypoint-initdb.d:ro
 
   mysql:
     container_name: mysql
     image: mysql:latest
+    env_file:
+      - ./env/database/mysql/.env.production
     volumes:
       - ./database/mysql/init:/docker-entrypoint-initdb.d:ro
-    env_file:
-      - ./env/database/mysql/production.env
 
   redis:
     container_name: redis
     image: redis:latest
+
+  # LocalStack is a cloud service emulator which provides the ability to run
+  # various aws services on a local machine.
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    env_file:
+      - ./env/localstack/.env.development
+    volumes:
+      - ./database/localstack/init:/etc/localstack/init/ready.d:ro
+      - ./database/localstack/config:/tmp/localstack:ro
