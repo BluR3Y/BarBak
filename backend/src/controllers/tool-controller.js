@@ -32,7 +32,7 @@ module.exports.create = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(createdTool instanceof VerifiedTool ? { alias: 'date_verified' } : {})
+                ...(createdTool instanceof VerifiedTool && { alias: 'date_verified' })
             }
         ]);
         res.status(201).send(response);
@@ -151,7 +151,7 @@ module.exports.getTool = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(toolInfo instanceof VerifiedTool ? { alias: 'date_verified' } : {}),
+                ...(toolInfo instanceof VerifiedTool && { alias: 'date_verified' })
             }
         ], toolInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);
@@ -173,7 +173,7 @@ module.exports.search = async (req, res, next) => {
         const searchQuery = Tool
             .where({
                 name: { $regex: query },
-                ...(categories.length ? { $and: searchFilters } : {})
+                ...(categories.length && { $and: searchFilters })
             })
             .accessibleBy(req.ability);
         const totalDocuments = await Tool.countDocuments(searchQuery);
@@ -220,7 +220,7 @@ module.exports.clientTools = async (req, res, next) => {
             .where({
                 variant: 'User Tool',
                 user: req.user._id,
-                ...(categories.length ? { $and: searchFilters } : {})
+                ...(categories.length && { $and: searchFilters })
             });
         const totalDocuments = await Tool.countDocuments(searchQuery);
         const responseDocuments = await Tool

@@ -108,7 +108,7 @@ drinkSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({
         name,
         _id: { $ne: this._id },
-        ...(!this.verified ? { user: this.user } : {})
+        ...(!this.verified && { user: this.user })
     }));
 }, 'Name is already associated with another drink', 'ALREDY_EXIST');
 
@@ -284,7 +284,7 @@ drinkSchema.statics.searchFilters = async function(preparation_methods, serving_
         Promise.all(serving_styles.map(style => Drink.validateServingStyle(style)))
     ]);
     const invalidParameters = {
-        ...(preparationMethodValidations.some(method => !method) ? {
+        ...(preparationMethodValidations.some(method => !method) && {
             preparation_methods: preparation_methods.reduce((accumulator, current, index) => ([
                 ...accumulator,
                 ...(!preparationMethodValidations[index] ? [{
@@ -292,8 +292,8 @@ drinkSchema.statics.searchFilters = async function(preparation_methods, serving_
                     message: 'Invalid preparation method'    
                 }] : []) 
             ]), [])
-        } : {}),
-        ...(servingStyleValidations.some(style => !style) ? {
+        }),
+        ...(servingStyleValidations.some(style => !style) && {
             serving_styles: serving_styles.reduce((accumulator, current, index) => ([
                 ...accumulator,
                 ...(!servingStyleValidations[index] ? [{
@@ -301,8 +301,8 @@ drinkSchema.statics.searchFilters = async function(preparation_methods, serving_
                     message: 'Invalid serving style'
                 }] : [])
             ]), [])
-        } : {})
-    };
+        })
+    }
     if (Object.keys(invalidParameters).length) {
         const error = new Error('Invalid filter parameters');
         error.errors = invalidParameters;

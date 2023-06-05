@@ -29,7 +29,7 @@ module.exports.create = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(createdDrinkware instanceof VerifiedDrinkware ? { alias: 'date_verified' } : {})
+                ...(createdDrinkware instanceof VerifiedDrinkware && { alias: 'date_verified' })
             }
         ]);
         res.status(201).send(response);
@@ -147,7 +147,7 @@ module.exports.getDrinkware = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(drinkwareInfo instanceof VerifiedDrinkware ? { alias: 'date_verified' } : {})
+                ...(drinkwareInfo instanceof VerifiedDrinkware && { alias: 'date_verified' })
             },
         ], drinkwareInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);

@@ -343,7 +343,7 @@ module.exports.getDrink = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(drinkInfo instanceof VerifiedDrink ? { alias: 'date_verified' } : {})
+                ...(drinkInfo instanceof VerifiedDrink && { alias: 'date_verified' })
             },
             { name: 'gallery_urls', alias: 'gallery' }
         ], drinkInfo.accessibleFieldsBy(req.ability, 'read'));
@@ -366,7 +366,7 @@ module.exports.search = async (req, res, next) => {
         const searchQuery = Drink
             .where({
                 name: { $regex: query },
-                ...(searchFilters.length ? { $and: searchFilters } : {})
+                ...(searchFilters.length && { $and: searchFilters })
             })
             .accessibleBy(req.ability);
         const totalDocuments = await Drink.countDocuments(searchQuery);
@@ -416,7 +416,7 @@ module.exports.clientDrinks = async (req, res, next) => {
             .where({
                 variant: 'User Drink',
                 user: req.user._id,
-                ...(searchFilters.length ? { $and: searchFilters } : {})
+                ...(searchFilters.length && { $and: searchFilters })
             });
         const totalDocuments = await Drink.countDocuments(searchQuery);
         const responseDocuments = await Drink

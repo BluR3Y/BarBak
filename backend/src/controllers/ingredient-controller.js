@@ -34,7 +34,7 @@ module.exports.create = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(createdIngredient instanceof VerifiedIngredient ? { alias: 'date_verified' } : {})
+                ...(createdIngredient instanceof VerifiedIngredient && { alias: 'date_verified' })
             }
         ]);
         res.status(201).send(response);
@@ -155,7 +155,7 @@ module.exports.getIngredient = async (req, res, next) => {
             },
             {
                 name: 'date_created',
-                ...(ingredientInfo instanceof VerifiedIngredient ? { alias: 'date_verified' } : {})
+                ...(ingredientInfo instanceof VerifiedIngredient && { alias: 'date_verified' })
             }
         ], ingredientInfo.accessibleFieldsBy(req.ability, 'read'));
         res.status(200).send(response);
@@ -177,7 +177,7 @@ module.exports.search = async (req, res, next) => {
         const searchQuery = Ingredient
             .where({
                 name: { $regex: query },
-                ...(categories.length ? { $and: searchFilters } : {})
+                ...(categories.length && { $and: searchFilters })
             })
             .accessibleBy(req.ability);
         const totalDocuments = await Ingredient.countDocuments(searchQuery);
@@ -228,7 +228,7 @@ module.exports.clientIngredients = async (req, res, next) => {
             .where({
                 variant: 'User Ingredient',
                 user: req.user._id,
-                ...(searchFilters.length ? { $or: searchFilters } : {})
+                ...(searchFilters.length && { $or: searchFilters })
             });
         const totalDocuments = await Ingredient.countDocuments(searchQuery);
         const responseDocuments = await Ingredient

@@ -38,7 +38,7 @@ ingredientSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({
         name,
         _id: { $ne: this._id },
-        ...(!this.verified ? { user: this.user } : {})
+        ...(!this.verified && { user: this.user })
     }));
 }, 'Name is already associated with another ingredient');
 
@@ -180,12 +180,13 @@ ingredientSchema.statics.searchFilters = async function(categories) {
         error.errors = invalidCategoryFilters;
         throw error;
     }
+    
     return [
         ...(categories.map(({ category, sub_categories }) => ({
             'category': category,
-            ...(sub_categories ? {
+            ...(sub_categories && {
                 'sub_category': { $in: sub_categories }
-            } : {})
+            })
         })))
     ]
 }

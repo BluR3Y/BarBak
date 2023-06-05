@@ -15,7 +15,7 @@ class AppError extends Error {
             // code: error_codes[errorCode],
             code: errorCode,
             message: message,
-            ...(this.errors ? { errors: errors } : {})
+            ...(errors && { errors })
         });
     }
 }

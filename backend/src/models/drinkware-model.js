@@ -31,7 +31,7 @@ drinkwareSchema.path('name').validate(async function(name) {
     return (!await this.constructor.exists({
         name,
         _id: { $ne: this._id },
-        ...(!this.verified ? { user: this.user } : {})
+        ...(!this.verified && { user: this.user })
     }));
 }, 'Name is already associated with another drinkware');
 

@@ -442,7 +442,7 @@ module.exports.clientDrinks = async (req, res, next) => {
             .where({
                 variant: 'User Drink',
                 user: req.user._id,
-                ...(searchFilters.length ? { $and: searchFilters } : {})
+                ...(searchFilters.length && { $and: searchFilters })
             });
         const totalDocuments = await Drink.countDocuments(searchQuery);
         const responseDocuments = await Drink
