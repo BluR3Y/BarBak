@@ -22,6 +22,7 @@ INSERT INTO tool_categories (`name`) VALUES
     ('cutting'),
     ('chilling'),
     ('cleaning'),
+    ('juicing'),
     ('other')
 ;
 
@@ -84,7 +85,7 @@ INSERT INTO barware_materials (`category_id`, `name`) VALUES
     (@metalware_material_id, 'enamelware'),
 
     (@plasticware_material_id, 'plastic'),
-    (@plasticware_material_id, 'Polycarbonate'),
+    (@plasticware_material_id, 'polycarbonate'),
     (@plasticware_material_id, 'acrylic'),
     (@plasticware_material_id, 'tritan'),
     (@plasticware_material_id, 'polypropylene'),
@@ -227,12 +228,13 @@ CREATE TABLE drink_serving_styles (
     PRIMARY KEY (`id`)
 );
 
-INSERT INTO drink_serving_styles (`name`) VALUES 
-    ('neat'),
-    ('straight-up'),
+INSERT INTO drink_serving_styles (`name`) VALUES
+    ('straight/neat'),
+    ('straight up/up'),
     ('on the rocks'),
-    ('straight'),
     ('chilled'),
+    ('frozen'),
+    ('flaming'),
     ('other')
 ;
 

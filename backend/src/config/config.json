@@ -5,7 +5,6 @@
             "png",
             "jpg",
             "gif",
-            "bmp",
             "webp"
         ],
         "videos": [
@@ -21,18 +20,6 @@
         "tool": "static/barware_cover.jpg",
         "user": "static/profile_image.png",
         "drink": "static/drink_cover.jpg"
-    },
-    "error_codes": {
-        "INVALID_ARGUMENT": 300,
-        "INVALID_PARAMETER": 301,
-        "MISSING_REQUIRED_FIELD": 302,
-        "UNSUPPORTED_FILE_FORMAT": 302,
-        "MISSING_REQUIRED_FILE": 302,
-        "NOT_FOUND": 303,
-        "UNAUTHORIZED": 304,
-        "FORBIDDEN": 305,
-        "ALREADY_EXIST": 306,
-        "INTERNAL": 307
     },
     "user_roles": {
         "admin": 1,

@@ -4,11 +4,55 @@ const { default_covers } = require('../config/config.json');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
 const barwarePlugin = require('./plugins/barware');
 
-const drinkwareSchema = new mongoose.Schema({
-    name: {
+const drinkwareNameSchema = new mongoose.Schema({
+    primary: {
         type: String,
         minlength: 3,
         maxlength: 30,
+        required: true
+    },
+    alternative: {
+        type: [{
+            type: String,
+            minlength: 3,
+            maxlength: 30
+        }]
+    },
+    _id: false
+});
+
+drinkwareNameSchema.path('primary').validate(async function(name) {
+    const { constructor, _id, verified, user } = this.ownerDocument();
+    return (!await constructor.exists({
+        _id: { $ne: _id },
+        'names.primary': name,
+        ...(!verified && { user })
+    }));
+}, 'Name is already associated with another drinkware', 'ALREADY_EXIST');
+
+drinkwareNameSchema.path('alternative').validate(function(altNames) {
+    const baseDocument = this.ownerDocument();
+    if (altNames.length > 5) return baseDocument.invalidate('names.alternative', 'A drinkware can only be assigned a maximum of 5 alternative names');
+    
+    const nameCounter = new Map([
+        [this.primary, 1]
+    ]);
+    for (const name of altNames) {
+        nameCounter.set(name, (nameCounter.has(name) ? nameCounter.get(name) : 0) + 1);
+    }
+    const duplicates = [...nameCounter]
+        .reduce((arr, [name, count]) => ([
+            ...arr,
+            ...(count > 1 ? [name] : [])
+        ]), []);
+    if (duplicates.length) {
+        return baseDocument.invalidate('names.alternative', 'Each alternative name must be unique', duplicates, 'NOT_UNIQUE');
+    }
+});
+
+const drinkwareSchema = new mongoose.Schema({
+    names: {
+        type: drinkwareNameSchema,
         required: true
     },
     description: {
@@ -26,14 +70,6 @@ const drinkwareSchema = new mongoose.Schema({
     }
 },{ collection: 'drinkware', discriminatorKey: 'variant' });
 drinkwareSchema.plugin(barwarePlugin);
-
-drinkwareSchema.path('name').validate(async function(name) {
-    return (!await this.constructor.exists({
-        name,
-        _id: { $ne: this._id },
-        ...(!this.verified && { user: this.user })
-    }));
-}, 'Name is already associated with another drinkware');
 
 drinkwareSchema.virtual('verified').get(function() {
     return (this instanceof this.model('Verified Drinkware'));

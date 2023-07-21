@@ -1,0 +1,15 @@
+MISSING_REQUIRED_FIELD
+UNSUPPORTED_FILE_FORMAT
+MISSING_REQUIRED_FILE
+FILE_LIMIT_EXCEEDED
+
+
+Client-Side Errors:
+    INVALID_ARGUMENT - Passed argument is not valid
+    NOT_FOUND - Requested resource was not found
+    UNAUTHORIZED - User lacks authentication credentials
+    FORBIDDEN - User lacks permission to access the requested resource
+    CONFLICT - A conflict exists between the requested operation and the current state of the resource
+
+Server-Side Errors:
+    INTERNAL - An unexpected error occured on the server while processing a request

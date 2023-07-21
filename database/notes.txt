@@ -11,4 +11,4 @@ Create a Backend docker container:
 docker run -d -p 3000:3000 --name barbak_backend_container --hostname backend --env-file D:/Programming/GitHub/BarBak/env/backend/production.env barbak-backend
 
 Create a LocalStack docker container for emulating S3 Bucket Service:
-docker run -d -p 4566:4566 -e SERVICES=s3 localstack/localstack
+docker run -d -p 4566:4566 --name barbak_localstack_container -e SERVICES=s3 localstack/localstack

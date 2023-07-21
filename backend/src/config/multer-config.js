@@ -32,7 +32,7 @@ module.exports.imageUpload = multer({
     },
     limits: {
         fileSize: 5 * 1024 * 1024,  // 5 MB
-        files: 10,    // 1 file per request
+        files: 10,    // 10 file(s) per request
     }
 });
 
@@ -63,6 +63,6 @@ module.exports.videoUpload = multer({
     },
     limits: {
         fileSize: 5 * 1024 * 1024,  // 5 MB - change
-        files: 1,    // 1 file per request
+        files: 1,    // 1 file(s) per request
     }
 });

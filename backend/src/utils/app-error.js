@@ -1,5 +1,3 @@
-const { error_codes } = require('../config/config.json');
-
 class AppError extends Error {
     constructor(statusCode, errorCode, message, errors) {
         super(message);
@@ -12,7 +10,6 @@ class AppError extends Error {
     errorResponse(res) {
         const { statusCode, errorCode, message, errors } = this;
         return res.status(statusCode).send({
-            // code: error_codes[errorCode],
             code: errorCode,
             message: message,
             ...(errors && { errors })

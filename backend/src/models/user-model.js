@@ -4,7 +4,7 @@ const { redisClient, executeSqlQuery } = require('../config/database-config');
 const emailQueue = require('../lib/queue/send-email');
 const s3FileRemoval = require('../lib/queue/remove-s3-file');
 const { default_covers, user_roles } = require('../config/config.json');
-const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
+const { accessibleFieldsPlugin } = require('@casl/mongoose');
 const { getPreSignedURL } = require('../utils/aws-s3-operations');
 
 const durationSchema = new mongoose.Schema({

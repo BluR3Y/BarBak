@@ -9,11 +9,12 @@ module.exports = (err, req, res, next) => {
             return err.errorResponse(res);
 
         case err instanceof MongooseError.ValidationError:
-            return (new AppError(400, 'INVALID_ARGUMENT', 'Invalid field values', Object.entries(err.errors).reduce((accumulator, [key, value]) => ({
+            return (new AppError(400, 'INVALID_ARGUMENT', 'Invalid field values', Object.entries(err.errors).reduce((accumulator, [key, { properties }]) => ({
                 ...accumulator,
                 [key]: {
-                    message: value.message,
-                    type: value.kind
+                    message: properties.message,
+                    type: properties.type !== 'user defined' ? properties.type : 'INVALID_ARGUMENT',
+                    value: properties.value
                 }
             }), {})).errorResponse(res));
 

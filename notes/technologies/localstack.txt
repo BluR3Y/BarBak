@@ -2,3 +2,15 @@ documentation:
     - Getting Started: https://docs.localstack.cloud/getting-started/installation/#docker
     - S3 Guide: https://docs.localstack.cloud/user-guide/aws/s3/
     - Medium Article Tutorial: https://medium.com/geekculture/localstack-full-local-aws-stack-for-development-and-tests-in-docker-dd19ba2cecc2
+    - Filesystem layout: https://docs.localstack.cloud/references/filesystem/
+
+aws cli commands:
+    - configure profile: aws configure --profile <profile_name>
+    - create localstack s3 bucket: aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket <bucket_name> --profile <profile_name>
+    - copy folder from local machine to s3 bucket: aws --endpoint-url=http://localhost:4566 s3 sync <source_path> s3://<bucket_name> --profile <profile_name>
+    - List bucket content: aws --endpoint-url=http://localhost:4566 s3 ls s3://<bucket_name>/<dir_path> --profile <profile_name>
+    - Copy Single file from s3 bucket to local machine: aws --endpoint-url=http://localhost:4566 s3 cp s3://<bucket_name>/<file_path> <local_path> --profile <profile_name>
+    - Copy Multiple files from s3 bucket to local machine: aws --endpoint-url=http://localhost:4566 s3 cp --recursive s3://<bucket_name>/<dir_path> <local_path> --profile <profile_name>
+    - Remove single file/dir from s3 bucket: aws --endpoint-url=http://localhost:4566 s3 rm s3://<bucket_name>/<file_path> -- profile <profile_name>
+    - Remove all files in a directory from an s3 bucket: aws --endpoint-url=http://localhost:4566 s3 rm --recursive s3://<bucket_name>/<dir_path> --profile <profile_name>
+    - Get head from file in s3 bucket: aws s3api head-object --bucket <bucket_name> --key <file_name> --endpoint-url=http://localhost:4566 --profile <profile_name>
