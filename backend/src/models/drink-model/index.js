@@ -122,30 +122,30 @@ drinkSchema.path('serving_style').validate(async function(style) {
 
 drinkSchema.path('drinkware').validate(async function(drinkware) {
     const drinkwareInfo = await Drinkware.findOne({ _id: drinkware });
-    if (!drinkwareInfo)
+    if (!drinkwareInfo) {
         return this.invalidate('drinkware', 'Drinkware does not exist', drinkware, 'NOT_FOUND');
-    
-    const { user, public } = this;
-    if (this instanceof this.model('Verified Drink') && drinkwareInfo instanceof UserDrinkware)
-        return this.invalidate('drinkware', 'Verified drinks must contain verified drinkware', drinkware, 'INVALID_ARGUMENT');
-    else if (this instanceof this.model('User Drink') && drinkwareInfo instanceof UserDrinkware) {
-        if (!drinkwareInfo.user.equals(user))
-            return this.invalidate('drinkware', 'Drink must contain a drinkware that is verified or your', drinkware, 'INVALID_ARGUMENT');
-        else if (public && !drinkwareInfo.public)
-            return this.invalidate('drinkware', 'Drinkware must be public to include in public drinks', 'INVALID_ARGUMENT');
     }
-
+    const { user, public } = this;
+    if (this instanceof this.model('Verified Drink') && drinkwareInfo instanceof UserDrinkware) {
+        return this.invalidate('drinkware', 'Verified drinks must contain verified drinkware', drinkware, 'INVALID_ARGUMENT');
+    } else if (this instanceof this.model('User Drink') && drinkwareInfo instanceof UserDrinkware) {
+        if (!drinkwareInfo.user.equals(user)) {
+            return this.invalidate('drinkware', 'Drink must contain a drinkware that is verified or your', drinkware, 'INVALID_ARGUMENT');
+        } else if (public && !drinkwareInfo.public) {
+            return this.invalidate('drinkware', 'Drinkware must be public to include in public drinks', 'INVALID_ARGUMENT');
+        }
+    }
     return true;
 });
 
 drinkSchema.path('ingredients').validate(function(items) {
-    if (items.length < 2 || items.length > 25)
+    if (items.length < 2 || items.length > 25) {
         return this.invalidate('ingredients', 'Drink must contains between 2 and 25 ingredients', items, 'INVALID_ARGUMENT');
-
+    }
     const ingredientIds = new Set(items.map(({ ingredient }) => ingredient.toString()));
-    if (ingredientIds.size !== items.length)
+    if (ingredientIds.size !== items.length) {
         return this.invalidate('ingredients', 'Ingredient list must not contain multiple of the same ingredient', items, 'ALREADY_EXIST');
-
+    }
     return true;
 });
 
@@ -153,21 +153,22 @@ drinkSchema.path('tools').validate(async function(tools) {
     const { user, public } = this;
     const toolIds = new Set(tools.map(tool => tool.toString()));
 
-    if (toolIds.size !== tools.length)
+    if (toolIds.size !== tools.length) {
         return this.invalidate('tools', 'Tool list must not contain duplicates', tools, 'ALREADY_EXIST');
-
+    }
     await Promise.all(tools.map(async (tool, index) => {
         const toolInfo = await Tool.findOne({ _id: tool });
-        if (!toolInfo)
+        if (!toolInfo) {
             return this.invalidate(`tools.${index}`, 'Tool does not exist', tool, 'NOT_FOUND');
-
-        if (this instanceof this.model('Verified Drink') && toolInfo instanceof UserTool)
+        }
+        if (this instanceof this.model('Verified Drink') && toolInfo instanceof UserTool) {
             return this.invalidate(`tools.${index}`, 'Verified drinks must contain verified tools', tool, 'INVALID_ARGUMENT');
-        else if (this instanceof this.model('User Drink') && toolInfo instanceof UserTool) {
-            if (!toolInfo.user.equals(user))
+        } else if (this instanceof this.model('User Drink') && toolInfo instanceof UserTool) {
+            if (!toolInfo.user.equals(user)) {
                 return this.invalidate(`tools.${index}`, 'Drink must contain tools that are verified or yours', tool, 'INVALID_ARGUMENT');
-            else if (public && !toolInfo.public)
+            } else if (public && !toolInfo.public) {
                 return this.invalidate(`tools.${index}`, 'Tool must be public to include in public drinks', 'INVALID_ARGUMENT');
+            }
         }
     }));
     return true;
@@ -226,8 +227,9 @@ drinkSchema.pre('save', async function(next) {
     const { cover, gallery } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
-    if (modifiedFields.includes('cover') && cover)
+    if (modifiedFields.includes('cover') && cover) {
         await s3FileRemoval({ filepath: cover });
+    }
     if (modifiedFields.includes('gallery')) {
         const removedImages = gallery.filter(img => !this.gallery.find(galleryImg => galleryImg._id.equals(img._id)));
         await Promise.all(removedImages.map(file => s3FileRemoval({ filepath: file.file_path })));
@@ -236,8 +238,9 @@ drinkSchema.pre('save', async function(next) {
 });
 
 drinkSchema.pre('remove', async function(next) {
-    if (this.cover)
+    if (this.cover) {
         await s3FileRemoval({ filepath: this.cover });
+    }
     if (this.gallery.length) {
         await Promise.all(this.gallery.map(file => s3FileRemoval({ filepath: file.file_path })));
     }

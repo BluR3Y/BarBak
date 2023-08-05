@@ -32,8 +32,9 @@ drinkwareNameSchema.path('primary').validate(async function(name) {
 
 drinkwareNameSchema.path('alternative').validate(function(altNames) {
     const baseDocument = this.ownerDocument();
-    if (altNames.length > 5) return baseDocument.invalidate('names.alternative', 'A drinkware can only be assigned a maximum of 5 alternative names');
-    
+    if (altNames.length > 5) {
+        return baseDocument.invalidate('names.alternative', 'A drinkware can only be assigned a maximum of 5 alternative names');
+    }
     const nameCounter = new Map([
         [this.primary, 1]
     ]);
@@ -83,14 +84,16 @@ drinkwareSchema.pre('save', async function(next) {
     const { cover } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
-    if (modifiedFields.includes('cover') && cover)
+    if (modifiedFields.includes('cover') && cover) {
         await s3FileRemoval({ filepath: cover });
+    }
     next();
 });
 
 drinkwareSchema.pre('remove', async function(next) {
-    if (this.cover)
+    if (this.cover) {
         await s3FileRemoval({ filepath: this.cover });
+    }
     next();
 });
 

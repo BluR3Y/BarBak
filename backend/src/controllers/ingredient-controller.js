@@ -48,12 +48,13 @@ module.exports.modify = async (req, res, next) => {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findById(ingredient_id);
 
-        if (!ingredientInfo)
+        if (!ingredientInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
+        }
         const allowedFields = ingredientInfo.accessibleFieldsBy(req.ability, 'update');
-        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
+        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to modify ingredient');
-
+        }
         ingredientInfo.set(req.body);
         if (req.file) {
             const uploadInfo = await s3Operations.createObject(req.file, 'assets/ingredients/images/cover');
@@ -76,8 +77,9 @@ module.exports.delete = async (req, res, next) => {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findById(ingredient_id);
 
-        if (!ingredientInfo)
+        if (!ingredientInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to delete ingredient')
             .throwUnlessCan('delete', ingredientInfo);
@@ -94,14 +96,14 @@ module.exports.copy = async (req, res, next) => {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findById(ingredient_id);
 
-        if (!ingredientInfo)
+        if (!ingredientInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
-
+        }
         const allowedFields = ingredientInfo.accessibleFieldsBy(req.ability, 'read');
         const requiredFields = ['name', 'description', 'category', 'sub_category'];
-        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field)))
+        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field))) {
             throw new AppError().setMessage('Unauthorized to copy ingredient');
-
+        }
         const createdIngredient = new UserIngredient({
             ...(requiredFields.reduce((accumulator, current) => ({
                 ...accumulator,
@@ -129,8 +131,9 @@ module.exports.getIngredient = async (req, res, next) => {
         const { ingredient_id } = req.params;
         const ingredientInfo = await Ingredient.findById(ingredient_id);
 
-        if (!ingredientInfo)
+        if (!ingredientInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Ingredient does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view ingredient')
             .throwUnlessCan('read', ingredientInfo);

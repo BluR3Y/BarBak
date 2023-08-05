@@ -10,15 +10,16 @@ module.exports.findByName = function(fileDir, fileName) {
 
 module.exports.moveSingle = function(sourcePath, destPath) {
     return new Promise((resolve, reject) => {
-        if (!fs.existsSync(sourcePath))
+        if (!fs.existsSync(sourcePath)) {
             return reject('File does not exist');
+        }
         var filename = path.basename(sourcePath);
-        while (fs.existsSync(path.join(destPath, filename)))
+        while (fs.existsSync(path.join(destPath, filename))) {
             filename = crypto.randomUUID() + path.extname(filename);
+        }
         const fileDest = path.join(destPath, filename);
         fs.rename(sourcePath, fileDest, (err) => {
-            if (err)
-                return reject(err);
+            if (err) return reject(err);
             resolve(formatPath(fileDest));
         });
     });
@@ -26,8 +27,9 @@ module.exports.moveSingle = function(sourcePath, destPath) {
 
 module.exports.copySingle = function(readPath, writePath = path.dirname(readPath)) {
     return new Promise((resolve, reject) => {
-        if (!fs.existsSync(readPath))
+        if (!fs.existsSync(readPath)) {
             return reject('File does not exist');
+        }
         var filename = path.basename(readPath);
         var newFileName;
         do {
@@ -37,8 +39,7 @@ module.exports.copySingle = function(readPath, writePath = path.dirname(readPath
         const fileDest = path.join(writePath, newFileName);
 
         fs.copyFile(readPath, fileDest, (err) => {
-            if (err)
-                return reject(err);
+            if (err) return reject(err);
             resolve(formatPath(fileDest));
         });
     });
@@ -50,8 +51,9 @@ module.exports.copyMultiple = function(readPaths, writePath) {
 
 module.exports.deleteSingle = function(filepath) {
     return new Promise((resolve, reject) => {
-        if (!fs.existsSync(filepath))
+        if (!fs.existsSync(filepath)) {
             reject("File does not exist");
+        }
         fs.unlink(filepath, function(err) {
             if (err) return reject(err);
             resolve();
@@ -65,8 +67,9 @@ module.exports.deleteMultiple = function(filepaths) {
 
 module.exports.readSingle = function(filepath) {
     return new Promise((resolve, reject) => {
-        if (!fs.existsSync(filepath))
+        if (!fs.existsSync(filepath)) {
             reject("File does not exist");
+        }
         fs.readFile(filepath, function(err , data) {
             if (err) return reject(err);
             resolve(data);

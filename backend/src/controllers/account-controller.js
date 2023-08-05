@@ -8,8 +8,7 @@ module.exports.login = auth.authenticate.localLogin;
 
 module.exports.logout = async (req, res, next) => {
     req.session.destroy((err) => {
-        if (err)
-            return next(new Error('Internal server error'));
+        if (err) return next(err);
         res.status(204).send();
     });
 }
@@ -18,9 +17,9 @@ module.exports.register = async (req, res, next) => {
     try {
         const { fullname, email, password } = req.body;
 
-        if (await User.exists({ email }))
+        if (await User.exists({ email })) {
             throw new AppError(409, 'ALREADY_EXIST', 'Email is already associated with another account');
-        
+        }
         const { encryptionKey, iv, encryptedData } = encryptionOperations.encrypt(JSON.stringify({ fullname, email, password }));
         req.session.verifiedAccount = false;
         req.session.encryptedRegistrationInfo = encryptedData;
@@ -37,11 +36,11 @@ module.exports.register = async (req, res, next) => {
 module.exports.resendRegistrationCode = async (req, res, next) => {
     try {
         const { verifiedAccount } = req.session;
-        if (typeof verifiedAccount === 'undefined')
+        if (typeof verifiedAccount === 'undefined') {
             throw new AppError(404, 'NOT_FOUND', 'Registration process has not been initialized');
-        else if (verifiedAccount)
+        } else if (verifiedAccount) {
             throw new AppError(403, 'FORBIDDEN', 'Registration code has already been provided');
-
+        }
         const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
         const decryptedData = encryptionOperations.decrypt(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
         const registrationInfo = JSON.parse(decryptedData);
@@ -56,14 +55,16 @@ module.exports.resendRegistrationCode = async (req, res, next) => {
 module.exports.validateRegistrationCode = async (req, res, next) => {
     try {
         const { verifiedAccount } = req.session;
-        if (typeof verifiedAccount === 'undefined')
+        if (typeof verifiedAccount === 'undefined') {
             throw new AppError(404, 'NOT_FOUND', 'Registration process has not been initialized');
-        else if (verifiedAccount)
+        } else if (verifiedAccount) {
             throw new AppError(403, 'FORBIDDEN', 'Registration code has already been provided');
+        }
 
         const { registration_code } = req.params;
-        if (!await User.validateRegistrationCode(req.sessionID, registration_code))
+        if (!await User.validateRegistrationCode(req.sessionID, registration_code)) {
             throw new AppError(400, 'INVALID_ARGUMENT', 'Registration code is invalid');
+        }
         
         req.session.verifiedAccount = true;
         res.status(204).send();    
@@ -75,11 +76,11 @@ module.exports.validateRegistrationCode = async (req, res, next) => {
 module.exports.usernameSelection = async (req, res, next) => {
     try {
         const { verifiedAccount } = req.session;
-        if (typeof verifiedAccount === 'undefined')
+        if (typeof verifiedAccount === 'undefined') {
             throw new AppError(404, 'NOT_FOUND', 'Registration process has not been initialized');
-        else if (!verifiedAccount)
+        } else if (!verifiedAccount) {
             throw new AppError(403, 'FORBIDDEN', 'Registration code has not been provided');
-
+        }
         const { registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo } = req.session;
         const decryptedData = encryptionOperations.decrypt(registrationInfoEncryptionKey, registrationInfoIV, encryptedRegistrationInfo);
         const { fullname, email, password } = JSON.parse(decryptedData);
@@ -99,8 +100,7 @@ module.exports.usernameSelection = async (req, res, next) => {
         delete req.session.registrationInfoIV;
 
         req.logIn(createdUser, (err) => {
-            if (err)
-                throw new Error('Internal server error');
+            if (err) return next(err);
             responseObject(createdUser, [
                 { name: '_id', alias: 'id' },
                 { name: 'username' },

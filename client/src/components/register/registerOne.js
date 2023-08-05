@@ -20,20 +20,23 @@ function RegistrationOne(props) {
     const [otherError, setOtherError] = useState('');
 
     const fullnameCallback = (fullname) => {
-        if (fullnameError)
+        if (fullnameError) {
             setFullNameError('');
+        }
         setFullName(fullname);
     }
 
     const emailCallback = (email) => {
-        if (emailError)
+        if (emailError) {
             setEmailError('');
+        }
         setEmail(email);
     }
 
     const passwordCallback = (password) => {
-        if (passwordError)
+        if (passwordError) {
             setPasswordError('');
+        }
         setPassword(password);
     }
 

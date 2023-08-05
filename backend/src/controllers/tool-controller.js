@@ -46,13 +46,13 @@ module.exports.modify = async (req, res, next) => {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findById(tool_id);
 
-        if (!toolInfo)
+        if (!toolInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-            
+        }
         const allowedFields = toolInfo.accessibleFieldsBy(req.ability, 'update');
-        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
+        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to modify tool');
-
+        }
         toolInfo.set(req.body);
         if (req.file) {
             const uploadInfo = await s3Operations.createObject(req.file, 'assets/tools/images/cover');
@@ -75,8 +75,9 @@ module.exports.delete = async (req, res, next) => {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findById(tool_id);
 
-        if (!toolInfo)
+        if (!toolInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to delete tool')
             .throwUnlessCan('delete', toolInfo);
@@ -93,14 +94,14 @@ module.exports.copy = async (req, res, next) => {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findById(tool_id);
 
-        if (!toolInfo)
+        if (!toolInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
-        
+        }
         const allowedFields = toolInfo.accessibleFieldsBy(req.ability, 'read');
         const requiredFields = ['name', 'description', 'category'];
-        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field)))
+        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to copy tool');
-
+        }
         const createdTool = new UserTool({
             ...(requiredFields.reduce((accumulator, current) => ({
                 ...accumulator,
@@ -128,8 +129,9 @@ module.exports.getTool = async (req, res, next) => {
         const { tool_id } = req.params;
         const toolInfo = await Tool.findById(tool_id);
 
-        if (!toolInfo)
+        if (!toolInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Tool does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view tool')
             .throwUnlessCan('read', toolInfo);

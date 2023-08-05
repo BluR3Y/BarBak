@@ -40,9 +40,9 @@ toolSchema.path('name').validate(async function(name) {
 }, 'Name is already associated with another tool');
 
 toolSchema.path('category').validate(async function(category) {
-    if (!await this.constructor.validateCategory(category))
+    if (!await this.constructor.validateCategory(category)) {
         return this.invalidate('category', 'Invalid category value', category, 'exist');
-
+    }
     return true;
 });
 
@@ -70,14 +70,16 @@ toolSchema.pre('save', async function(next) {
     const { cover } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
-    if (modifiedFields.includes('cover') && cover)
+    if (modifiedFields.includes('cover') && cover) {
         await s3FileRemoval({ filepath: cover });
+    }
     next();
 });
 
 toolSchema.pre('remove', async function(next) {
-    if (this.cover)
+    if (this.cover) {
         await s3FileRemoval({ filepath: this.cover });
+    }
     next();
 });
 

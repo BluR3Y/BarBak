@@ -35,13 +35,14 @@ ingredientSchema.path('ingredient').validate(async function(ingredient) {
     const VerifiedDrink = baseDocument.model('Verified Drink');
     const UserDrink = baseDocument.model('User Drink');
 
-    if (baseDocument instanceof VerifiedDrink && ingredientInfo instanceof UserIngredient)
+    if (baseDocument instanceof VerifiedDrink && ingredientInfo instanceof UserIngredient) {
         return this.invalidate('ingredient', 'Verified drinks must contain verified ingredients', ingredient, 'valid');
-    else if (baseDocument instanceof UserDrink && ingredientInfo instanceof UserIngredient) {
-        if (!ingredientInfo.user.equals(user))
+    } else if (baseDocument instanceof UserDrink && ingredientInfo instanceof UserIngredient) {
+        if (!ingredientInfo.user.equals(user)) {
             return this.invalidate('ingredient', 'Drink must contain ingredients that are verified or yours', ingredient, 'valid');
-        else if (public && !ingredientInfo.public)
+        } else if (public && !ingredientInfo.public) {
             return this.invalidate('ingredient', 'Public drinks must contain ingredients that are public', ingredient, 'valid');
+        }
     }
     return true;
 });
@@ -130,15 +131,15 @@ ingredientSchema.add({
 });
 
 ingredientSchema.path('substitutes').validate(async function(substitutes) {
-    if (substitutes.length > 5)
+    if (substitutes.length > 5) {
         return this.invalidate('substitutes', 'Each ingredient is only permitted 5 substitutes', substitutes, 'valid');
-
+    }
     const substituteIds = new Set(substitutes.map(item => item.ingredient.toString()));
-    if (substituteIds.size !== substitutes.length)
+    if (substituteIds.size !== substitutes.length) {
         return this.invalidate('substitutes', 'Each ingredient in a substitute list must be unique', substitutes, 'valid');
-    else if (substituteIds.has(this.ingredient.toString()))
+    } else if (substituteIds.has(this.ingredient.toString())) {
         return this.invalidate('substitutes', 'Ingredient can not be in substitutes list');
-
+    }
     return true;
 });
 

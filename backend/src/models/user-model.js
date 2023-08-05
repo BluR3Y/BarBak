@@ -187,9 +187,9 @@ userSchema.pre('save', async function(next) {
     const { profile_image } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
-    if (modifiedFields.includes('profile_image') && profile_image)
+    if (modifiedFields.includes('profile_image') && profile_image) {
         await s3FileRemoval({ filepath: profile_image });
-    
+    }
     next();
 });
 
@@ -253,9 +253,9 @@ userSchema.statics.validateRegistrationCode = async function(sessionId, registra
     const redisRes = await redisClient.get(`registration-code:${sessionId}`);
     const validation = registrationCode === redisRes;
 
-    if (validation)
+    if (validation) {
         await redisClient.del(`registration-code:${sessionId}`);
-
+    }
     return validation;
 }
 

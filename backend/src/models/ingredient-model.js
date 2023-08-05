@@ -45,11 +45,11 @@ ingredientSchema.path('name').validate(async function(name) {
 ingredientSchema.path('category').validate(async function(category) {
     const { isValid, reason } = await this.constructor.validateCategory(category, this.sub_category);
 
-    if (!isValid && reason === 'invalid_category')
+    if (!isValid && reason === 'invalid_category') {
         return this.invalidate('category', 'Invalid category value', category, 'exist');
-    else if (!isValid && reason === 'invalid_sub_categories')
+    } else if (!isValid && reason === 'invalid_sub_categories') {
         return this.invalidate('sub_category', 'Invalid sub-category value', this.sub_category, 'exist');
-    
+    }
     return true;
 });
 
@@ -89,14 +89,16 @@ ingredientSchema.pre('save', async function(next) {
     const { cover } = await this.constructor.findById(this._id) || {};
     const modifiedFields = this.modifiedPaths();
 
-    if (modifiedFields.includes('cover') && cover)
+    if (modifiedFields.includes('cover') && cover) {
         await s3FileRemoval({ filepath: cover });
+    }
     next();
 });
 
 ingredientSchema.pre('remove', async function(next) {
-    if (this.cover)
+    if (this.cover) {
         await s3FileRemoval({ filepath: this.cover });
+    }
     next();
 });
 
@@ -121,9 +123,9 @@ ingredientSchema.statics.getCategories = async function() {
 }
 
 ingredientSchema.statics.validateCategory = async function(category, subCategories = []) {
-    if (!Array.isArray(subCategories))
+    if (!Array.isArray(subCategories)) {
         subCategories = [subCategories];
-
+    }
     const [{ categoryCount }] = await executeSqlQuery(`
         SELECT
             COUNT(*) AS categoryCount

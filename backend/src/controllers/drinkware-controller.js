@@ -43,13 +43,13 @@ module.exports.modify = async (req, res, next) => {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findById(drinkware_id);
 
-        if (!drinkwareInfo)
+        if (!drinkwareInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
-
+        }
         const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability, 'update');
-        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field)))
+        if (![...Object.keys(req.body), ...(req.file ? [req.file.fieldname] : [])].every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to modify drinkware');
-
+        }
         drinkwareInfo.set(req.body);
         if (req.file) {
             const uploadInfo = await s3Operations.createObject(req.file, 'assets/drinkware/images/cover');
@@ -72,8 +72,9 @@ module.exports.delete = async (req, res, next) => {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findById(drinkware_id);
 
-        if (!drinkwareInfo)
+        if (!drinkwareInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to delete drinkware')
             .throwUnlessCan('delete', drinkwareInfo);
@@ -90,14 +91,14 @@ module.exports.copy = async (req, res, next) => {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findById(drinkware_id);
         
-        if (!drinkwareInfo)
+        if (!drinkwareInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
-        
+        }
         const allowedFields = drinkwareInfo.accessibleFieldsBy(req.ability, 'read');
         const requiredFields = ['name', 'description'];
-        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field)))
+        if (![...requiredFields, 'cover'].every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to copy drinkware');
-        
+        }
         const createdDrinkware = new UserDrinkware({
             ...(requiredFields.reduce((accumulator, current) => ({
                 ...accumulator,
@@ -125,8 +126,9 @@ module.exports.getDrinkware = async (req, res, next) => {
         const { drinkware_id } = req.params;
         const drinkwareInfo = await Drinkware.findById(drinkware_id);
 
-        if (!drinkwareInfo)
+        if (!drinkwareInfo) {
             throw new AppError(404, 'NOT_FOUND', 'Drinkware does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view drinkware')
             .throwUnlessCan('read', drinkwareInfo);

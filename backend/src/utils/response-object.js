@@ -29,11 +29,11 @@ const responseObject = async function(source, requestedFields, allowedFields = [
     for (const key of requestedFields.map(obj => obj.alias || obj.name)) {
         const obj = requestedFields.find(obj => obj.alias === key || obj.name === key);
 
-        if (allowedFields.length && !allowedFields.includes(obj.name))
+        if (allowedFields.length && !allowedFields.includes(obj.name)) {
             continue;
-        else if (obj.condition && !obj.condition(source))
+        } else if (obj.condition && !obj.condition(source)) {
             continue;
-
+        }
         const fieldData = await _.get(source, obj.name);
         if (obj.parent_fields?.length && typeof fieldData === 'object') {
             _.assign(responseObj, await responseObject(fieldData, obj.parent_fields));

@@ -10,8 +10,9 @@ export const withOutAuth = ( WrappedComponent, redirectPath = '/', inverted = fa
         static async getInitialProps(ctx) {
             try {
                 const sessionToken = getCookie(ctx.req.headers.cookie, 'session');
-                if (!sessionToken)
+                if (!sessionToken) {
                     throw new Error('User Not Authenticated');
+                }
                 const { data } = await axios.get(process.env.NEXT_PUBLIC_BACKEND_URL + '/users/@me', {
                     headers: {
                         'cookie': `session=${sessionToken}`
@@ -30,8 +31,9 @@ export const withOutAuth = ( WrappedComponent, redirectPath = '/', inverted = fa
         componentDidMount() {
             const { user, updateUserInfo } = this.props;
             updateUserInfo(user);
-            if (inverted ? !user : user)
+            if (inverted ? !user : user) {
                 Router.push(redirectPath);
+            }
         }
 
         render() {

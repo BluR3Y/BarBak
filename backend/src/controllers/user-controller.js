@@ -10,9 +10,9 @@ module.exports.modifyClientInfo = async (req, res, next) => {
     try {
         const userInfo = await User.findById(req.user._id);
         const allowedFields = userInfo.accessibleFieldsBy(req.ability, 'update');
-        if (!Object.keys(req.body).every(field => allowedFields.includes(field)))
+        if (!Object.keys(req.body).every(field => allowedFields.includes(field))) {
             throw new CaslError().setMessage('Unauthorized to modify user profile');
-
+        }
         userInfo.set(req.body);
         if (req.file) {
             const uploadInfo = await s3Operations.createObject(req.file, 'assets/users/images/profile');
@@ -35,8 +35,9 @@ module.exports.getUser = async (req, res, next) => {
         const { user_id } = req.params;
         const userInfo = await User.findById(user_id);
         
-        if (!userInfo)
+        if (!userInfo) {
             throw new AppError(404, 'NOT_FOUND', 'User does not exist');
+        }
         CaslError.from(req.ability)
             .setMessage('Unauthorized to view user profile')
             .throwUnlessCan('read', userInfo);

@@ -30,10 +30,11 @@ class Register extends React.Component {
     }
 
     updateActiveRegistration = (direction) => {
-        if (direction === 'next')
+        if (direction === 'next') {
             this.setState(prevState => ({ activeStep: prevState.activeStep + 1 }));
-        else if (direction === 'prev')
+        } else if (direction === 'prev') {
             this.setState(prevState => ({ activeStep: prevState.activeStep - 1 }));
+        }
     }
 
     updateRegistrationInfo = (info) => {

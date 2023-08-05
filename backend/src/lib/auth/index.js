@@ -60,7 +60,8 @@ function authenticationStrategyCallback(req, res, next) {
 
 // Middleware that checks if session exists
 exports.sessionAuthenticationRequired = function(req, res, next) {
-    if(!req.isAuthenticated())
+    if(!req.isAuthenticated()) {
         throw new AppError(401, 'UNAUTHORIZED', 'Unauthorized request');
+    }
     next();
 }

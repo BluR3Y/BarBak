@@ -9,8 +9,9 @@ module.exports.imageUpload = multer({
     storage: multer.diskStorage({
         destination: function(req, file, cb) {
             const dir = path.join(basePath, 'images');
-            if (!fs.existsSync(dir))
+            if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir,{ recursive: true });
+            }
             cb (null, dir);
         },
         filename: function(req, file, cb) {
@@ -26,8 +27,9 @@ module.exports.imageUpload = multer({
         const type = mime[0];
         const subType = mime[1];
 
-        if (type !== 'image' || !allowedFileFormats.images.includes(subType))
+        if (type !== 'image' || !allowedFileFormats.images.includes(subType)) {
             return cb(new multer.MulterError('UNSUPPORTED_FILE_FORMAT'));
+        }
         cb (null, true);
     },
     limits: {
@@ -40,8 +42,9 @@ module.exports.videoUpload = multer({
     storage: multer.diskStorage({
         destination: function(req, file, cb) {
             const dir = path.join(basePath, 'video');
-            if (!fs.existsSync(dir))
+            if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir,{ recursive: true });
+            }
             cb (null, dir);
         },
         filename: function(req, file, cb) {
@@ -57,8 +60,9 @@ module.exports.videoUpload = multer({
         const type = mime[0];
         const subType = mime[1];
 
-        if (type !== 'video' || !allowedFileFormats.videos.includes(subType))
+        if (type !== 'video' || !allowedFileFormats.videos.includes(subType)) {
             return cb(new multer.MulterError('UNSUPPORTED_FILE_FORMAT'));
+        }
         cb (null, true);
     },
     limits: {
