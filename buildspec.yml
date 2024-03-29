@@ -1,8 +1,8 @@
 version: 0.2
 env:
   secrets-manager:
-    DOCKER_ID: "docker_credentials:docker_id"
-    DOCKER_PW: "docker_credentials:docker_token"
+    DOCKER_ID: "docker-credentials:docker_id"
+    DOCKER_PW: "docker-credentials:docker_token"
 phases:
   build:
     commands:
