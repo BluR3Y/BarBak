@@ -4,23 +4,27 @@ env:
     DOCKER_ID: "docker-credentials:docker_id"
     DOCKER_PW: "docker-credentials:docker_token"
 phases:
+  pre_build:
+    commands:
+    - echo Logging in to the Docker CLI
+    - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
+    - REPOSITORY_NAME="barbak-$STAGE_NAME"
   build:
     commands:
+    - echo Building Docker images
     - echo Build started on `date`
-    # Build the Docker images
-    - echo Building the production Docker images...
-    - docker build -t "reyhec/barbak-${STAGE_NAME}-webserver" ./webserver
-    - docker build -t "reyhec/barbak-${STAGE_NAME}-client" ./client
-    - docker build -t "reyhec/barbak-${STAGE_NAME}-backend" ./backend
-    # Log In to the Docker CLI
-    - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
+    - docker build -t reyhec/$REPOSITORY_NAME-webserver ./webserver
+    - docker build -t reyhec/$REPOSITORY_NAME-client ./client
+    - docker build -t reyhec/$REPOSITORY_NAME-backend ./backend
   post_build:
     commands:
-    # Take these images and push them to Docker hub
-    - echo Pushing to Docker images...
-    - docker push "reyhec/barbak-${STAGE_NAME}-webserver"
-    - docker push "reyhec/barbak-${STAGE_NAME}-client"
-    - docker push "reyhec/barbak-${STAGE_NAME}-backend"
+    - echo Pushing images to Docker Hub
+    - docker push reyhec/$REPOSITORY_NAME-webserver
+    - docker push reyhec/$REPOSITORY_NAME-client
+    - docker push reyhec/$REPOSITORY_NAME-backend
 artifacts:
   files:
     - '**/*'
+
+# Resource:
+  # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html

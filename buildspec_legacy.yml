@@ -1,0 +1,26 @@
+version: 0.2
+env:
+  secrets-manager:
+    DOCKER_ID: "docker-credentials:docker_id"
+    DOCKER_PW: "docker-credentials:docker_token"
+phases:
+  build:
+    commands:
+    - echo Build started on `date`
+    # Build the Docker images
+    - echo Building the production Docker images...
+    - docker build -t "reyhec/barbak-${STAGE_NAME}-webserver" ./webserver
+    - docker build -t "reyhec/barbak-${STAGE_NAME}-client" ./client
+    - docker build -t "reyhec/barbak-${STAGE_NAME}-backend" ./backend
+    # Log In to the Docker CLI
+    - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
+  post_build:
+    commands:
+    # Take these images and push them to Docker hub
+    - echo Pushing to Docker images...
+    - docker push "reyhec/barbak-${STAGE_NAME}-webserver"
+    - docker push "reyhec/barbak-${STAGE_NAME}-client"
+    - docker push "reyhec/barbak-${STAGE_NAME}-backend"
+artifacts:
+  files:
+    - '**/*'

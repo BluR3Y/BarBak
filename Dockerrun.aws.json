@@ -32,7 +32,7 @@
     },
     {
       "name": "backend",
-      "image": "reyhec/barbak-backend:latest",
+      "image": "reyhec/barbak-development-backend:latest",
       "hostname": "backend",
       "essential": false,
       "links": ["mysql","redis"],
@@ -40,14 +40,14 @@
     },
     {
       "name": "client",
-      "image": "reyhec/barbak-client:latest",
+      "image": "reyhec/barbak-development-client:latest",
       "hostname": "client",
       "essential": false,
       "memory": 300
     },
     {
       "name": "webserver",
-      "image": "reyhec/barbak-webserver:latest",
+      "image": "reyhec/barbak-development-webserver:latest",
       "hostname": "webserver",
       "essential": true,
       "portMappings": [

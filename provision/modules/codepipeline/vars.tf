@@ -21,3 +21,8 @@ variable "repo_branch" {
   description = "Github repository branch where source changes are to be detected"
   type = string
 }
+
+variable "codebuild_name" {
+  description = "Codebuild project name"
+  type = string
+}

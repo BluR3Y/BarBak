@@ -41,7 +41,7 @@ resource "aws_codepipeline" "main" {
       version = "1"
 
       configuration = {
-        ProjectName = "barbak-development-build"  // temp
+        ProjectName = var.codebuild_name
         PrimarySource = "SourceArtifact"
       }
       run_order = 2
@@ -55,12 +55,15 @@ resource "aws_codepipeline" "main" {
   #     name = "DeployAction"
   #     category = "Deploy"
   #     owner = "AWS"
-  #     provider = "CodeDeploy"
+  #     provider = "ECS"
   #     input_artifacts = ["BuildArtifact"]
   #     version = "1"
 
   #     configuration = {
-  #       ApplicationName = ""  // temp
+  #       ClusterName = ""
+  #       ServiceName = ""
+  #       FileName = ""
+  #       TaskDefinitionTemplatePath = ""
   #     }
   #     run_order = 3
   #   }
