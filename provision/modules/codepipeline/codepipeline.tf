@@ -48,26 +48,24 @@ resource "aws_codepipeline" "main" {
     }
   }
 
-  # stage {
-  #   name = "Deploy"
+  stage {
+    name = "Deploy"
 
-  #   action {
-  #     name = "DeployAction"
-  #     category = "Deploy"
-  #     owner = "AWS"
-  #     provider = "ECS"
-  #     input_artifacts = ["BuildArtifact"]
-  #     version = "1"
+    action {
+      name = "DeployAction"
+      category = "Deploy"
+      owner = "AWS"
+      provider = "ElasticBeanstalk"
+      input_artifacts = ["BuildArtifact"]
+      version = "1"
 
-  #     configuration = {
-  #       ClusterName = ""
-  #       ServiceName = ""
-  #       FileName = ""
-  #       TaskDefinitionTemplatePath = ""
-  #     }
-  #     run_order = 3
-  #   }
-  # }
+      configuration = {
+        ApplicationName = var.beanstalk_application_name
+        EnvironmentName = var.beanstalk_environment_name
+      }
+      run_order = 3
+    }
+  }
 }
 
 # Resources:

@@ -4,6 +4,11 @@ resource "aws_iam_role" "main" {
   assume_role_policy = data.aws_iam_policy_document.main.json
 }
 
+resource "aws_iam_instance_profile" "main" {
+  name = "${var.project_name}-${var.project_environment}-role-profile"
+  role = aws_iam_role.main.name
+}
+
 # This is a data source which can be used to construct a 
 # JSON representation of an IAM policy document, 
 # for use with resources which expect policy documents, 
@@ -22,6 +27,33 @@ data "aws_iam_policy_document" "main" {
 }
 
 # Policies for different environments
+# Last Here
+data "aws_iam_policy" "beanstalk_web_tier_policy" {
+  arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier"
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_web_tier_policy_attachment" {
+  role = aws_iam_role.main.name
+  policy_arn = data.aws_iam_policy.beanstalk_web_tier_policy.arn
+}
+
+data "aws_iam_policy" "beanstalk_worker_tier_policy" {
+  arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier"
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_worker_tier_policy_attachment" {
+  role = aws_iam_role.main.name
+  policy_arn = data.aws_iam_policy.beanstalk_worker_tier_policy.arn
+}
+
+data "aws_iam_policy" "beanstalk_multi_container_policy" {
+  arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_multi_container_policy_attachment" {
+  role = aws_iam_role.main.name
+  policy_arn = data.aws_iam_policy.beanstalk_multi_container_policy.arn
+}
 
 resource "aws_iam_policy" "main" {
   name = "${var.project_name}-${var.project_environment}-beanstalk-policy"
@@ -222,3 +254,6 @@ data "aws_iam_policy_document" "elasticbeanstalk_barbak_app" {
     resources = ["*"]
   }
 }
+
+# Resources:
+  # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/iam-instanceprofile.html

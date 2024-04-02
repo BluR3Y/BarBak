@@ -26,3 +26,11 @@ variable "codebuild_name" {
   description = "Codebuild project name"
   type = string
 }
+
+variable "beanstalk_application_name" {
+  type = string
+}
+
+variable "beanstalk_environment_name" {
+  type = string
+}

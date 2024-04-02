@@ -9,3 +9,8 @@ variable "project_environment" {
 variable "project_description" {
   type = string
 }
+
+variable "instance_types" {
+  type = string
+  default = "t2.medium,t3.medium"
+}
