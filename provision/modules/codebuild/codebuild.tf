@@ -20,6 +20,11 @@ resource "aws_codebuild_project" "main" {
     privileged_mode = true
 
     environment_variable {
+      name = "PROJECT_NAME"
+      value = var.project_name
+    }
+
+    environment_variable {
       name = "STAGE_NAME"
       value = var.project_environment
     }

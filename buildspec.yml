@@ -6,25 +6,27 @@ env:
 phases:
   pre_build:
     commands:
-    - echo Logging in to the Docker CLI
-    - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
-    - REPOSITORY_NAME="barbak-$STAGE_NAME"
+      - echo Logging in to Docker Hub
+      - echo $DOCKER_PW | docker login -u $DOCKER_ID --password-stdin
+      - REPOSITORY_URI="${DOCKER_ID}/${PROJECT_NAME}-${STAGE_NAME}"
   build:
     commands:
-    - echo Building Docker images
-    - echo Build started on `date`
-    - docker build -t reyhec/$REPOSITORY_NAME-webserver ./webserver
-    - docker build -t reyhec/$REPOSITORY_NAME-client ./client
-    - docker build -t reyhec/$REPOSITORY_NAME-backend ./backend
+      - echo Build started on `date`
+      - echo Building Docker images...
+      - docker build -t $REPOSITORY_URI-webserver ./webserver
+      - docker build -t $REPOSITORY_URI-client ./client
+      - docker build -t $REPOSITORY_URI-backend ./backend
   post_build:
     commands:
-    - echo Pushing images to Docker Hub
-    - docker push reyhec/$REPOSITORY_NAME-webserver
-    - docker push reyhec/$REPOSITORY_NAME-client
-    - docker push reyhec/$REPOSITORY_NAME-backend
+      - echo Build completed on `date`
+      - echo Pushing built images to Docker Hub...
+      - docker push $REPOSITORY_URI-webserver
+      - docker push $REPOSITORY_URI-client
+      - docker push $REPOSITORY_URI-backend
+      - echo Writing image definitions file...
+      - printf '[{"name":"webserver","imageUri":"%s"},{"name":"client","imageUri":"%s"},{"name":"backend","imageUri":"%s"}]' $REPOSITORY_URI-webserver $REPOSITORY_URI-client $REPOSITORY_URI-backend > imagedefinitions.json
 artifacts:
-  files:
-    - '**/*'
+  files: imagedefinitions.json
 
 # Resource:
   # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html

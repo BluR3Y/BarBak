@@ -50,18 +50,18 @@ resource "aws_codepipeline" "main" {
 
   stage {
     name = "Deploy"
-
+    # Missing: needs modification
     action {
       name = "DeployAction"
       category = "Deploy"
       owner = "AWS"
-      provider = "ElasticBeanstalk"
+      provider = "ECS"
       input_artifacts = ["BuildArtifact"]
       version = "1"
 
       configuration = {
-        ApplicationName = var.beanstalk_application_name
-        EnvironmentName = var.beanstalk_environment_name
+        ClusterName = var.ecs_cluster_name
+        ServiceName = var.ecs_service_name
       }
       run_order = 3
     }
@@ -70,5 +70,6 @@ resource "aws_codepipeline" "main" {
 
 # Resources:
   # https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference.html
-
+  # https://docs.aws.amazon.com/codepipeline/latest/userguide/file-reference.html#pipelines-create-image-definitions
   # https://stackoverflow.com/questions/25956193/difference-between-amazon-ec2-and-aws-elastic-beanstalk
+  # https://docs.aws.amazon.com/codepipeline/latest/userguide/ecs-cd-pipeline.html

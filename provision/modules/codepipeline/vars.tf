@@ -27,10 +27,10 @@ variable "codebuild_name" {
   type = string
 }
 
-variable "beanstalk_application_name" {
+variable "ecs_cluster_name" {
   type = string
 }
 
-variable "beanstalk_environment_name" {
+variable "ecs_service_name" {
   type = string
 }

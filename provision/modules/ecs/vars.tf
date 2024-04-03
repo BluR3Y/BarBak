@@ -6,11 +6,12 @@ variable "project_environment" {
   type = string
 }
 
-variable "project_description" {
+variable "region" {
   type = string
 }
 
-variable "instance_types" {
+variable "vpc_cidr" {
+  description = "CIDR range"
   type = string
-  default = "t2.medium,t3.medium"
+  default = "10.0.0.0/16"
 }

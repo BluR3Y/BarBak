@@ -55,11 +55,11 @@ services:
 
   # LocalStack is a cloud service emulator which provides the ability to run
   # various aws services on a local machine.
-  localstack:
-    container_name: localstack
-    image: localstack/localstack:latest
-    env_file:
-      - ./env/localstack/.env.development
-    volumes:
-      - ./database/localstack/init:/etc/localstack/init/ready.d:ro
-      - ./database/localstack/config:/tmp/localstack:ro
+  # localstack:
+  #   container_name: localstack
+  #   image: localstack/localstack:latest
+  #   env_file:
+  #     - ./env/localstack/.env.development
+  #   volumes:
+  #     - ./database/localstack/init:/etc/localstack/init/ready.d:ro
+  #     - ./database/localstack/config:/tmp/localstack:ro
