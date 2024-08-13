@@ -5,5 +5,7 @@
 ## Introduction
 Barbak serves as a unique platform designed to educate users in the art of mixing and serving drinks. Inspired by the role of a barback in the service industry, Barbak is tailored to assist both amateur and seasoned mixologists in crafting a wide array of alcoholic and non-alcoholic beverages, providing step-by-step guidance and a wealth of resources.
 <br>
+## Tech Stack Diagram
+![Alt text](./Barbak_Tech_Stack.png?raw=true "Tech Stack Diagram")
 ## Technical Architecture Diagram
 ![Alt text](./BarBak_Technical_Architecture_Diagram.png?raw=true "Technical Architecture Diagram")
